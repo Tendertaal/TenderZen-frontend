@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TenderPlanner v2.0</title>
+
+    <!-- Flatpickr Date Picker - Nederlandse datum notatie -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/nl.js"></script>
+
+    <!-- Load Supabase library - UMD bundle (GEEN import map!) -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <!-- Initialize Supabase AFTER library is loaded -->
+    <script>
+        const SUPABASE_URL = 'https://ayamyedredynntdaldlu.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5YW15ZWRyZWR5bm50ZGFsZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMTQ1NDcsImV4cCI6MjA3ODc5MDU0N30.fOL5bDKrgMnSu-zZ63Eg4vXPhF3ycNxk3-7nIyR8ryg';
+
+        // Wait for supabase to be available
+        if (typeof supabase !== 'undefined' && supabase.createClient) {
+            try {
+                window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                    auth: {
+                        autoRefreshToken: true,
+                        persistSession: true,
+                        detectSessionInUrl: true
+                    }
+                });
+                console.log('✅ Supabase initialized');
+            } catch (error) {
+                console.error('❌ Supabase init failed:', error);
+            }
+        } else {
+            console.error('❌ Supabase library not loaded');
+        }
+    </script>
+
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/main.css?v=3">
+    <link rel="stylesheet" href="css/ProfileDropdown.css">
+    <link rel="stylesheet" href="css/components.css?v=3">
+    <link rel="stylesheet" href="css/Header.css?v=3">
+    <link rel="stylesheet" href="css/HeadersRow.css?v=4">
+    <link rel="stylesheet" href="css/TenderAanmaken.css?v=3">
+    <link rel="stylesheet" href="css/tender-card.css?v=3">
+    <link rel="stylesheet" href="css/totaal-view.css?v=3">
+    <link rel="stylesheet" href="css/views.css?v=3">
+    <link rel="stylesheet" href="css/TenderbureausView.css?v=3">
+    <link rel="stylesheet" href="css/table-view.css?v=10">
+
+    <!-- Modal CSS - VOLGORDE BELANGRIJK: base eerst -->
+    <link rel="stylesheet" href="css/modal-base.css?v=3">
+    <link rel="stylesheet" href="css/BedrijfModal.css?v=3">
+    <link rel="stylesheet" href="css/TeamlidModal.css?v=3">
+
+    <link rel="stylesheet" href="css/BedrijfSelector.css?v=3">
+    <link rel="stylesheet" href="css/mfa.css?v=3">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/multi-bureau-extra.css">
+    <link rel="stylesheet" href="css/BureauSwitcher.css">
+    <link rel="stylesheet" href="css/TenderbureauModal.css">
+
+    <!-- Icons -->
+    <script src="js/icons.js"></script>
+
+    <style>
+        /* Basic reset and layout */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        #app {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #app-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        #app-content {
+            flex: 1;
+            width: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        /* Loading screen */
+        .loading-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #app.loaded .loading-screen {
+            display: none;
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- App Container -->
+    <div id="app">
+        <!-- Header (dynamically inserted) -->
+        <div id="app-header"></div>
+
+        <!-- Main Content Area -->
+        <div id="app-content">
+            <!-- Loading screen (replaced by router) -->
+            <div class="loading-screen">
+                <div class="loading-spinner"></div>
+                <p>TenderPlanner wordt geladen...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load main app -->
+    <script type="module" src="js/main.js?v=23"></script>
+
+</body>
+
+</html>

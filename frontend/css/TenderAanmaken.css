@@ -1,0 +1,586 @@
+/**
+ * TenderAanmaken.css
+ * TenderZen Design System v2.0
+ * Krachtige kleuren, gradient buttons, fase-specifieke accenten
+ */
+
+/* ========================================
+   MODAL
+   ======================================== */
+
+.tender-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.tender-modal .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.tender-modal .modal-container {
+    position: relative;
+    background: var(--bg-surface);
+    border-radius: var(--radius-xl);
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+}
+
+/* ========================================
+   MODAL HEADER
+   ======================================== */
+
+.tender-modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-6) var(--space-8);
+    border-bottom: 1px solid var(--border-light);
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    color: var(--text-primary);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.tender-modal .modal-header h2 {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    color: var(--text-primary);
+}
+
+.tender-modal .modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: var(--radius-lg);
+    border: 2px solid #f59e0b;
+}
+
+.tender-modal .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-xl);
+    cursor: pointer;
+    padding: var(--space-2);
+    line-height: 1;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+}
+
+.tender-modal .modal-close:hover {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+/* ========================================
+   MODAL CONTENT
+   ======================================== */
+
+.tender-modal .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-8);
+}
+
+/* Custom scrollbar */
+.tender-modal .modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.tender-modal .modal-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.tender-modal .modal-content::-webkit-scrollbar-thumb {
+    background: var(--border-default);
+    border-radius: var(--radius-sm);
+}
+
+.tender-modal .modal-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ========================================
+   FORM SECTIONS
+   ======================================== */
+
+.form-section {
+    margin-bottom: var(--space-8);
+    padding: var(--space-6);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-light);
+}
+
+.section-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    margin: 0 0 var(--space-5) 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.section-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    border: 2px solid;
+}
+
+/* Section Icon Variants */
+.section-icon.icon-company {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-color: #3b82f6;
+}
+
+.section-icon.icon-tender {
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border-color: #8b5cf6;
+}
+
+.section-icon.icon-classification {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-color: #f59e0b;
+}
+
+.section-icon.icon-financial {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border-color: #10b981;
+}
+
+.section-icon.icon-timeline {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-color: #ef4444;
+}
+
+.section-icon.icon-team {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    border-color: #6366f1;
+}
+
+.section-icon.icon-docs {
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    border-color: #a855f7;
+}
+
+.section-icon.icon-requirements {
+    background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
+    border-color: #06b6d4;
+}
+
+.section-icon.icon-risk {
+    background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+    border-color: #f97316;
+}
+
+.help-text {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    font-weight: normal;
+    margin-left: var(--space-2);
+}
+
+/* ========================================
+   FORM GROUPS
+   ======================================== */
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.required {
+    color: #dc2626;
+    margin-left: var(--space-1);
+}
+
+.form-control {
+    width: 100%;
+    padding: var(--space-2-5) var(--space-3);
+    border: 2px solid var(--border-default);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    transition: all 0.2s ease;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.form-control:hover:not(:focus) {
+    border-color: var(--border-focus);
+}
+
+textarea.form-control {
+    resize: vertical;
+    font-family: var(--font-family);
+    min-height: 100px;
+}
+
+select.form-control {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: var(--space-10);
+    appearance: none;
+}
+
+/* ========================================
+   CRITICAL FIELDS
+   ======================================== */
+
+.form-group.critical label {
+    color: #dc2626;
+    font-weight: var(--font-weight-bold);
+}
+
+.form-group.critical .form-control {
+    border: 2px solid #fca5a5;
+    background: #fef2f2;
+}
+
+.form-group.critical .form-control:focus {
+    border-color: #dc2626;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
+}
+
+/* ========================================
+   CHECKBOXES
+   ======================================== */
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    border: 2px solid var(--border-light);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    cursor: pointer;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    font-size: var(--font-size-sm);
+}
+
+.checkbox-label:hover {
+    background: var(--bg-hover);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #6366f1;
+}
+
+.checkbox-label input[type="checkbox"]:checked + span {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+/* ========================================
+   MODAL FOOTER
+   ======================================== */
+
+.tender-modal .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-6) var(--space-8);
+    border-top: 1px solid var(--border-light);
+    background: var(--bg-secondary);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+.btn {
+    padding: var(--space-3) var(--space-6);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-family);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 2px solid var(--border-default);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-focus);
+}
+
+/* Concept Button - Amber */
+.btn-concept {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+}
+
+.btn-concept:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+}
+
+/* Primary Button - TenderZen Gradient */
+.tender-modal .btn-primary,
+.btn-primary {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.tender-modal .btn-primary:hover,
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+/* ========================================
+   FASE SELECT STYLING
+   ======================================== */
+
+#tender-fase {
+    font-weight: var(--font-weight-semibold);
+}
+
+#tender-fase option[value="acquisitie"] {
+    color: #b45309;
+}
+
+#tender-fase option[value="inschrijvingen"] {
+    color: #6d28d9;
+}
+
+#tender-fase option[value="ingediend"] {
+    color: #047857;
+}
+
+/* ========================================
+   STATUS SELECT STYLING
+   ======================================== */
+
+#tender-status option[value="go"] {
+    color: #047857;
+}
+
+#tender-status option[value="no-go"] {
+    color: #dc2626;
+}
+
+#tender-status option[value="maybe"] {
+    color: #b45309;
+}
+
+#tender-status option[value="pending"] {
+    color: #6366f1;
+}
+
+/* ========================================
+   DATE INPUTS
+   ======================================== */
+
+input[type="date"].form-control {
+    cursor: pointer;
+}
+
+input[type="date"].form-control::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+input[type="date"].form-control:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+}
+
+/* ========================================
+   NUMBER INPUTS
+   ======================================== */
+
+input[type="number"].form-control {
+    font-family: var(--font-family-mono);
+}
+
+input[type="number"].form-control::-webkit-inner-spin-button,
+input[type="number"].form-control::-webkit-outer-spin-button {
+    opacity: 0.5;
+}
+
+input[type="number"].form-control:hover::-webkit-inner-spin-button,
+input[type="number"].form-control:hover::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* ========================================
+   URL INPUTS
+   ======================================== */
+
+input[type="url"].form-control {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xs);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .tender-modal .modal-container {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .tender-modal .modal-header {
+        padding: var(--space-4) var(--space-6);
+    }
+
+    .tender-modal .modal-header h2 {
+        font-size: var(--font-size-xl);
+    }
+
+    .tender-modal .modal-content {
+        padding: var(--space-6);
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .checkbox-group {
+        grid-template-columns: 1fr;
+    }
+
+    .tender-modal .modal-footer {
+        flex-direction: column;
+        gap: var(--space-3);
+        padding: var(--space-4) var(--space-6);
+    }
+
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .tender-modal .modal-container {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+    }
+
+    .tender-modal .modal-header {
+        border-radius: 0;
+    }
+
+    .tender-modal .modal-footer {
+        border-radius: 0;
+    }
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tender-modal[style*="display: flex"] .modal-container {
+    animation: slideDown 0.3s ease-out;
+}
+
+/* ========================================
+   PLACEHOLDER STYLING
+   ======================================== */
+
+.form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.form-control:focus::placeholder {
+    opacity: 0.5;
+}

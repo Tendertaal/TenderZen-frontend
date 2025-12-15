@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start test-password-reset.html)",
+      "Bash(start reset-password.html)"
+    ]
+  }
+}

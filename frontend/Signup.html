@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registreren - TenderPlanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .signup-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px;
+            padding: 48px 40px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .app-title {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .app-subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .signup-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .signup-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .signup-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 24px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+            animation: shake 0.3s;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            border: 1px solid #a5d6a7;
+            color: #2e7d32;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .password-requirements {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 8px;
+            padding-left: 8px;
+        }
+
+        .password-requirements li {
+            margin: 4px 0;
+        }
+
+        .requirement-met {
+            color: #27ae60;
+        }
+
+        .requirement-not-met {
+            color: #e74c3c;
+        }
+    </style>
+
+    <!-- Import Map for Supabase -->
+    <script type="importmap">
+    {
+      "imports": {
+        "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div class="signup-container">
+        <div class="logo">📋</div>
+        <h1 class="app-title">TenderPlanner</h1>
+        <p class="app-subtitle">Maak een nieuw account</p>
+
+        <!-- Error Message -->
+        <div id="error-message" class="error-message"></div>
+
+        <!-- Success Message -->
+        <div id="success-message" class="success-message"></div>
+
+        <!-- Signup Form -->
+        <form id="signup-form">
+            <div class="form-group">
+                <label for="name">Naam</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    placeholder="Jouw naam"
+                    required
+                    autocomplete="name"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="jouw@email.nl"
+                    required
+                    autocomplete="email"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">Wachtwoord</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="••••••••"
+                    required
+                    autocomplete="new-password"
+                >
+                <ul class="password-requirements" id="password-requirements">
+                    <li id="req-length">Minimaal 8 karakters</li>
+                    <li id="req-uppercase">Minimaal 1 hoofdletter</li>
+                    <li id="req-number">Minimaal 1 cijfer</li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <label for="password-confirm">Bevestig wachtwoord</label>
+                <input 
+                    type="password" 
+                    id="password-confirm" 
+                    name="password-confirm" 
+                    placeholder="••••••••"
+                    required
+                    autocomplete="new-password"
+                >
+            </div>
+
+            <button type="submit" class="signup-btn" id="signup-btn">
+                Account aanmaken
+            </button>
+        </form>
+
+        <div class="login-link">
+            Al een account? <a href="login.html">Log hier in</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from '@supabase/supabase-js';
+
+        // ========================================
+        // SUPABASE CONFIGURATIE
+        // ========================================
+        // ⚠️ VERVANG DEZE MET JOUW SUPABASE CREDENTIALS
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+        // Initialize Supabase client
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = supabase;
+
+        // ========================================
+        // DOM ELEMENTS
+        // ========================================
+        const signupForm = document.getElementById('signup-form');
+        const signupBtn = document.getElementById('signup-btn');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const passwordConfirmInput = document.getElementById('password-confirm');
+
+        // ========================================
+        // PASSWORD VALIDATION
+        // ========================================
+        function validatePassword(password) {
+            const requirements = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                number: /[0-9]/.test(password)
+            };
+
+            // Update UI
+            document.getElementById('req-length').className = requirements.length ? 'requirement-met' : 'requirement-not-met';
+            document.getElementById('req-uppercase').className = requirements.uppercase ? 'requirement-met' : 'requirement-not-met';
+            document.getElementById('req-number').className = requirements.number ? 'requirement-met' : 'requirement-not-met';
+
+            return requirements.length && requirements.uppercase && requirements.number;
+        }
+
+        passwordInput.addEventListener('input', (e) => {
+            validatePassword(e.target.value);
+        });
+
+        // ========================================
+        // UTILITY FUNCTIONS
+        // ========================================
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+            successMessage.classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.classList.add('show');
+            errorMessage.classList.remove('show');
+        }
+
+        function hideMessages() {
+            errorMessage.classList.remove('show');
+            successMessage.classList.remove('show');
+        }
+
+        function setLoading(isLoading) {
+            signupBtn.disabled = isLoading;
+            
+            if (isLoading) {
+                signupBtn.innerHTML = '<span class="loading-spinner"></span> Account aanmaken...';
+            } else {
+                signupBtn.innerHTML = 'Account aanmaken';
+            }
+        }
+
+        // ========================================
+        // CHECK IF ALREADY LOGGED IN
+        // ========================================
+        async function checkExistingSession() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (session) {
+                    console.log('✅ Gebruiker is al ingelogd, redirect naar app...');
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('Error checking session:', error);
+            }
+        }
+
+        checkExistingSession();
+
+        // ========================================
+        // SIGNUP WITH EMAIL/PASSWORD
+        // ========================================
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideMessages();
+
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const passwordConfirm = passwordConfirmInput.value;
+
+            // Validate password
+            if (!validatePassword(password)) {
+                showError('Wachtwoord voldoet niet aan de vereisten.');
+                return;
+            }
+
+            // Check if passwords match
+            if (password !== passwordConfirm) {
+                showError('Wachtwoorden komen niet overeen.');
+                return;
+            }
+
+            setLoading(true);
+
+            console.log('📝 Attempting signup...', { name, email });
+
+            try {
+                // Sign up with Supabase
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            name: name
+                        },
+                        emailRedirectTo: window.location.origin + '/index.html'
+                    }
+                });
+
+                if (error) throw error;
+
+                console.log('✅ Signup succesvol!', data);
+
+                // Check if email confirmation is required
+                if (data.user && !data.session) {
+                    showSuccess('✅ Account aangemaakt! Check je email om je account te bevestigen.');
+                    
+                    // Clear form
+                    signupForm.reset();
+                } else {
+                    showSuccess('✅ Account aangemaakt! Doorsturen...');
+                    
+                    // Redirect after a moment
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                }
+
+            } catch (error) {
+                console.error('❌ Signup error:', error);
+                
+                let errorMsg = 'Er is een fout opgetreden bij het aanmaken van je account.';
+                
+                if (error.message.includes('User already registered')) {
+                    errorMsg = 'Dit email adres is al in gebruik.';
+                } else if (error.message.includes('Password')) {
+                    errorMsg = 'Wachtwoord is niet sterk genoeg.';
+                } else if (error.message) {
+                    errorMsg = error.message;
+                }
+                
+                showError(errorMsg);
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        console.log('📝 Signup page loaded');
+        console.log('📝 Supabase URL:', SUPABASE_URL);
+    </script>
+</body>
+</html>

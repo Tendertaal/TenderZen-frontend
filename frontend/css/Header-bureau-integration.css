@@ -1,0 +1,122 @@
+/**
+ * Header Bureau Switcher Integration CSS
+ * TenderZen v2.1
+ * 
+ * Extra CSS voor de bureau switcher integratie in de header.
+ * Voeg dit toe aan Header.css of als apart bestand.
+ */
+
+/* =========================================================
+   HEADER LEFT - DIVIDER & CONTAINER
+   ========================================================= */
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(0, 0, 0, 0.1);
+    margin: 0 8px;
+}
+
+.bureau-switcher-container {
+    display: flex;
+    align-items: center;
+}
+
+/* =========================================================
+   PLACEHOLDER (loading state)
+   ========================================================= */
+
+.bureau-switcher-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+}
+
+.placeholder-shimmer {
+    width: 120px;
+    height: 28px;
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.05) 0%,
+        rgba(0, 0, 0, 0.1) 50%,
+        rgba(0, 0, 0, 0.05) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* =========================================================
+   PROFILE MENU - BUREAU NAME
+   ========================================================= */
+
+.profile-bureau-name {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+    padding: 2px 8px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.profile-bureau-name:empty {
+    display: none;
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+@media (prefers-color-scheme: dark) {
+    .header-divider {
+        background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .placeholder-shimmer {
+        background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.05) 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0.05) 100%
+        );
+        background-size: 200% 100%;
+    }
+    
+    .profile-bureau-name {
+        background: #374151;
+        color: #9ca3af;
+    }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .header-divider {
+        margin: 0 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-divider {
+        display: none;
+    }
+}

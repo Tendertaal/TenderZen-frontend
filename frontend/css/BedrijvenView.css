@@ -1,0 +1,772 @@
+/**
+ * BedrijvenView.css - TenderZen Design System v2.0
+ * Krachtige kleuren, 2px borders, rijke gradients
+ */
+
+/* ========================================
+   CONTAINER
+   ======================================== */
+
+.bedrijven-view {
+    padding: var(--space-6) var(--space-8);
+    background: var(--bg-secondary);
+    min-height: calc(100vh - 140px);
+}
+
+/* ========================================
+   HEADER SECTION
+   ======================================== */
+
+.bedrijven-view .view-header {
+    background: var(--bg-surface);
+    padding: var(--space-6) var(--space-7);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+    margin-bottom: var(--space-5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border-light);
+}
+
+.bedrijven-view .header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.bedrijven-view .header-left h1 {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.bedrijven-view .header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-radius: var(--radius-lg);
+    border: 2px solid #3b82f6;
+}
+
+.bedrijven-view .subtitle {
+    margin: 0;
+    padding: var(--space-1) var(--space-3);
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border-radius: var(--radius-full);
+    color: #6d28d9;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    border: 2px solid #8b5cf6;
+}
+
+/* Primary Button - TenderZen Gradient */
+.bedrijven-view .header-right .btn-primary,
+.bedrijven-view #btn-create-bedrijf {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%) !important;
+    color: white !important;
+    border: none;
+    padding: var(--space-2-5) var(--space-5);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
+.bedrijven-view .header-right .btn-primary:hover,
+.bedrijven-view #btn-create-bedrijf:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+/* ========================================
+   FILTERS SECTION
+   ======================================== */
+
+.bedrijven-view .filters-bar {
+    background: var(--bg-surface);
+    padding: var(--space-5) var(--space-7);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: var(--space-5);
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    border: 1px solid var(--border-light);
+}
+
+.bedrijven-view .filter-group {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.bedrijven-view .filter-input,
+.bedrijven-view .filter-select {
+    width: 100%;
+    padding: var(--space-2-5) var(--space-4);
+    border: 2px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.bedrijven-view .filter-input:focus,
+.bedrijven-view .filter-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.bedrijven-view .search-input {
+    padding-left: var(--space-10);
+    background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%236366f1" stroke-width="2"%3E%3Ccircle cx="11" cy="11" r="8"/%3E%3Cpath d="m21 21-4.35-4.35"/%3E%3C/svg%3E');
+    background-repeat: no-repeat;
+    background-position: 14px center;
+}
+
+.bedrijven-view .btn-secondary {
+    padding: var(--space-2-5) var(--space-5);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    font-family: var(--font-family);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.bedrijven-view .btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: #6366f1;
+    color: #4f46e5;
+}
+
+/* ========================================
+   STATS CARDS
+   ======================================== */
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+.stat-card {
+    background: var(--bg-surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-light);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
+}
+
+/* Stat Card Variants */
+.stat-card.stat-total .stat-icon-wrapper {
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border: 2px solid #8b5cf6;
+}
+
+.stat-card.stat-active .stat-icon-wrapper {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border: 2px solid #10b981;
+}
+
+.stat-card.stat-preferred .stat-icon-wrapper {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 2px solid #f59e0b;
+}
+
+.stat-card.stat-recent .stat-icon-wrapper {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border: 2px solid #3b82f6;
+}
+
+.stat-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xl);
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    line-height: 1;
+    margin-bottom: var(--space-1-5);
+}
+
+.stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: var(--font-weight-semibold);
+}
+
+/* ========================================
+   TABLE
+   ======================================== */
+
+.bedrijven-table-container {
+    background: var(--bg-surface);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+}
+
+.bedrijven-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.bedrijven-table thead {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.bedrijven-table th {
+    padding: var(--space-4) var(--space-5);
+    text-align: left;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border-default);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bedrijven-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
+}
+
+.bedrijven-table th.sortable:hover {
+    color: var(--text-primary);
+    background: rgba(99, 102, 241, 0.08);
+}
+
+.bedrijven-table tbody tr {
+    border-bottom: 1px solid var(--border-light);
+    transition: all 0.2s ease;
+}
+
+.bedrijven-table tbody tr:hover {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, transparent 100%);
+}
+
+.bedrijven-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.bedrijven-table td {
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.bedrijf-naam {
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+}
+
+.bedrijven-table td small {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    margin-top: var(--space-1);
+    font-weight: normal;
+}
+
+/* ========================================
+   TAGS - Krachtige kleuren
+   ======================================== */
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-2-5);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    margin-right: var(--space-1-5);
+    white-space: nowrap;
+}
+
+.tag-preferred {
+    background: #fef3c7;
+    color: #92400e;
+    border: 2px solid #f59e0b;
+}
+
+.tag-branche {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 2px solid #3b82f6;
+}
+
+.tag-cert {
+    background: #d1fae5;
+    color: #065f46;
+    border: 2px solid #10b981;
+}
+
+/* ========================================
+   RATING
+   ======================================== */
+
+.rating {
+    color: #f59e0b;
+    font-size: var(--font-size-base);
+    letter-spacing: 2px;
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+
+.action-buttons {
+    display: flex;
+    gap: var(--space-1-5);
+}
+
+.btn-icon {
+    background: var(--bg-surface);
+    border: 2px solid var(--border-default);
+    cursor: pointer;
+    padding: var(--space-2);
+    border-radius: var(--radius-lg);
+    transition: all 0.2s ease;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+}
+
+.btn-icon:hover {
+    transform: scale(1.08);
+}
+
+.btn-icon.btn-view:hover {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1e40af;
+}
+
+.btn-icon.btn-edit:hover {
+    background: #ede9fe;
+    border-color: #8b5cf6;
+    color: #6d28d9;
+}
+
+.btn-icon.btn-delete:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #dc2626;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 80px var(--space-5);
+    background: var(--bg-surface);
+    border-radius: var(--radius-xl);
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto var(--space-5);
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border-radius: var(--radius-2xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #8b5cf6;
+}
+
+.empty-state-title {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state-text {
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+}
+
+/* ========================================
+   MODAL
+   ======================================== */
+
+.bedrijf-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-container {
+    position: relative;
+    background: var(--bg-surface);
+    border-radius: var(--radius-xl);
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-6) var(--space-8);
+    border-bottom: 1px solid var(--border-light);
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    color: var(--text-primary);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.modal-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-radius: var(--radius-lg);
+    border: 2px solid #3b82f6;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: var(--font-size-xl);
+    cursor: pointer;
+    padding: var(--space-2);
+    line-height: 1;
+    border-radius: var(--radius-md);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.modal-close:hover {
+    background: var(--bg-surface);
+    color: var(--text-primary);
+}
+
+.modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-8);
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: var(--border-default);
+    border-radius: var(--radius-sm);
+}
+
+.modal-footer {
+    padding: var(--space-6) var(--space-8);
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    background: var(--bg-secondary);
+    border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+/* Form styling */
+.form-section {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-light);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-6);
+}
+
+.section-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    margin: 0 0 var(--space-4) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.section-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border-radius: var(--radius-md);
+    border: 2px solid #8b5cf6;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.form-group {
+    margin-bottom: var(--space-4);
+}
+
+.form-group label {
+    display: block;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.form-control {
+    width: 100%;
+    padding: var(--space-2-5) var(--space-3);
+    border: 2px solid var(--border-default);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family);
+    transition: all 0.2s ease;
+    background: var(--bg-surface);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-2);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: background 0.2s ease;
+    font-size: var(--font-size-sm);
+}
+
+.checkbox-label:hover {
+    background: var(--bg-surface);
+}
+
+.checkbox-label input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: #6366f1;
+}
+
+/* View mode styling */
+.bedrijf-header-card {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    color: var(--text-primary);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--space-8);
+    border: 2px solid var(--border-light);
+}
+
+.bedrijf-title h3 {
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--space-6);
+    margin-bottom: var(--space-6);
+}
+
+.info-section {
+    background: var(--bg-secondary);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-light);
+}
+
+.info-section h4 {
+    margin: 0 0 var(--space-4) 0;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+}
+
+.info-item {
+    display: flex;
+    margin-bottom: var(--space-3);
+    font-size: var(--font-size-sm);
+}
+
+.info-item .label {
+    font-weight: var(--font-weight-semibold);
+    min-width: 130px;
+    color: var(--text-muted);
+}
+
+.info-item .value {
+    color: var(--text-primary);
+}
+
+.info-item .value a {
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+}
+
+.info-item .value a:hover {
+    text-decoration: underline;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 1200px) {
+    .bedrijven-view {
+        padding: var(--space-4) var(--space-5);
+    }
+
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .bedrijven-view .view-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-4);
+    }
+
+    .bedrijven-view .filters-bar {
+        flex-direction: column;
+    }
+
+    .bedrijven-view .filter-group {
+        width: 100%;
+        max-width: none;
+    }
+
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .bedrijven-table-container {
+        overflow-x: auto;
+    }
+
+    .bedrijven-table {
+        min-width: 900px;
+    }
+}

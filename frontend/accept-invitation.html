@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uitnodiging Accepteren - TenderZen</title>
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-width: 480px;
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #667eea 100%);
+            padding: 32px;
+            text-align: center;
+            color: white;
+        }
+        
+        .header .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 32px;
+        }
+        
+        .state {
+            display: none;
+        }
+        
+        .state.active {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 0;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+        
+        .form-control:disabled {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #667eea 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .error-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .success-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .success-box h3 {
+            margin-bottom: 8px;
+        }
+        
+        .welcome-box {
+            background: #fefce8;
+            border: 1px solid #fef08a;
+            color: #854d0e;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .password-hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+        
+        .password-hint ul {
+            margin-top: 4px;
+            margin-left: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-container">
+                <!-- Zen Stenen Logo -->
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="24" cy="34" rx="14" ry="6" fill="white" fill-opacity="0.5"/>
+                    <ellipse cx="24" cy="26" rx="11" ry="5" fill="white" fill-opacity="0.7"/>
+                    <ellipse cx="24" cy="19" rx="8" ry="4" fill="white"/>
+                </svg>
+                <h1>TenderZen</h1>
+            </div>
+            <p>Tender Management Platform</p>
+        </div>
+        
+        <div class="content">
+            <!-- Loading State -->
+            <div id="state-loading" class="state active">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Uitnodiging verifiëren...</p>
+                </div>
+            </div>
+            
+            <!-- Error State -->
+            <div id="state-error" class="state">
+                <div class="error-box">
+                    <h3>⚠️ Er is een probleem</h3>
+                    <p id="error-message">Er is een fout opgetreden.</p>
+                </div>
+                <p style="text-align: center; color: #6b7280; margin-bottom: 16px;">
+                    Neem contact op met de persoon die je heeft uitgenodigd om een nieuwe uitnodiging te ontvangen.
+                </p>
+                <a href="/" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none;">
+                    Naar homepage
+                </a>
+            </div>
+            
+            <!-- Password Form State -->
+            <div id="state-password" class="state">
+                <div class="welcome-box">
+                    <h3>👋 Welkom!</h3>
+                    <p>Stel een wachtwoord in om je account te activeren.</p>
+                </div>
+                
+                <form id="password-form">
+                    <div class="form-group">
+                        <label for="email">E-mailadres</label>
+                        <input type="email" id="email" class="form-control" disabled>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Nieuw wachtwoord</label>
+                        <input type="password" id="password" class="form-control" 
+                               placeholder="Kies een sterk wachtwoord" required minlength="8">
+                        <div class="password-hint">
+                            <ul>
+                                <li>Minimaal 8 tekens</li>
+                                <li>Gebruik letters en cijfers</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password-confirm">Bevestig wachtwoord</label>
+                        <input type="password" id="password-confirm" class="form-control" 
+                               placeholder="Herhaal je wachtwoord" required>
+                    </div>
+                    
+                    <div id="form-error" class="error-box" style="display: none;"></div>
+                    
+                    <button type="submit" class="btn btn-primary" id="btn-submit">
+                        Account activeren
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Success State -->
+            <div id="state-success" class="state">
+                <div class="success-box">
+                    <h3>🎉 Account geactiveerd!</h3>
+                    <p>Je wachtwoord is ingesteld en je account is klaar voor gebruik.</p>
+                </div>
+                <br>
+                <a href="/" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none;">
+                    Ga naar TenderZen
+                </a>
+            </div>
+            
+            <!-- Already Logged In State -->
+            <div id="state-logged-in" class="state">
+                <div class="success-box">
+                    <h3>✅ Je bent al ingelogd</h3>
+                    <p>Je kunt direct aan de slag.</p>
+                </div>
+                <br>
+                <a href="/" class="btn btn-primary" style="display: block; text-align: center; text-decoration: none;">
+                    Ga naar TenderZen
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================
+        // CONFIGURATION
+        // =====================================================
+        const SUPABASE_URL = 'https://ayamyedredynntdaldlu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5YW15ZWRyZWR5bm50ZGFsZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMTQ1NDcsImV4cCI6MjA3ODc5MDU0N30.fOL5bDKrgMnSu-zZ63Eg4vXPhF3ycNxk3-7nIyR8ryg';
+        
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: true,
+                detectSessionInUrl: false
+            }
+        });
+        
+        // Flag om dubbele verwerking te voorkomen
+        let initialized = false;
+        
+        // =====================================================
+        // HELPER FUNCTIONS
+        // =====================================================
+        
+        function showState(stateId) {
+            document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+            document.getElementById(stateId).classList.add('active');
+        }
+        
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            showState('state-error');
+        }
+        
+        function getUrlParams() {
+            const params = {};
+            
+            // Get query params (?token=xxx)
+            const searchParams = new URLSearchParams(window.location.search);
+            for (const [key, value] of searchParams) {
+                params[key] = value;
+            }
+            
+            // Get hash params (#access_token=xxx)
+            if (window.location.hash && window.location.hash.length > 1) {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                for (const [key, value] of hashParams) {
+                    params[key] = value;
+                }
+            }
+            
+            return params;
+        }
+        
+        // =====================================================
+        // ACCEPT BUREAU INVITATION VIA EDGE FUNCTION
+        // =====================================================
+        
+        async function acceptBureauInvitation(token) {
+            console.log('🎫 acceptBureauInvitation called');
+            
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                
+                if (userError || !user) {
+                    console.error('❌ Could not get user:', userError);
+                    return { success: false, error: 'User not authenticated' };
+                }
+                
+                console.log('👤 User:', user.id, user.email);
+                
+                // Call Edge Function for complete onboarding
+                const response = await fetch(
+                    `${SUPABASE_URL}/functions/v1/complete-onboarding`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        },
+                        body: JSON.stringify({
+                            userId: user.id,
+                            email: user.email,
+                            inviteToken: token
+                        })
+                    }
+                );
+                
+                const result = await response.json();
+                console.log('🎫 Edge Function result:', result);
+                
+                if (!response.ok) {
+                    console.error('❌ Edge Function error:', result);
+                    return { success: false, error: result.error };
+                }
+                
+                console.log('🎉 Onboarding complete!');
+                return { success: true };
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // =====================================================
+        // MAIN INITIALIZATION
+        // =====================================================
+        
+        async function init() {
+            if (initialized) return;
+            initialized = true;
+            
+            console.log('🚀 Initializing accept-invitation page...');
+            
+            const params = getUrlParams();
+            console.log('URL params:', params);
+            
+            // Check for errors in URL
+            if (params.error) {
+                let errorMessage = 'Er is een fout opgetreden.';
+                
+                if (params.error_code === 'otp_expired') {
+                    errorMessage = 'De uitnodigingslink is verlopen. Vraag een nieuwe uitnodiging aan.';
+                } else if (params.error_description) {
+                    errorMessage = decodeURIComponent(params.error_description.replace(/\+/g, ' '));
+                }
+                
+                showError(errorMessage);
+                return;
+            }
+            
+            // Store token for later use
+            window.bureauInviteToken = params.token;
+            
+            // Check if we have access_token from Supabase magic link
+            if (params.access_token) {
+                console.log('📧 Received access token from email link');
+                
+                try {
+                    // Set the session
+                    const { data, error } = await supabase.auth.setSession({
+                        access_token: params.access_token,
+                        refresh_token: params.refresh_token
+                    });
+                    
+                    if (error) throw error;
+                    
+                    console.log('✅ Session set');
+                    
+                    // Get user info
+                    const { data: { user } } = await supabase.auth.getUser();
+                    
+                    if (user) {
+                        document.getElementById('email').value = user.email;
+                        showState('state-password');
+                    }
+                    
+                } catch (error) {
+                    console.error('Session error:', error);
+                    showError('Kon de sessie niet instellen. Probeer opnieuw.');
+                }
+                
+                return;
+            }
+            
+            // Check for bureau invite token (initial page load)
+            if (params.token) {
+                console.log('🎫 Found bureau invite token');
+                
+                // Verify token exists
+                const { data: invitation, error } = await supabase
+                    .from('bureau_invites')
+                    .select('*, tenderbureaus(naam)')
+                    .eq('invite_token', params.token)
+                    .single();
+                
+                if (error || !invitation) {
+                    showError('De uitnodigingslink is ongeldig of al gebruikt.');
+                    return;
+                }
+                
+                if (invitation.status === 'accepted') {
+                    showError('Deze uitnodiging is al geaccepteerd. Log in om door te gaan.');
+                    return;
+                }
+                
+                if (new Date(invitation.expires_at) < new Date()) {
+                    showError('De uitnodigingslink is verlopen. Vraag een nieuwe uitnodiging aan.');
+                    return;
+                }
+                
+                // Show password form
+                document.getElementById('email').value = invitation.email;
+                showState('state-password');
+                return;
+            }
+            
+            // Check if already logged in
+            const { data: { session } } = await supabase.auth.getSession();
+            
+            if (session) {
+                showState('state-logged-in');
+                return;
+            }
+            
+            // No token, no session
+            showError('Geen geldige uitnodigingslink gevonden.');
+        }
+        
+        // =====================================================
+        // PASSWORD FORM HANDLER
+        // =====================================================
+        
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('password-confirm').value;
+            const errorBox = document.getElementById('form-error');
+            const btn = document.getElementById('btn-submit');
+            
+            errorBox.style.display = 'none';
+            
+            // Validate
+            if (password.length < 8) {
+                errorBox.textContent = 'Wachtwoord moet minimaal 8 tekens zijn.';
+                errorBox.style.display = 'block';
+                return;
+            }
+            
+            if (password !== passwordConfirm) {
+                errorBox.textContent = 'Wachtwoorden komen niet overeen.';
+                errorBox.style.display = 'block';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Bezig met activeren...';
+            
+            try {
+                // Update password
+                const { error } = await supabase.auth.updateUser({ password });
+                
+                if (error) throw error;
+                
+                console.log('✅ Password set successfully');
+                
+                // Accept bureau invitation
+                console.log('🎫 Accepting bureau invitation...');
+                const result = await acceptBureauInvitation(window.bureauInviteToken);
+                console.log('🎫 Result:', result);
+                
+                // Show success
+                showState('state-success');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                errorBox.textContent = error.message || 'Er is een fout opgetreden.';
+                errorBox.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Account activeren';
+            }
+        });
+        
+        // Start
+        init();
+    </script>
+</body>
+</html>

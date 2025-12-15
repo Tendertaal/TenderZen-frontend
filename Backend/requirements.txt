@@ -1,0 +1,22 @@
+# TenderPlanner Python Backend Dependencies
+# Stap 1: Core dependencies voor config en FastAPI setup
+
+# FastAPI and ASGI server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Environment and Configuration
+python-dotenv==1.0.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Supabase Client
+supabase==2.3.0
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Additional dependencies (will be expanded in later steps)
+httpx==0.25.1  # For async HTTP requests

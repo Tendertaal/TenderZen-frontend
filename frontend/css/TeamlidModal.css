@@ -1,0 +1,751 @@
+/**
+ * TeamlidModal.css - Complete Modal Styling (STANDALONE)
+ * TenderZen Design System
+ * 
+ * VOLLEDIG ONAFHANKELIJK - Bevat ALLES wat nodig is
+ * - Modal container structuur
+ * - Header, content, footer
+ * - Form elements
+ * - Teamlid-specifieke styling (avatar, color picker, roles)
+ * 
+ * Geen afhankelijkheid van modal-base.css!
+ */
+
+/* ============================================
+   MODAL CONTAINER & OVERLAY
+   ============================================ */
+
+.teamlid-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.teamlid-modal .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.teamlid-modal .modal-container {
+    position: relative;
+    background: #f8fafc;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: teamlidModalSlideIn 0.2s ease-out;
+    overflow: hidden;
+}
+
+@keyframes teamlidModalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   MODAL HEADER
+   ============================================ */
+
+.teamlid-modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 16px 16px 0 0;
+    flex-shrink: 0;
+}
+
+.teamlid-modal .modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.teamlid-modal .modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.teamlid-modal .modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+}
+
+.teamlid-modal .modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.teamlid-modal .modal-close:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* ============================================
+   MODAL CONTENT
+   ============================================ */
+
+.teamlid-modal .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.teamlid-modal .modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.teamlid-modal .modal-content::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.teamlid-modal .modal-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* ============================================
+   MODAL FOOTER
+   ============================================ */
+
+.teamlid-modal .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 0 0 16px 16px;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.teamlid-modal .modal-footer-left,
+.teamlid-modal .modal-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.teamlid-modal .modal-footer--right {
+    justify-content: flex-end;
+}
+
+.teamlid-modal .footer-left,
+.teamlid-modal .footer-right {
+    display: flex;
+    gap: 12px;
+}
+
+/* ============================================
+   FORM SECTIONS
+   ============================================ */
+
+.teamlid-modal .form-section {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.teamlid-modal .form-section:last-child {
+    margin-bottom: 0;
+}
+
+.teamlid-modal .form-section--primary {
+    border-color: #c7d2fe;
+    background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
+}
+
+.teamlid-modal .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 12px 0;
+}
+
+.teamlid-modal .section-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+.teamlid-modal .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.teamlid-modal .form-row:last-child {
+    margin-bottom: 0;
+}
+
+.teamlid-modal .form-row--single {
+    grid-template-columns: 1fr;
+}
+
+.teamlid-modal .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.teamlid-modal .form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.teamlid-modal .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+.teamlid-modal .form-control:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.teamlid-modal .form-control::placeholder {
+    color: #94a3b8;
+}
+
+.teamlid-modal textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.teamlid-modal select.form-control {
+    cursor: pointer;
+}
+
+.teamlid-modal .form-hint {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.teamlid-modal .required {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+/* ============================================
+   TEAMLID-SPECIFIEKE STYLING
+   ============================================ */
+
+/* Avatar Section */
+.teamlid-modal .avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
+    border-radius: 12px;
+    border: 1px solid #c7d2fe;
+    margin-bottom: 16px;
+}
+
+.teamlid-modal .avatar-preview {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s ease;
+}
+
+.teamlid-modal .avatar-preview:hover {
+    transform: scale(1.05);
+}
+
+.teamlid-modal .avatar-info {
+    text-align: center;
+}
+
+.teamlid-modal .avatar-initials {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.teamlid-modal .avatar-description {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* Color Picker */
+.teamlid-modal .color-picker-section {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.teamlid-modal .color-picker-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 12px;
+}
+
+.teamlid-modal .color-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
+    gap: 10px;
+}
+
+.teamlid-modal .color-option {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.teamlid-modal .color-option:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.teamlid-modal .color-option.selected {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #0f172a;
+}
+
+.teamlid-modal .color-option.bg-red {
+    background: #ef4444;
+}
+
+.teamlid-modal .color-option.bg-orange {
+    background: #f97316;
+}
+
+.teamlid-modal .color-option.bg-yellow {
+    background: #eab308;
+}
+
+.teamlid-modal .color-option.bg-green {
+    background: #22c55e;
+}
+
+.teamlid-modal .color-option.bg-blue {
+    background: #3b82f6;
+}
+
+.teamlid-modal .color-option.bg-indigo {
+    background: #6366f1;
+}
+
+.teamlid-modal .color-option.bg-purple {
+    background: #a855f7;
+}
+
+.teamlid-modal .color-option.bg-pink {
+    background: #ec4899;
+}
+
+.teamlid-modal .color-option.bg-cyan {
+    background: #06b6d4;
+}
+
+.teamlid-modal .color-option.bg-gray {
+    background: #6b7280;
+}
+
+/* Role Selection */
+.teamlid-modal .role-section {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.teamlid-modal .role-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 12px;
+}
+
+.teamlid-modal .role-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.teamlid-modal .role-option {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.teamlid-modal .role-option:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.teamlid-modal .role-option input[type="radio"],
+.teamlid-modal .role-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-right: 12px;
+    accent-color: #8b5cf6;
+    cursor: pointer;
+}
+
+.teamlid-modal .role-option-content {
+    flex: 1;
+}
+
+.teamlid-modal .role-name {
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.teamlid-modal .role-description {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+/* Member Info Card */
+.teamlid-modal .member-info-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.teamlid-modal .member-info-card h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.teamlid-modal .info-item {
+    display: flex;
+    font-size: 14px;
+    margin-bottom: 8px;
+    justify-content: space-between;
+}
+
+.teamlid-modal .info-item:last-child {
+    margin-bottom: 0;
+}
+
+.teamlid-modal .info-label {
+    font-weight: 500;
+    color: #64748b;
+}
+
+.teamlid-modal .info-value {
+    color: #0f172a;
+}
+
+.teamlid-modal .info-link {
+    color: #8b5cf6;
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.teamlid-modal .info-link:hover {
+    color: #7c3aed;
+    text-decoration: underline;
+}
+
+/* Status Badge */
+.teamlid-modal .status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.teamlid-modal .status-active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.teamlid-modal .status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.teamlid-modal .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+}
+
+.teamlid-modal .btn-primary {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+}
+
+.teamlid-modal .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.teamlid-modal .btn-secondary {
+    background: white;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.teamlid-modal .btn-secondary:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.teamlid-modal .btn-danger {
+    background: white;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.teamlid-modal .btn-danger:hover {
+    background: #fef2f2;
+    border-color: #f87171;
+}
+
+/* ============================================
+   TENDERBUREAU DISPLAY
+   ============================================ */
+
+.teamlid-modal .tenderbureau-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    border: 1px solid #bbf7d0;
+    border-radius: 10px;
+    margin-bottom: 16px;
+}
+
+.teamlid-modal .bureau-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.teamlid-modal .bureau-info {
+    flex: 1;
+}
+
+.teamlid-modal .bureau-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #10b981;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.teamlid-modal .bureau-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+/* ============================================
+   STATUS TOGGLE SWITCH
+   ============================================ */
+
+.teamlid-modal .status-toggle {
+    padding-top: 4px;
+}
+
+.teamlid-modal .toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.teamlid-modal .toggle-label input {
+    display: none;
+}
+
+.teamlid-modal .toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: #e2e8f0;
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s;
+}
+
+.teamlid-modal .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s;
+}
+
+.teamlid-modal .toggle-label input:checked+.toggle-switch {
+    background: #10b981;
+}
+
+.teamlid-modal .toggle-label input:checked+.toggle-switch::after {
+    transform: translateX(20px);
+}
+
+.teamlid-modal .toggle-text {
+    font-size: 14px;
+    color: #475569;
+}
+
+
+
+@media (max-width: 768px) {
+    .teamlid-modal .modal-container {
+        max-width: 95%;
+        max-height: 95vh;
+    }
+
+    .teamlid-modal .modal-header,
+    .teamlid-modal .modal-content,
+    .teamlid-modal .modal-footer {
+        padding: 16px;
+    }
+
+    .teamlid-modal .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .teamlid-modal .color-picker-grid {
+        grid-template-columns: repeat(auto-fit, minmax(45px, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .teamlid-modal {
+        padding: 12px;
+    }
+
+    .teamlid-modal .modal-container {
+        width: 100%;
+        max-height: 95vh;
+    }
+
+    .teamlid-modal .avatar-preview {
+        width: 100px;
+        height: 100px;
+        font-size: 40px;
+    }
+
+    .teamlid-modal .color-picker-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}

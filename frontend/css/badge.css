@@ -1,0 +1,510 @@
+/**
+ * Badges CSS - TenderZen v2.0
+ * Status & Fase badges styling
+ * 
+ * CHANGELOG:
+ * - TenderZen kleuren toegepast
+ * - Icon support toegevoegd
+ * - Nieuwe badge varianten
+ * - Verbeterde hover states
+ */
+
+/* ============================================
+   BASE BADGE STYLING
+   ============================================ */
+
+.badge,
+.status-badge,
+.phase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.badge-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.badge-label {
+    line-height: 1;
+}
+
+/* ============================================
+   STATUS BADGES - Go/No-Go/Maybe/Pending
+   ============================================ */
+
+/* Go - Groen */
+.status-badge--go,
+.badge-go {
+    background: var(--color-success-50);
+    color: var(--color-success-700);
+    border: 1px solid var(--color-success-200);
+}
+
+.status-badge--go .badge-icon,
+.badge-go .badge-icon {
+    color: var(--color-success-600);
+}
+
+/* No-Go - Rood */
+.status-badge--no-go,
+.badge-no-go {
+    background: var(--color-error-50);
+    color: var(--color-error-700);
+    border: 1px solid var(--color-error-200);
+}
+
+.status-badge--no-go .badge-icon,
+.badge-no-go .badge-icon {
+    color: var(--color-error-600);
+}
+
+/* Maybe - Oranje */
+.status-badge--maybe,
+.badge-maybe {
+    background: var(--color-warning-50);
+    color: var(--color-warning-700);
+    border: 1px solid var(--color-warning-200);
+}
+
+.status-badge--maybe .badge-icon,
+.badge-maybe .badge-icon {
+    color: var(--color-warning-600);
+}
+
+/* Pending - Indigo */
+.status-badge--pending,
+.badge-pending {
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+    border: 1px solid var(--color-primary-200);
+}
+
+.status-badge--pending .badge-icon,
+.badge-pending .badge-icon {
+    color: var(--color-primary-600);
+}
+
+/* ============================================
+   FASE BADGES - Acquisitie/Inschrijvingen/Ingediend
+   ============================================ */
+
+/* Acquisitie - Amber (KRACHTIGER) */
+.phase-badge--acquisitie,
+.badge-acquisitie {
+    background: #fef3c7;
+    color: #92400e;
+    border: 2px solid #f59e0b;
+    font-weight: 700;
+}
+
+.phase-badge--acquisitie .badge-icon,
+.badge-acquisitie .badge-icon {
+    color: #d97706;
+}
+
+/* Inschrijvingen - Paars (KRACHTIGER) */
+.phase-badge--inschrijvingen,
+.badge-inschrijvingen {
+    background: #ede9fe;
+    color: #5b21b6;
+    border: 2px solid #8b5cf6;
+    font-weight: 700;
+}
+
+.phase-badge--inschrijvingen .badge-icon,
+.badge-inschrijvingen .badge-icon {
+    color: #7c3aed;
+}
+
+/* Ingediend - Groen (KRACHTIGER) */
+.phase-badge--ingediend,
+.badge-ingediend {
+    background: #d1fae5;
+    color: #065f46;
+    border: 2px solid #10b981;
+    font-weight: 700;
+}
+
+.phase-badge--ingediend .badge-icon,
+.badge-ingediend .badge-icon {
+    color: #059669;
+}
+
+/* ============================================
+   WORKFLOW STATUS BADGES
+   ============================================ */
+
+/* Zoeken bedrijf - Amber */
+.badge-zoeken-bedrijf {
+    background: var(--color-amber-50);
+    color: var(--color-amber-700);
+    border: 1px solid var(--color-amber-200);
+}
+
+/* Opstellen offerte - Yellow */
+.badge-opstellen-offerte {
+    background: #fef9c3;
+    color: #854d0e;
+    border: 1px solid #fde047;
+}
+
+/* Offerte akkoord - Blue */
+.badge-offerte-akkoord {
+    background: var(--color-info-50);
+    color: var(--color-info-700);
+    border: 1px solid var(--color-info-200);
+}
+
+/* Inplannen - Indigo */
+.badge-inplannen {
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+    border: 1px solid var(--color-primary-200);
+}
+
+/* Uitvoeren - Purple */
+.badge-uitvoeren {
+    background: var(--color-purple-50);
+    color: var(--color-purple-700);
+    border: 1px solid var(--color-purple-200);
+}
+
+/* Ingediend status - Teal */
+.badge-ingediend-status {
+    background: var(--color-teal-50);
+    color: var(--color-teal-700);
+    border: 1px solid var(--color-teal-200);
+}
+
+/* Evalueren - Orange */
+.badge-evalueren {
+    background: var(--color-warning-50);
+    color: var(--color-warning-700);
+    border: 1px solid var(--color-warning-200);
+}
+
+/* Afgerond - Gray */
+.badge-afgerond {
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+    border: 1px solid var(--color-gray-300);
+}
+
+/* ============================================
+   GENERIC COLOR BADGES
+   ============================================ */
+
+.badge-primary {
+    background: var(--color-primary-50);
+    color: var(--color-primary-700);
+    border: 1px solid var(--color-primary-200);
+}
+
+.badge-success {
+    background: var(--color-success-50);
+    color: var(--color-success-700);
+    border: 1px solid var(--color-success-200);
+}
+
+.badge-error,
+.badge-danger {
+    background: var(--color-error-50);
+    color: var(--color-error-700);
+    border: 1px solid var(--color-error-200);
+}
+
+.badge-warning {
+    background: var(--color-warning-50);
+    color: var(--color-warning-700);
+    border: 1px solid var(--color-warning-200);
+}
+
+.badge-info {
+    background: var(--color-info-50);
+    color: var(--color-info-700);
+    border: 1px solid var(--color-info-200);
+}
+
+.badge-neutral,
+.badge-gray {
+    background: var(--color-gray-100);
+    color: var(--color-gray-600);
+    border: 1px solid var(--color-gray-300);
+}
+
+.badge-purple {
+    background: var(--color-purple-50);
+    color: var(--color-purple-700);
+    border: 1px solid var(--color-purple-200);
+}
+
+.badge-pink {
+    background: var(--color-pink-50);
+    color: var(--color-pink-700);
+    border: 1px solid var(--color-pink-200);
+}
+
+.badge-teal {
+    background: var(--color-teal-50);
+    color: var(--color-teal-700);
+    border: 1px solid var(--color-teal-200);
+}
+
+.badge-amber {
+    background: var(--color-amber-50);
+    color: var(--color-amber-700);
+    border: 1px solid var(--color-amber-200);
+}
+
+/* ============================================
+   BADGE SIZES
+   ============================================ */
+
+.badge-xs {
+    padding: 2px var(--space-1-5);
+    font-size: 10px;
+    gap: 2px;
+}
+
+.badge-sm {
+    padding: var(--space-0-5) var(--space-2);
+    font-size: 10px;
+    gap: var(--space-1);
+}
+
+.badge-lg {
+    padding: var(--space-1-5) var(--space-4);
+    font-size: var(--font-size-sm);
+    gap: var(--space-1-5);
+}
+
+.badge-xl {
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--font-size-base);
+    gap: var(--space-2);
+}
+
+/* ============================================
+   BADGE VARIANTS
+   ============================================ */
+
+/* Solid variant (filled) */
+.badge-solid.badge-primary {
+    background: var(--color-primary-500);
+    color: white;
+    border-color: var(--color-primary-500);
+}
+
+.badge-solid.badge-success {
+    background: var(--color-success-500);
+    color: white;
+    border-color: var(--color-success-500);
+}
+
+.badge-solid.badge-error {
+    background: var(--color-error-500);
+    color: white;
+    border-color: var(--color-error-500);
+}
+
+.badge-solid.badge-warning {
+    background: var(--color-warning-500);
+    color: white;
+    border-color: var(--color-warning-500);
+}
+
+/* Dot variant */
+.badge-dot {
+    padding-left: var(--space-2);
+}
+
+.badge-dot::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: currentColor;
+    margin-right: var(--space-1-5);
+}
+
+/* Pill variant (more rounded) */
+.badge-pill {
+    border-radius: var(--radius-full);
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+}
+
+/* ============================================
+   BADGE HOVER STATES
+   ============================================ */
+
+.badge-interactive,
+.badge-clickable {
+    cursor: pointer;
+}
+
+.badge-interactive:hover,
+.badge-clickable:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.badge-interactive:active,
+.badge-clickable:active {
+    transform: translateY(0);
+}
+
+/* ============================================
+   BADGE IN DROPDOWN/SELECT
+   ============================================ */
+
+.badge-dropdown {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.badge-dropdown:hover {
+    border-color: var(--color-primary-400);
+    background: var(--color-primary-50);
+}
+
+.badge-dropdown .dropdown-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted);
+    margin-left: auto;
+    transition: transform var(--transition-fast);
+}
+
+.badge-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+/* ============================================
+   COUNT BADGES (Notification style)
+   ============================================ */
+
+.badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 var(--space-1-5);
+    border-radius: var(--radius-full);
+    font-size: 11px;
+    font-weight: var(--font-weight-bold);
+    background: var(--color-error-500);
+    color: white;
+}
+
+.badge-count-sm {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+}
+
+.badge-count-lg {
+    min-width: 24px;
+    height: 24px;
+    font-size: 12px;
+}
+
+.badge-count-primary {
+    background: var(--color-primary-500);
+}
+
+.badge-count-success {
+    background: var(--color-success-500);
+}
+
+.badge-count-warning {
+    background: var(--color-warning-500);
+}
+
+.badge-count-gray {
+    background: var(--color-gray-500);
+}
+
+/* ============================================
+   BADGE GROUPS
+   ============================================ */
+
+.badge-group {
+    display: inline-flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.badge-group-compact {
+    gap: var(--space-1);
+}
+
+.badge-group-stacked {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* ============================================
+   REMOVABLE BADGES
+   ============================================ */
+
+.badge-removable {
+    padding-right: var(--space-1-5);
+}
+
+.badge-remove-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    margin-left: var(--space-1);
+    border-radius: var(--radius-full);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: all var(--transition-fast);
+}
+
+.badge-remove-btn:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 600px) {
+    .badge,
+    .status-badge,
+    .phase-badge {
+        padding: var(--space-0-5) var(--space-2);
+        font-size: 10px;
+    }
+    
+    .badge-label-mobile-hidden {
+        display: none;
+    }
+}

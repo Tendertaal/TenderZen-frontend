@@ -1,0 +1,412 @@
+/**
+ * table-view.css - TenderZen Gedeelde Tabel Styling
+ * 
+ * Gebruikt door: TeamledenView, BedrijvenView, en toekomstige tabel-views
+ * 
+ * BEM Naming Convention:
+ * - .table-view = Block (container)
+ * - .table-view__header = Element (onderdeel)
+ * - .table-view__row--highlighted = Modifier (variant)
+ */
+
+/* ========================================
+   CONTAINER
+   ======================================== */
+
+.table-view {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin: 24px;
+}
+
+/* ========================================
+   COLUMN HEADERS
+   ======================================== */
+
+.table-view__headers {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: #fafbfc;
+  border-bottom: 1px solid #e2e8f0;
+  min-height: 48px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+}
+
+/* ========================================
+   DATA ROWS CONTAINER
+   ======================================== */
+
+.table-view__row {
+  display: flex;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.table-view__row:hover {
+  background: #f8fafc;
+}
+
+.table-view__row:last-child {
+  border-bottom: none;
+}
+
+/* ========================================
+   INACTIVE TEAM MEMBERS
+   ======================================== */
+
+.table-view__row.teamlid--inactive {
+  opacity: 0.55;
+  background: rgba(100, 116, 139, 0.03);
+}
+
+.table-view__row.teamlid--inactive:hover {
+  background: rgba(100, 116, 139, 0.08);
+}
+
+.table-view__row.teamlid--inactive .table-view__name {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.table-view__row.teamlid--inactive .table-view__meta {
+  color: #cbd5e0;
+}
+
+.table-view__row.teamlid--inactive .table-view__text {
+  color: #94a3b8;
+}
+
+.table-view__row.teamlid--inactive .table-view__avatar {
+  filter: grayscale(80%);
+}
+
+/* ========================================
+   COLUMNS - Flexbox gebaseerd
+   ======================================== */
+
+.table-view__col {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  box-sizing: border-box;
+}
+
+/* Column sizes */
+.table-view__col--main {
+  flex: 2;
+  min-width: 240px;
+}
+
+.table-view__col--md {
+  flex: 1.2;
+  min-width: 150px;
+}
+
+.table-view__col--sm {
+  flex: 0.8;
+  min-width: 100px;
+}
+
+.table-view__col--actions {
+  width: 100px;
+  justify-content: flex-end;
+}
+
+/* Main column in data rows heeft meer gap voor avatar */
+.table-view__row .table-view__col--main {
+  gap: 12px;
+}
+
+/* Icons in header columns */
+.table-view__headers .table-view__col svg {
+  opacity: 0.7;
+}
+
+/* ========================================
+   SORTABLE COLUMNS
+   ======================================== */
+
+.table-view__col--sortable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.table-view__col--sortable:hover {
+  color: #0f172a;
+}
+
+.table-view__col--sorted {
+  color: #8b5cf6;
+}
+
+/* ========================================
+   AVATAR (rond, met initialen)
+   ======================================== */
+
+.table-view__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* ========================================
+   INFO BLOCK (naam + meta)
+   ======================================== */
+
+.table-view__info {
+  min-width: 0;
+  /* Prevents overflow */
+}
+
+.table-view__name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-view__meta {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ========================================
+   TEXT STYLES
+   ======================================== */
+
+.table-view__text {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.table-view__text--bold {
+  font-weight: 500;
+  color: #475569;
+}
+
+.table-view__text--muted {
+  color: #94a3b8;
+}
+
+/* ========================================
+   TAGS / BADGES
+   ======================================== */
+
+.table-view__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Badge varianten met dynamische kleuren via inline style */
+/* Gebruik: style="background: ${color}15; color: ${color}; border: 1px solid ${color}30" */
+
+/* ========================================
+   ACCOUNT STATUS BADGES
+   Voor TeamledenView en user management
+   ======================================== */
+
+.table-view__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.table-view__badge--active {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.table-view__badge--pending {
+  background: #fef3c7;
+  color: #b45309;
+  cursor: pointer;
+}
+
+.table-view__badge--pending:hover {
+  background: #fde68a;
+  transform: translateY(-1px);
+}
+
+.table-view__badge--expired {
+  background: #fee2e2;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.table-view__badge--expired:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.table-view__badge--inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.table-view__badge--toggle {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.table-view__badge--toggle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.table-view__badge--toggle.table-view__badge--active:hover {
+  background: #86efac;
+}
+
+.table-view__badge--toggle.table-view__badge--inactive:hover {
+  background: #e2e8f0;
+}
+
+.table-view__badge--muted {
+  background: #f8fafc;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* Resend icon in badges */
+.table-view__badge .resend-icon {
+  opacity: 0;
+  margin-left: 2px;
+  transition: opacity 0.15s ease;
+}
+
+.table-view__badge--pending:hover .resend-icon,
+.table-view__badge--expired:hover .resend-icon {
+  opacity: 1;
+}
+
+/* ========================================
+   RATING (sterren)
+   ======================================== */
+
+.table-view__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+
+.table-view__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.table-view__action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.table-view__action-btn:hover {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.table-view__action-btn--edit:hover {
+  color: #2563eb;
+  background: #dbeafe;
+}
+
+.table-view__action-btn--delete:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.table-view__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 40px;
+}
+
+.table-view__empty-icon {
+  margin-bottom: 16px;
+  color: #94a3b8;
+}
+
+.table-view__empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.table-view__empty-text {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 24px 0;
+}
+
+.table-view__empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.table-view__empty-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}

@@ -1,0 +1,237 @@
+/**
+ * Multi-Bureau Extra Styles
+ * TenderZen v2.1
+ * 
+ * Extra CSS voor:
+ * - Bureau loading overlay
+ * - No bureau access screen
+ * - Minimal header
+ */
+
+/* =========================================================
+   BUREAU LOADING OVERLAY
+   ========================================================= */
+
+#bureau-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+
+.bureau-loading-spinner {
+    text-align: center;
+}
+
+.bureau-loading-spinner .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.bureau-loading-spinner p {
+    color: #6b7280;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* =========================================================
+   NO BUREAU ACCESS SCREEN
+   ========================================================= */
+
+.no-bureau-access {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.no-bureau-icon {
+    font-size: 64px;
+    margin-bottom: 24px;
+    opacity: 0.8;
+}
+
+.no-bureau-access h2 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 12px 0;
+}
+
+.no-bureau-access p {
+    color: #6b7280;
+    font-size: 15px;
+    margin: 0 0 8px 0;
+    max-width: 400px;
+}
+
+.no-bureau-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.no-bureau-actions .btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.no-bureau-actions .btn-secondary {
+    background: #667eea;
+    color: white;
+    border: none;
+}
+
+.no-bureau-actions .btn-secondary:hover {
+    background: #5a67d8;
+}
+
+.no-bureau-actions .btn-outline {
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.no-bureau-actions .btn-outline:hover {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+/* =========================================================
+   MINIMAL HEADER (for no-access state)
+   ========================================================= */
+
+.header--minimal {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.header--minimal .logo-text {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header--minimal .user-email {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* =========================================================
+   ERROR STATE
+   ========================================================= */
+
+.error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.error-state .error-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.error-state h3 {
+    font-size: 18px;
+    color: #1f2937;
+    margin: 0 0 20px 0;
+}
+
+.error-state .btn {
+    padding: 10px 24px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.error-state .btn:hover {
+    background: #5a67d8;
+}
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+@media (prefers-color-scheme: dark) {
+    #bureau-loading-overlay {
+        background: rgba(17, 24, 39, 0.95);
+    }
+    
+    .bureau-loading-spinner .spinner {
+        border-color: #374151;
+        border-top-color: #818cf8;
+    }
+    
+    .bureau-loading-spinner p {
+        color: #9ca3af;
+    }
+    
+    .no-bureau-access h2 {
+        color: #f3f4f6;
+    }
+    
+    .no-bureau-access p {
+        color: #9ca3af;
+    }
+    
+    .no-bureau-actions .btn-outline {
+        color: #9ca3af;
+        border-color: #4b5563;
+    }
+    
+    .no-bureau-actions .btn-outline:hover {
+        background: #374151;
+    }
+    
+    .header--minimal {
+        background: #1f2937;
+        border-bottom-color: #374151;
+    }
+    
+    .header--minimal .user-email {
+        color: #9ca3af;
+    }
+    
+    .error-state h3 {
+        color: #f3f4f6;
+    }
+}

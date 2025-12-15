@@ -1,0 +1,87 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🐍 Backend Server",
+      "type": "shell",
+      "command": "${workspaceFolder}/backend/venv/Scripts/python.exe",
+      "args": [
+        "-m",
+        "app.main"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "group": "servers",
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🌐 Frontend Server",
+      "type": "shell",
+      "command": "python",
+      "args": [
+        "-m",
+        "http.server",
+        "8000"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "group": "servers",
+        "reveal": "always",
+        "panel": "dedicated",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "isBackground": true
+    },
+    {
+      "label": "🚀 Open Browser",
+      "type": "shell",
+      "command": "timeout",
+      "args": [
+        "/t",
+        "3",
+        "&&",
+        "start",
+        "http://localhost:8000"
+      ],
+      "windows": {
+        "command": "timeout",
+        "args": [
+          "/t",
+          "3",
+          "&&",
+          "start",
+          "http://localhost:8000"
+        ]
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "dependsOn": [
+        "🌐 Frontend Server"
+      ]
+    }
+  ]
+}

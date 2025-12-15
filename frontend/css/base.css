@@ -1,0 +1,221 @@
+/**
+ * Base CSS - TenderPlanner v2.0
+ * Global resets en base styling
+ */
+
+/* ============================================
+   RESET
+   ============================================ */
+
+   * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ============================================
+   BODY & HTML
+   ============================================ */
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    color: var(--gray-800);
+    background: var(--bg-body);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* ============================================
+   TYPOGRAPHY
+   ============================================ */
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--font-weight-semibold);
+    line-height: 1.2;
+    color: var(--gray-900);
+}
+
+h1 { font-size: var(--font-size-2xl); }
+h2 { font-size: var(--font-size-xl); }
+h3 { font-size: var(--font-size-lg); }
+h4 { font-size: var(--font-size-md); }
+h5 { font-size: var(--font-size-base); }
+h6 { font-size: var(--font-size-sm); }
+
+p {
+    margin-bottom: var(--spacing-md);
+}
+
+a {
+    color: var(--primary-blue);
+    text-decoration: none;
+    transition: color var(--transition-base);
+}
+
+a:hover {
+    color: var(--primary-blue);
+    opacity: 0.8;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+button {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ============================================
+   INPUTS
+   ============================================ */
+
+input,
+select,
+textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+}
+
+/* ============================================
+   LISTS
+   ============================================ */
+
+ul, ol {
+    list-style: none;
+}
+
+/* ============================================
+   TABLES
+   ============================================ */
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/* ============================================
+   IMAGES
+   ============================================ */
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ============================================
+   SCROLLBAR (Webkit)
+   ============================================ */
+
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.hidden {
+    display: none !important;
+}
+
+.invisible {
+    visibility: hidden;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.no-select {
+    user-select: none;
+}
+
+/* Text alignment */
+.text-left { text-align: left; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+
+/* Font weights */
+.font-normal { font-weight: var(--font-weight-normal); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+/* Font sizes */
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+
+/* Colors */
+.text-gray { color: var(--gray-600); }
+.text-primary { color: var(--primary-blue); }
+.text-success { color: var(--status-go); }
+.text-danger { color: var(--status-no-go); }
+.text-warning { color: var(--status-maybe); }
+
+/* Spacing */
+.mt-1 { margin-top: var(--spacing-sm); }
+.mt-2 { margin-top: var(--spacing-md); }
+.mt-3 { margin-top: var(--spacing-lg); }
+.mt-4 { margin-top: var(--spacing-xl); }
+
+.mb-1 { margin-bottom: var(--spacing-sm); }
+.mb-2 { margin-bottom: var(--spacing-md); }
+.mb-3 { margin-bottom: var(--spacing-lg); }
+.mb-4 { margin-bottom: var(--spacing-xl); }
+
+.p-1 { padding: var(--spacing-sm); }
+.p-2 { padding: var(--spacing-md); }
+.p-3 { padding: var(--spacing-lg); }
+.p-4 { padding: var(--spacing-xl); }
+
+/* Flexbox */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: var(--spacing-sm); }
+.gap-2 { gap: var(--spacing-md); }
+.gap-3 { gap: var(--spacing-lg); }

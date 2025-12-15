@@ -1,0 +1,1173 @@
+/**
+ * Header Component Styles
+ * TenderZen v2.1 - Dynamic Context Support + Archief Tab
+ * 
+ * CHANGELOG v2.1:
+ * - NIEUW: Archief tab styling (.phase-indicator.archief)
+ * - NIEUW: Archief tab active state
+ * - FIX: Duplicaat CSS verwijderd
+ * 
+ * Bevat:
+ * - Main Header (altijd zichtbaar)
+ * - Sub Headers per context (tenders, bedrijven, tenderbureaus, settings, team)
+ */
+
+/* ========================================
+   MAIN HEADER BAR
+   ======================================== */
+
+.header-wrapper {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky, 100);
+}
+
+.header {
+    background: var(--bg-surface, #ffffff);
+    border-bottom: 1px solid var(--border-light, #e2e8f0);
+    padding: var(--space-3, 12px) var(--space-6, 24px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6, 24px);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+}
+
+/* ========================================
+   LOGO
+   ======================================== */
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    cursor: pointer;
+}
+
+.logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.logo-text {
+    font-family: var(--font-family-logo, 'Inter', sans-serif);
+    font-size: var(--font-size-xl, 20px);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-primary, #1e293b);
+    letter-spacing: -0.02em;
+}
+
+/* ========================================
+   SEARCH BOX
+   ======================================== */
+
+.search-box {
+    position: relative;
+}
+
+.search-box input {
+    padding: var(--space-2, 8px) var(--space-3, 12px) var(--space-2, 8px) var(--space-10, 40px);
+    border: 2px solid var(--border-default, #e2e8f0);
+    border-radius: var(--radius-lg, 10px);
+    width: 280px;
+    font-size: var(--font-size-sm, 14px);
+    font-family: var(--font-family, 'Inter', sans-serif);
+    background: var(--bg-secondary, #f8fafc);
+    color: var(--text-primary, #1e293b);
+    transition: all 0.2s ease;
+}
+
+.search-box input::placeholder {
+    color: var(--text-muted, #94a3b8);
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #6366f1;
+    background: var(--bg-surface, #ffffff);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.search-icon {
+    position: absolute;
+    left: var(--space-3, 12px);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted, #94a3b8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========================================
+   MENU DROPDOWN
+   ======================================== */
+
+.menu-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.menu-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    background: var(--bg-surface, #ffffff);
+    color: var(--text-secondary, #64748b);
+    border: 2px solid var(--border-default, #e2e8f0);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    border-radius: var(--radius-lg, 10px);
+    cursor: pointer;
+    font-weight: var(--font-weight-medium, 500);
+    font-size: var(--font-size-sm, 14px);
+    font-family: var(--font-family, 'Inter', sans-serif);
+    transition: all 0.2s ease;
+}
+
+.menu-btn:hover {
+    border-color: #6366f1;
+    background: #f5f3ff;
+}
+
+.menu-btn.active {
+    border-color: #6366f1;
+    background: #f5f3ff;
+}
+
+.menu-btn .menu-icon,
+.menu-btn .chevron-icon {
+    display: flex;
+}
+
+.menu-btn .chevron-icon {
+    transition: transform 0.2s ease;
+}
+
+.menu-btn.active .chevron-icon {
+    transform: rotate(180deg);
+}
+
+/* Menu Content */
+.menu-content {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--bg-surface, #ffffff);
+    min-width: 220px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-xl, 12px);
+    z-index: var(--z-dropdown, 200);
+    padding: var(--space-2, 8px) 0;
+    border: 1px solid var(--border-light, #e2e8f0);
+}
+
+.menu-content.show {
+    display: block;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    color: var(--text-secondary, #64748b);
+    text-decoration: none;
+    transition: all 0.15s ease;
+    font-size: var(--font-size-sm, 14px);
+    cursor: pointer;
+}
+
+.menu-item:hover {
+    background: #f5f3ff;
+    color: #4f46e5;
+}
+
+.menu-item .menu-item-icon {
+    display: flex;
+    width: 20px;
+    justify-content: center;
+}
+
+.menu-divider {
+    height: 1px;
+    background: var(--border-light, #e2e8f0);
+    margin: var(--space-2, 8px) 0;
+}
+
+/* Admin menu items */
+.menu-item--admin {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border-left: 3px solid #d97706;
+}
+
+.menu-item--admin:hover {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.admin-badge {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #d97706;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* ========================================
+   PROFILE DROPDOWN (Simplified Avatar)
+   ======================================== */
+
+.profile-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.profile-avatar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+    border: 2px solid transparent;
+    border-radius: var(--radius-full, 50%);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.profile-avatar-btn:hover {
+    border-color: #a5b4fc;
+}
+
+.profile-avatar-btn.active {
+    border-color: #6366f1;
+}
+
+.profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-full, 50%);
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: var(--font-weight-semibold, 600);
+    font-size: var(--font-size-sm, 14px);
+    transition: transform 0.2s ease;
+}
+
+.profile-avatar-btn:hover .profile-avatar {
+    transform: scale(1.05);
+}
+
+/* Legacy support voor oude profile-btn */
+.profile-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    padding: 6px 12px 6px 6px;
+    background: var(--bg-surface, #ffffff);
+    border: 2px solid var(--border-light, #e2e8f0);
+    border-radius: var(--radius-xl, 12px);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.profile-btn:hover {
+    border-color: #a5b4fc;
+    background: #f5f3ff;
+}
+
+.profile-btn.active {
+    border-color: #6366f1;
+    background: #f5f3ff;
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.profile-name {
+    font-size: var(--font-size-sm, 14px);
+    font-weight: var(--font-weight-semibold, 600);
+    color: var(--text-primary, #1e293b);
+}
+
+.profile-role {
+    font-size: var(--font-size-xs, 12px);
+    color: var(--text-muted, #94a3b8);
+}
+
+.profile-btn .chevron-icon {
+    display: flex;
+    transition: transform 0.2s ease;
+}
+
+.profile-btn.active .chevron-icon {
+    transform: rotate(180deg);
+}
+
+/* Profile Menu */
+.profile-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--bg-surface, #ffffff);
+    min-width: 280px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-xl, 12px);
+    z-index: var(--z-dropdown, 200);
+    border: 1px solid var(--border-light, #e2e8f0);
+    overflow: hidden;
+}
+
+.profile-menu.show {
+    display: block;
+    animation: slideDown 0.2s ease-out;
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 16px);
+    padding: var(--space-5, 20px);
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%);
+}
+
+.profile-avatar-large {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-full, 50%);
+    background: rgba(255, 255, 255, 0.2);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: var(--font-weight-bold, 700);
+    font-size: var(--font-size-xl, 20px);
+}
+
+.profile-header-info {
+    flex: 1;
+    color: white;
+}
+
+.profile-header-name {
+    font-size: var(--font-size-lg, 18px);
+    font-weight: var(--font-weight-bold, 700);
+    margin-bottom: 2px;
+}
+
+.profile-header-email {
+    font-size: var(--font-size-xs, 12px);
+    opacity: 0.9;
+    margin-bottom: var(--space-2, 8px);
+}
+
+.profile-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-full, 50px);
+    font-size: var(--font-size-xs, 12px);
+    font-weight: var(--font-weight-semibold, 600);
+    color: white;
+}
+
+.profile-role-badge .badge-icon {
+    display: flex;
+}
+
+.profile-menu-items {
+    padding: var(--space-2, 8px);
+}
+
+.profile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    border-radius: var(--radius-md, 8px);
+    color: var(--text-secondary, #64748b);
+    text-decoration: none;
+    font-size: var(--font-size-sm, 14px);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.profile-menu-item:hover {
+    background: #f5f3ff;
+    color: #4f46e5;
+}
+
+.profile-menu-item .menu-item-icon {
+    display: flex;
+    width: 20px;
+    justify-content: center;
+}
+
+.profile-menu-item.danger {
+    color: #dc2626;
+}
+
+.profile-menu-item.danger:hover {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.profile-menu-divider {
+    height: 1px;
+    background: var(--border-light, #e2e8f0);
+    margin: var(--space-2, 8px);
+}
+
+/* ========================================
+   SUB HEADER CONTAINER
+   ======================================== */
+
+.sub-header-container {
+    background: var(--bg-surface, #ffffff);
+    border-bottom: 1px solid var(--border-light, #e2e8f0);
+}
+
+.sub-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-6, 24px);
+    min-height: 56px;
+}
+
+.sub-header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+}
+
+.sub-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 16px);
+}
+
+/* Sub header center - for filters */
+.sub-header-center {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+    padding: 0 var(--space-4, 16px);
+}
+
+/* ========================================
+   UNIFIED FILTER BAR (Voorstel 1)
+   Professionele filter styling voor alle context pagina's
+   ======================================== */
+
+.sub-header-filters {
+    display: flex;
+    align-items: center;
+    background: var(--bg-muted, #f8fafc);
+    padding: 4px;
+    border-radius: 10px;
+    gap: 2px;
+}
+
+.filter-search-compact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+    min-width: 200px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.2s;
+}
+
+.filter-search-compact:focus-within {
+    box-shadow: 0 0 0 2px var(--primary, #6366f1), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.filter-search-compact .search-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    color: var(--text-muted, #94a3b8);
+}
+
+.filter-input-compact {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    width: 100%;
+    color: var(--text-primary, #0f172a);
+}
+
+.filter-input-compact::placeholder {
+    color: var(--text-muted, #94a3b8);
+}
+
+/* Filter divider */
+.filter-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border-light, #e2e8f0);
+    margin: 0 4px;
+}
+
+.filter-select-compact {
+    appearance: none;
+    background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 34px 10px 12px;
+    font-size: 13px;
+    font-weight: 450;
+    color: var(--text-secondary, #475569);
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.filter-select-compact:hover {
+    background-color: white;
+}
+
+.filter-select-compact:focus {
+    outline: none;
+    background-color: white;
+    box-shadow: 0 0 0 2px var(--primary, #6366f1);
+}
+
+.btn-icon-compact {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-muted, #94a3b8);
+}
+
+.btn-icon-compact:hover {
+    background: white;
+    color: var(--text-secondary, #64748b);
+}
+
+.btn-reset-filters:hover {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+/* ========================================
+   TENDERS SUB HEADER (Tabs)
+   ======================================== */
+
+.sub-header-tenders .sub-header-left {
+    gap: var(--space-1, 4px);
+}
+
+.main-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-4, 16px) var(--space-5, 20px);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: var(--font-size-sm, 14px);
+    font-weight: var(--font-weight-medium, 500);
+    font-family: var(--font-family, 'Inter', sans-serif);
+    color: var(--text-tertiary, #94a3b8);
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: -1px;
+}
+
+.main-tab:hover {
+    color: var(--text-primary, #1e293b);
+    background: var(--bg-hover, #f8fafc);
+}
+
+/* Fase-specifieke tab kleuren */
+.main-tab[data-tab="totaal"].active {
+    color: #4f46e5;
+    border-bottom-color: #6366f1;
+}
+
+.main-tab[data-tab="acquisitie"].active {
+    color: #b45309;
+    border-bottom-color: #f59e0b;
+}
+
+.main-tab[data-tab="inschrijvingen"].active {
+    color: #6d28d9;
+    border-bottom-color: #8b5cf6;
+}
+
+.main-tab[data-tab="ingediend"].active {
+    color: #047857;
+    border-bottom-color: #10b981;
+}
+
+/* ⭐ v2.1: Archief tab styling */
+.main-tab[data-tab="archief"].active {
+    color: #475569;
+    border-bottom-color: #64748b;
+}
+
+.main-tab .tab-icon {
+    display: flex;
+}
+
+/* Phase Indicator */
+.phase-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.phase-indicator.acquisitie {
+    background: #f59e0b;
+}
+
+.phase-indicator.inschrijvingen {
+    background: #8b5cf6;
+}
+
+.phase-indicator.ingediend {
+    background: #10b981;
+}
+
+/* ⭐ v2.1: Archief phase indicator */
+.phase-indicator.archief {
+    background: #64748b;
+}
+
+/* Tab Badge - Base */
+.main-tab .badge {
+    background: var(--bg-tertiary, #e2e8f0);
+    color: var(--text-tertiary, #64748b);
+    padding: 2px 8px;
+    border-radius: var(--radius-full, 50px);
+    font-size: var(--font-size-xs, 12px);
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+/* Tab Badge - Fase-specifieke kleuren */
+.main-tab[data-tab="totaal"].active .badge {
+    background: #6366f1;
+    color: white;
+}
+
+.main-tab[data-tab="acquisitie"].active .badge {
+    background: #f59e0b;
+    color: white;
+}
+
+.main-tab[data-tab="inschrijvingen"].active .badge {
+    background: #8b5cf6;
+    color: white;
+}
+
+.main-tab[data-tab="ingediend"].active .badge {
+    background: #10b981;
+    color: white;
+}
+
+/* ⭐ v2.1: Archief badge styling */
+.main-tab[data-tab="archief"].active .badge {
+    background: #64748b;
+    color: white;
+}
+
+/* ========================================
+   CREATE BUTTON
+   ======================================== */
+
+.create-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #4f46e5 100%);
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: var(--radius-lg, 10px);
+    cursor: pointer;
+    font-weight: var(--font-weight-semibold, 600);
+    font-size: var(--font-size-sm, 14px);
+    font-family: var(--font-family, 'Inter', sans-serif);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+    transition: all 0.2s ease;
+    margin-left: var(--space-4, 16px);
+}
+
+.create-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.create-btn:active {
+    transform: translateY(0);
+}
+
+.create-btn svg {
+    flex-shrink: 0;
+}
+
+/* Green variant for team */
+.create-btn-green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+}
+
+.create-btn-green:hover {
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+
+/* Blue variant for bedrijven */
+.create-btn-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+.create-btn-blue:hover {
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+/* Purple variant for tenderbureaus */
+.create-btn-purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+}
+
+.create-btn-purple:hover {
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+}
+
+/* ========================================
+   NAV-TAB STYLE (Voorstel C: Underline)
+   Context headers voor Bedrijven, Tenderbureaus, Team
+   ======================================== */
+
+.sub-header-context {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-6, 24px);
+    background: var(--bg-surface, #ffffff);
+    border-bottom: 1px solid var(--border-light, #e2e8f0);
+    min-height: 56px;
+}
+
+.sub-header-context .sub-header-left {
+    display: flex;
+    align-items: center;
+}
+
+.sub-header-context .sub-header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+}
+
+.sub-header-context .sub-header-right {
+    display: flex;
+    align-items: center;
+}
+
+/* Nav Tab - Underline Style */
+.nav-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: 16px 20px;
+    font-size: var(--font-size-sm, 14px);
+    font-weight: var(--font-weight-medium, 500);
+    color: var(--text-tertiary, #94a3b8);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.15s ease;
+}
+
+.nav-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: transparent;
+    border-radius: 2px 2px 0 0;
+    transition: background 0.15s ease;
+}
+
+/* Active states per kleur */
+.nav-tab.active[data-color="blue"] {
+    color: #3b82f6;
+}
+
+.nav-tab.active[data-color="blue"]::after {
+    background: #3b82f6;
+}
+
+.nav-tab.active[data-color="purple"] {
+    color: #8b5cf6;
+}
+
+.nav-tab.active[data-color="purple"]::after {
+    background: #8b5cf6;
+}
+
+.nav-tab.active[data-color="green"] {
+    color: #10b981;
+}
+
+.nav-tab.active[data-color="green"]::after {
+    background: #10b981;
+}
+
+/* Nav Badge */
+.nav-tab .nav-badge {
+    padding: 2px 8px;
+    border-radius: var(--radius-full, 50px);
+    font-size: var(--font-size-xs, 12px);
+    font-weight: var(--font-weight-semibold, 600);
+    background: var(--bg-tertiary, #f1f5f9);
+    color: var(--text-tertiary, #64748b);
+    transition: all 0.15s ease;
+}
+
+.nav-tab.active[data-color="blue"] .nav-badge {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.nav-tab.active[data-color="purple"] .nav-badge {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.nav-tab.active[data-color="green"] .nav-badge {
+    background: #d1fae5;
+    color: #047857;
+}
+
+/* ========================================
+   VIEW TOGGLE
+   ======================================== */
+
+.view-toggle {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-secondary, #f1f5f9);
+    padding: 4px;
+    border-radius: var(--radius-lg, 10px);
+}
+
+.view-toggle button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: var(--radius-md, 8px);
+    font-size: var(--font-size-sm, 14px);
+    font-family: var(--font-family, 'Inter', sans-serif);
+    color: var(--text-tertiary, #94a3b8);
+    transition: all 0.2s ease;
+}
+
+.view-toggle button:hover {
+    color: var(--text-primary, #1e293b);
+}
+
+.view-toggle button.active {
+    background: var(--bg-surface, #ffffff);
+    color: var(--text-primary, #1e293b);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.view-toggle button .view-icon {
+    display: flex;
+}
+
+/* ========================================
+   CONTEXT HEADERS (Bedrijven, Tenderbureaus, Team)
+   ======================================== */
+
+.context-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+}
+
+.context-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-xl, 12px);
+    border: 2px solid;
+}
+
+/* Bedrijven - Blauw */
+.context-icon-bedrijven {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-color: #3b82f6;
+}
+
+/* Tenderbureaus - Paars */
+.context-icon-tenderbureaus {
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border-color: #8b5cf6;
+}
+
+/* Settings - Indigo */
+.context-icon-settings {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    border-color: #6366f1;
+}
+
+/* Team - Groen */
+.context-icon-team {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border-color: #10b981;
+}
+
+.context-title h1 {
+    font-size: var(--font-size-lg, 18px);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--text-primary, #1e293b);
+    margin: 0;
+}
+
+.context-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border: 2px solid #3b82f6;
+    border-radius: var(--radius-full, 50px);
+    font-size: var(--font-size-xs, 12px);
+    font-weight: var(--font-weight-bold, 700);
+    color: #1d4ed8;
+}
+
+.context-badge-purple {
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+    border-color: #8b5cf6;
+    color: #6d28d9;
+}
+
+.context-badge-green {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border-color: #10b981;
+    color: #047857;
+}
+
+/* ========================================
+   SETTINGS SUB HEADER (Tabs)
+   ======================================== */
+
+.sub-header-settings .sub-header-left {
+    gap: var(--space-6, 24px);
+}
+
+.settings-tabs {
+    display: flex;
+    gap: var(--space-1, 4px);
+}
+
+.settings-tab {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    padding: var(--space-2-5, 10px) var(--space-4, 16px);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: var(--font-size-sm, 14px);
+    font-weight: var(--font-weight-medium, 500);
+    font-family: var(--font-family, 'Inter', sans-serif);
+    color: var(--text-tertiary, #94a3b8);
+    border-radius: var(--radius-lg, 10px);
+    transition: all 0.2s ease;
+}
+
+.settings-tab:hover {
+    color: var(--text-primary, #1e293b);
+    background: var(--bg-hover, #f8fafc);
+}
+
+.settings-tab.active {
+    color: #4f46e5;
+    background: #f5f3ff;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 1200px) {
+    .search-box input {
+        width: 200px;
+    }
+    
+    .main-tab {
+        padding: 12px 14px;
+    }
+    
+    .profile-info {
+        display: none;
+    }
+    
+    .create-btn span:not(:first-child) {
+        display: none;
+    }
+    
+    .create-btn {
+        padding: 10px;
+    }
+    
+    /* Compact filters op medium schermen */
+    .filter-search-compact {
+        min-width: 160px;
+    }
+    
+    .filter-select-compact {
+        min-width: 100px;
+        padding-right: 24px;
+    }
+}
+
+@media (max-width: 900px) {
+    .header {
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+    }
+    
+    .search-box {
+        display: none;
+    }
+    
+    .sub-header {
+        padding: 0 var(--space-4, 16px);
+        flex-wrap: wrap;
+        gap: var(--space-2, 8px);
+    }
+    
+    .sub-header-center {
+        order: 3;
+        width: 100%;
+        justify-content: flex-start;
+        padding: var(--space-2, 8px) 0;
+    }
+    
+    .sub-header-filters {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+    
+    .filter-search-compact {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .main-tab {
+        padding: 12px;
+    }
+    
+    .main-tab .tab-label {
+        display: none;
+    }
+    
+    .view-toggle button span:not(.view-icon) {
+        display: none;
+    }
+    
+    .context-title h1 {
+        font-size: var(--font-size-base, 16px);
+    }
+    
+    .settings-tab span {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .logo-text {
+        display: none;
+    }
+    
+    .menu-btn span:not(.menu-icon) {
+        display: none;
+    }
+    
+    .context-badge {
+        display: none;
+    }
+    
+    /* Filters stack vertically */
+    .sub-header-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filter-search-compact,
+    .filter-select-compact {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .btn-icon-compact {
+        align-self: flex-end;
+    }
+}

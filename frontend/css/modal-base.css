@@ -1,0 +1,498 @@
+/**
+ * modal-base.css - Gedeelde Modal Styling
+ * TenderZen Design System
+ * 
+ * Gebruikt door:
+ * - TeamlidModal
+ * - BedrijfModal
+ * - TenderAanmaken
+ * 
+ * Elke modal heeft ook een eigen CSS bestand voor specifieke styling.
+ */
+
+/* ============================================
+   MODAL CONTAINER & OVERLAY
+   ============================================ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal.is-open {
+    display: flex;
+}
+
+.modal .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal .modal-container {
+    position: relative;
+    background: #f8fafc;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: modalSlideIn 0.2s ease-out;
+    overflow: hidden;
+}
+
+.modal .modal-container--large {
+    max-width: 1000px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   MODAL HEADER
+   ============================================ */
+
+.modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-radius: 16px 16px 0 0;
+}
+
+.modal .modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal .modal-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.modal .modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+}
+
+.modal .modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.modal .modal-close:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* ============================================
+   MODAL CONTENT
+   ============================================ */
+
+.modal .modal-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+/* BedrijfModal specifieke padding (compacter) */
+.modal.bedrijf-modal .modal-content {
+    padding: 16px;
+}
+
+.modal .modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal .modal-content::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.modal .modal-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+/* ============================================
+   MODAL FOOTER
+   ============================================ */
+
+.modal .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 0 0 16px 16px;
+    gap: 12px;
+}
+
+.modal .modal-footer-left,
+.modal .modal-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal .modal-footer--right {
+    justify-content: flex-end;
+}
+
+.modal .footer-left,
+.modal .footer-right {
+    display: flex;
+    gap: 12px;
+}
+
+/* ============================================
+   FORM SECTIONS
+   ============================================ */
+
+.modal .form-section {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.modal .form-section:last-child {
+    margin-bottom: 0;
+}
+
+.modal .form-section--primary {
+    border-color: #c7d2fe;
+    background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
+}
+
+.modal .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 16px 0;
+}
+
+.modal .section-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================
+   COLLAPSIBLE SECTIONS
+   ============================================ */
+
+.modal .form-section--collapsible {
+    padding: 0;
+}
+
+.modal .section-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.modal .section-toggle .section-title {
+    margin: 0;
+}
+
+.modal .section-toggle .toggle-icon {
+    transition: transform 0.2s ease;
+    color: #64748b;
+}
+
+.modal .section-toggle.expanded .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.modal .section-content {
+    padding: 0 20px 20px 20px;
+    transition: all 0.2s ease;
+}
+
+.modal .section-content.collapsed {
+    display: none;
+}
+
+/* ============================================
+   FORM ELEMENTS
+   ============================================ */
+
+.modal .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.modal .form-row:last-child {
+    margin-bottom: 0;
+}
+
+.modal .form-row--single {
+    grid-template-columns: 1fr;
+}
+
+.modal .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.modal .form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.modal .form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+.modal .form-control:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.modal .form-control--prominent {
+    font-size: 16px;
+    font-weight: 500;
+    padding: 12px 16px;
+}
+
+.modal .form-control::placeholder {
+    color: #94a3b8;
+}
+
+.modal textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.modal select.form-control {
+    cursor: pointer;
+}
+
+.modal .form-hint {
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.modal .required {
+    color: #ef4444;
+    margin-left: 2px;
+}
+
+/* ============================================
+   CHECKBOX GRID
+   ============================================ */
+
+.modal .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.modal .checkbox-grid--three {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.modal .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 14px;
+    transition: all 0.15s ease;
+}
+
+.modal .checkbox-label:hover {
+    background: white;
+    border-color: #c7d2fe;
+}
+
+.modal .checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #8b5cf6;
+    cursor: pointer;
+}
+
+/* ============================================
+   INFO CARDS (View Mode)
+   ============================================ */
+
+.modal .info-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.modal .info-value {
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.modal .info-value--large {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.modal .info-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.modal .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+}
+
+.modal .btn-primary {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+}
+
+.modal .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.modal .btn-secondary {
+    background: white;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.modal .btn-secondary:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.modal .btn-danger {
+    background: white;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.modal .btn-danger:hover {
+    background: #fef2f2;
+    border-color: #f87171;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 640px) {
+    .modal {
+        padding: 12px;
+    }
+
+    .modal .modal-container {
+        width: 100%;
+        max-height: 95vh;
+    }
+
+    .modal .modal-header,
+    .modal .modal-content,
+    .modal .modal-footer {
+        padding: 16px;
+    }
+
+    .modal .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .modal .checkbox-grid,
+    .modal .checkbox-grid--three {
+        grid-template-columns: 1fr;
+    }
+}

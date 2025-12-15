@@ -1,0 +1,262 @@
+/**
+ * TenderbureauModal Styles
+ * TenderZen v1.0
+ */
+
+/* MODAL OVERLAY */
+#tenderbureau-modal.modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 99999 !important;
+    padding: 20px !important;
+    box-sizing: border-box !important;
+}
+
+/* MODAL CONTAINER */
+#tenderbureau-modal .modal-container {
+    background: white !important;
+    border-radius: 12px !important;
+    width: 100% !important;
+    max-width: 700px !important;
+    max-height: 90vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden !important;
+}
+
+#tenderbureau-modal .modal-container.modal-large {
+    max-width: 800px !important;
+}
+
+/* MODAL HEADER */
+#tenderbureau-modal .modal-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 20px 24px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    background: #f9fafb !important;
+    flex-shrink: 0 !important;
+}
+
+#tenderbureau-modal .modal-title {
+    margin: 0 !important;
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+}
+
+#tenderbureau-modal .modal-close {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    border: none !important;
+    background: transparent !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    color: #6b7280 !important;
+    font-size: 24px !important;
+    line-height: 1 !important;
+}
+
+#tenderbureau-modal .modal-close:hover {
+    background: #e5e7eb !important;
+    color: #1f2937 !important;
+}
+
+/* MODAL BODY */
+#tenderbureau-modal .modal-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 24px !important;
+    background: white !important;
+}
+
+/* FORM SECTIONS */
+#tenderbureau-modal .form-section {
+    margin-bottom: 28px !important;
+    padding-bottom: 24px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+#tenderbureau-modal .form-section:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+#tenderbureau-modal .section-title {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    margin: 0 0 16px 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* FORM ELEMENTS */
+#tenderbureau-modal .form-row {
+    display: flex !important;
+    gap: 16px !important;
+    margin-bottom: 16px !important;
+}
+
+#tenderbureau-modal .form-group {
+    flex: 1 !important;
+    margin-bottom: 16px !important;
+}
+
+#tenderbureau-modal .form-row .form-group {
+    margin-bottom: 0 !important;
+}
+
+#tenderbureau-modal .form-label {
+    display: block !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    margin-bottom: 6px !important;
+}
+
+#tenderbureau-modal .form-label .required {
+    color: #ef4444 !important;
+}
+
+#tenderbureau-modal .form-label .help-text {
+    display: block !important;
+    font-size: 11px !important;
+    font-weight: 400 !important;
+    color: #9ca3af !important;
+    margin-top: 2px !important;
+}
+
+#tenderbureau-modal .form-input,
+#tenderbureau-modal .form-select {
+    width: 100% !important;
+    padding: 10px 12px !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    color: #1f2937 !important;
+    background: white !important;
+    box-sizing: border-box !important;
+}
+
+#tenderbureau-modal .form-input:focus,
+#tenderbureau-modal .form-select:focus {
+    outline: none !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
+}
+
+#tenderbureau-modal .form-input::placeholder {
+    color: #9ca3af !important;
+}
+
+/* SMALL BUTTON */
+#tenderbureau-modal .btn-small {
+    display: inline-block !important;
+    margin-top: 8px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #667eea !important;
+    background: #f0f4ff !important;
+    border: 1px solid #c7d2fe !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+}
+
+#tenderbureau-modal .btn-small:hover {
+    background: #e0e7ff !important;
+}
+
+/* CHECKBOX */
+#tenderbureau-modal .checkbox-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    color: #374151 !important;
+}
+
+#tenderbureau-modal .checkbox-label input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    accent-color: #667eea !important;
+}
+
+/* MODAL FOOTER */
+#tenderbureau-modal .modal-footer {
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+    padding: 16px 24px !important;
+    border-top: 1px solid #e5e7eb !important;
+    background: #f9fafb !important;
+    flex-shrink: 0 !important;
+}
+
+#tenderbureau-modal .modal-footer .btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 10px 20px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    border: none !important;
+}
+
+#tenderbureau-modal .modal-footer .btn-secondary {
+    background: white !important;
+    border: 1px solid #d1d5db !important;
+    color: #374151 !important;
+}
+
+#tenderbureau-modal .modal-footer .btn-secondary:hover {
+    background: #f3f4f6 !important;
+}
+
+#tenderbureau-modal .modal-footer .btn-primary {
+    background: #667eea !important;
+    color: white !important;
+}
+
+#tenderbureau-modal .modal-footer .btn-primary:hover {
+    background: #5a67d8 !important;
+}
+
+#tenderbureau-modal .modal-footer .btn-primary:disabled {
+    background: #9ca3af !important;
+    cursor: not-allowed !important;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+    #tenderbureau-modal .modal-container {
+        max-height: 95vh !important;
+        margin: 10px !important;
+    }
+    
+    #tenderbureau-modal .form-row {
+        flex-direction: column !important;
+    }
+}

@@ -1,0 +1,396 @@
+/* ============================================
+   STATUS BADGE COMPONENT
+   ============================================ */
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+/* Interactive state */
+.status-badge.interactive {
+    cursor: pointer;
+}
+
+.status-badge.interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.status-badge.interactive:active {
+    transform: translateY(0);
+}
+
+/* Sizes */
+.status-badge.size-small {
+    padding: 6px 10px;
+    font-size: 11px;
+    gap: 4px;
+}
+
+.status-badge.size-medium {
+    padding: 10px 16px;
+    font-size: 13px;
+    gap: 6px;
+}
+
+.status-badge.size-large {
+    padding: 14px 20px;
+    font-size: 15px;
+    gap: 8px;
+}
+
+/* Status variants */
+.status-badge.status-go {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #10b981;
+}
+
+.status-badge.status-go.interactive:hover {
+    background: #a7f3d0;
+    border-color: #059669;
+}
+
+.status-badge.status-no-go {
+    background: #fee2e2;
+    color: #991b1b;
+    border-color: #ef4444;
+}
+
+.status-badge.status-no-go.interactive:hover {
+    background: #fecaca;
+    border-color: #dc2626;
+}
+
+.status-badge.status-maybe {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #f59e0b;
+}
+
+.status-badge.status-maybe.interactive:hover {
+    background: #fde68a;
+    border-color: #d97706;
+}
+
+.status-badge.status-pending {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #9ca3af;
+}
+
+.status-badge.status-pending.interactive:hover {
+    background: #e5e7eb;
+    border-color: #6b7280;
+}
+
+.status-icon {
+    font-size: 1.2em;
+    line-height: 1;
+}
+
+.status-label {
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ============================================
+   PHASE BADGE COMPONENT
+   ============================================ */
+
+.phase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+/* Interactive state */
+.phase-badge.interactive {
+    cursor: pointer;
+}
+
+.phase-badge.interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.phase-badge.interactive:active {
+    transform: translateY(0);
+}
+
+/* Sizes */
+.phase-badge.size-small {
+    padding: 4px 10px;
+    font-size: 10px;
+    gap: 4px;
+}
+
+.phase-badge.size-medium {
+    padding: 8px 14px;
+    font-size: 12px;
+    gap: 8px;
+}
+
+.phase-badge.size-large {
+    padding: 12px 18px;
+    font-size: 14px;
+    gap: 10px;
+}
+
+/* Phase indicator dot */
+.phase-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.phase-badge.size-small .phase-indicator {
+    width: 6px;
+    height: 6px;
+}
+
+.phase-badge.size-large .phase-indicator {
+    width: 10px;
+    height: 10px;
+}
+
+/* Phase variants */
+.phase-badge.phase-acquisitie {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fbbf24;
+}
+
+.phase-badge.phase-acquisitie .phase-indicator {
+    background: #fbbf24;
+}
+
+.phase-badge.phase-acquisitie.interactive:hover {
+    background: #fde68a;
+    border-color: #f59e0b;
+}
+
+.phase-badge.phase-inschrijvingen {
+    background: #dbeafe;
+    color: #1e3a8a;
+    border-color: #3b82f6;
+}
+
+.phase-badge.phase-inschrijvingen .phase-indicator {
+    background: #3b82f6;
+}
+
+.phase-badge.phase-inschrijvingen.interactive:hover {
+    background: #bfdbfe;
+    border-color: #2563eb;
+}
+
+.phase-badge.phase-ingediend {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #10b981;
+}
+
+.phase-badge.phase-ingediend .phase-indicator {
+    background: #10b981;
+}
+
+.phase-badge.phase-ingediend.interactive:hover {
+    background: #a7f3d0;
+    border-color: #059669;
+}
+
+.phase-label {
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ============================================
+   LOADING SPINNER COMPONENT
+   ============================================ */
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+/* Variants */
+.loading-spinner.variant-inline {
+    display: inline-flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.loading-spinner.variant-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+}
+
+.loading-spinner.variant-default {
+    padding: 40px;
+}
+
+/* Overlay backdrop */
+.spinner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Spinner circle animation */
+.spinner-circle {
+    border: 4px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Sizes */
+.loading-spinner.size-small .spinner-circle {
+    width: 24px;
+    height: 24px;
+    border-width: 3px;
+}
+
+.loading-spinner.size-medium .spinner-circle {
+    width: 40px;
+    height: 40px;
+    border-width: 4px;
+}
+
+.loading-spinner.size-large .spinner-circle {
+    width: 60px;
+    height: 60px;
+    border-width: 5px;
+}
+
+/* Spinner message */
+.spinner-message {
+    font-size: 14px;
+    color: #475569;
+    font-weight: 500;
+    text-align: center;
+}
+
+.variant-overlay .spinner-message {
+    font-size: 16px;
+    color: #1e293b;
+}
+
+/* Animations */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Badge group (for displaying multiple badges together) */
+.badge-group {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Loading state for cards */
+.card-loading {
+    pointer-events: none;
+    opacity: 0.6;
+    position: relative;
+}
+
+.card-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}

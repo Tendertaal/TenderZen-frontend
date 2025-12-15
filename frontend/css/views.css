@@ -1,0 +1,71 @@
+/**
+ * Views CSS
+ * Styling voor alle views
+ */
+
+/* ========================================
+   VIEW CONTAINERS
+   ======================================== */
+
+.view-container {
+    padding: 0;
+}
+
+.tender-list-view {
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    margin: 20px 0;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+/* ========================================
+   ERROR STATE
+   ======================================== */
+
+.error-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #ef4444;
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+/* ========================================
+   TENDER CARDS CONTAINER
+   ======================================== */
+
+.tender-cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
