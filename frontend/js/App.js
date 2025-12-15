@@ -1,8 +1,9 @@
 /**
  * TenderPlanner App Controller
- * TenderZen v2.1 - Multi-Bureau Support
+ * TenderZen v2.2 - Multi-Bureau Support + Custom Logout Modal
  * 
  * CHANGELOG:
+ * - v2.2: Custom logout confirmation modal
  * - v2.1: Multi-bureau support toegevoegd
  *   - BureauAccessService integratie
  *   - Bureau context initialisatie
@@ -19,10 +20,15 @@ import { apiService } from './services/ApiService.js';
 import { faseService } from './services/FaseService.js';
 import { bedrijvenService } from './services/Bedrijvenservice.js';
 import { tenderbureausService } from './services/TenderbureausService.js';
-import { supabase } from './config.js';
+import { getSupabase } from './config.js';
 
 // ============================================================
-// NIEUW: Import BureauAccessService
+// NIEUW: Import LogoutConfirmModal
+// ============================================================
+import { confirmLogout } from './components/LogoutConfirmModal.js';
+
+// ============================================================
+// Import BureauAccessService
 // ============================================================
 import { bureauAccessService } from './services/BureauAccessService.js';
 
@@ -61,9 +67,7 @@ export class App {
         this.tenders = []; // Master data - all tenders
         this.isSuperAdmin = false;
 
-        // ============================================================
-        // NIEUW: Bureau state
-        // ============================================================
+        // Bureau state
         this.currentBureau = null;
 
         // DOM references
@@ -75,12 +79,9 @@ export class App {
 
     /**
      * Initialize the app
-     * ============================================================
-     * GEWIJZIGD: Bureau context initialisatie toegevoegd
-     * ============================================================
      */
     async init() {
-        console.log('ðŸš€ TenderPlanner App wordt geÃ¯nitialiseerd...');
+        console.log('🚀 TenderPlanner App wordt geïnitialiseerd...');
 
         try {
             // 1. Check authentication
@@ -93,10 +94,8 @@ export class App {
             // 2. Get DOM references
             this.contentContainer = document.getElementById('app-content');
 
-            // ============================================================
-            // NIEUW: 3. Initialize bureau context VOOR andere data laden
-            // ============================================================
-            console.log('ðŸ¢ Initializing bureau context...');
+            // 3. Initialize bureau context VOOR andere data laden
+            console.log('🏢 Initializing bureau context...');
             await this.initBureauContext();
 
             // Check of user toegang heeft tot minimaal 1 bureau
@@ -106,20 +105,18 @@ export class App {
             }
 
             // 4. Load fase configuration
-            console.log('ðŸ“‹ Loading fase configuration...');
+            console.log('📋 Loading fase configuration...');
             await faseService.loadConfig();
 
             // 4b. Load bedrijven data
-            console.log('ðŸ¢ Loading bedrijven...');
+            console.log('🏢 Loading bedrijven...');
             await bedrijvenService.loadBedrijven();
 
             // 5. Initialize components
             this.initHeader();
 
-            // ============================================================
-            // NIEUW: 5b. Initialize bureau switcher in header
-            // ============================================================
-            console.log('ðŸ”€ Initializing bureau switcher...');
+            // 5b. Initialize bureau switcher in header
+            console.log('🔀 Initializing bureau switcher...');
             await this.header.initBureauSwitcher();
 
             // 5c. Setup bureau change handler
@@ -140,18 +137,15 @@ export class App {
             // 9. Hide loading screen
             this.hideLoading();
 
-            console.log('âœ… TenderPlanner App succesvol geladen!');
-            console.log(`ðŸ“ Actief bureau: ${this.currentBureau.bureau_naam}`);
+            console.log('✅ TenderPlanner App succesvol geladen!');
+            console.log(`📍 Actief bureau: ${this.currentBureau.bureau_naam}`);
 
         } catch (error) {
-            console.error('âŒ App init error:', error);
+            console.error('❌ App init error:', error);
             this.showError('Er ging iets fout bij het laden van de applicatie.');
         }
     }
 
-    // ============================================================
-    // NIEUW: Initialize bureau context
-    // ============================================================
     /**
      * Initialize bureau context
      * Moet VOOR data laden worden aangeroepen
@@ -162,30 +156,27 @@ export class App {
             this.currentBureau = await bureauAccessService.initializeBureauContext();
 
             if (!this.currentBureau) {
-                console.warn('âš ï¸ Geen bureau gevonden voor deze gebruiker');
+                console.warn('⚠️ Geen bureau gevonden voor deze gebruiker');
                 return null;
             }
 
-            console.log('âœ… Bureau context:', this.currentBureau.bureau_naam);
-            console.log('ðŸ‘¤ Rol in bureau:', this.currentBureau.user_role);
+            console.log('✅ Bureau context:', this.currentBureau.bureau_naam);
+            console.log('👤 Rol in bureau:', this.currentBureau.user_role);
 
             return this.currentBureau;
 
         } catch (error) {
-            console.error('âŒ Error initializing bureau context:', error);
+            console.error('❌ Error initializing bureau context:', error);
             throw error;
         }
     }
 
-    // ============================================================
-    // NIEUW: Handle bureau change
-    // ============================================================
     /**
      * Handle bureau change - herlaad alle data
      * @param {Object} newBureau - Het nieuwe bureau
      */
     async handleBureauChange(newBureau) {
-        console.log('ðŸ”„ Bureau gewisseld naar:', newBureau.bureau_naam);
+        console.log('🔄 Bureau gewisseld naar:', newBureau.bureau_naam);
 
         this.currentBureau = newBureau;
 
@@ -205,10 +196,10 @@ export class App {
             // Update header counts
             this.updateHeaderCounts();
 
-            console.log('âœ… Data herladen voor nieuw bureau');
+            console.log('✅ Data herladen voor nieuw bureau');
 
         } catch (error) {
-            console.error('âŒ Error loading data for new bureau:', error);
+            console.error('❌ Error loading data for new bureau:', error);
             this.showError('Er ging iets fout bij het laden van bureau data.');
         } finally {
             this.hideBureauLoading();
@@ -244,9 +235,6 @@ export class App {
         }
     }
 
-    // ============================================================
-    // NIEUW: No bureau access screen
-    // ============================================================
     /**
      * Toon scherm wanneer user geen bureau toegang heeft
      */
@@ -256,13 +244,13 @@ export class App {
         if (this.contentContainer) {
             this.contentContainer.innerHTML = `
                 <div class="no-bureau-access">
-                    <div class="no-bureau-icon">ðŸ¢</div>
+                    <div class="no-bureau-icon">🏢</div>
                     <h2>Geen bureau toegang</h2>
                     <p>Je hebt nog geen toegang tot een tenderbureau.</p>
                     <p>Vraag een collega om je uit te nodigen, of neem contact op met de beheerder.</p>
                     <div class="no-bureau-actions">
                         <button class="btn btn-secondary" onclick="window.app.checkForInvites()">
-                            ðŸ”„ Controleer uitnodigingen
+                            🔄 Controleer uitnodigingen
                         </button>
                         <button class="btn btn-outline" onclick="window.app.logout()">
                             Uitloggen
@@ -311,9 +299,6 @@ export class App {
         }
     }
 
-    // ============================================================
-    // NIEUW: Bureau loading overlay
-    // ============================================================
     showBureauLoading() {
         // Verwijder bestaande overlay
         this.hideBureauLoading();
@@ -340,17 +325,24 @@ export class App {
      * Check authentication and get user profile
      */
     async checkAuth() {
-        console.log('ðŸ”‘ Checking authentication...');
+        console.log('🔑 Checking authentication...');
 
         try {
+            const supabase = getSupabase();
+            
+            if (!supabase) {
+                console.error('❌ Supabase client not available');
+                return false;
+            }
+            
             const { data: { session }, error } = await supabase.auth.getSession();
 
             if (error || !session) {
-                console.log('âŒ Not authenticated');
+                console.log('❌ Not authenticated');
                 return false;
             }
 
-            console.log('âœ… Authenticated:', session.user.email);
+            console.log('✅ Authenticated:', session.user.email);
 
             // Get user profile to check super-admin status
             const { data: profile } = await supabase
@@ -367,7 +359,7 @@ export class App {
                     role: profile.role || 'member',
                     is_super_admin: this.isSuperAdmin
                 };
-                console.log('ðŸ‘¤ User profile loaded, super-admin:', this.isSuperAdmin);
+                console.log('👤 User profile loaded, super-admin:', this.isSuperAdmin);
             }
 
             return true;
@@ -381,7 +373,7 @@ export class App {
      * Initialize header
      */
     initHeader() {
-        console.log('ðŸ“Š Initializing header...');
+        console.log('📊 Initializing header...');
 
         this.header = new Header();
 
@@ -413,7 +405,7 @@ export class App {
      * Initialize tender creation form
      */
     initTenderAanmaken() {
-        console.log('ðŸ“ Initializing tender form...');
+        console.log('📝 Initializing tender form...');
 
         this.tenderAanmaken = new TenderAanmaken();
         document.body.appendChild(this.tenderAanmaken.render());
@@ -422,10 +414,10 @@ export class App {
         this.tenderAanmaken.onSave = async (data) => {
             try {
                 await apiService.createTender(data);
-                console.log('âœ… Tender created');
+                console.log('✅ Tender created');
                 await this.loadData();
             } catch (error) {
-                console.error('âŒ Create tender error:', error);
+                console.error('❌ Create tender error:', error);
                 alert('Er ging iets fout bij het aanmaken van de tender.');
             }
         };
@@ -434,10 +426,10 @@ export class App {
         this.tenderAanmaken.onUpdate = async (tenderId, data, isConcept) => {
             try {
                 await apiService.updateTender(tenderId, data);
-                console.log('âœ… Tender updated');
+                console.log('✅ Tender updated');
                 await this.loadData();
             } catch (error) {
-                console.error('âŒ Update tender error:', error);
+                console.error('❌ Update tender error:', error);
                 alert('Er ging iets fout bij het updaten van de tender.');
             }
         };
@@ -447,13 +439,13 @@ export class App {
      * Initialize bedrijf modal
      */
     initBedrijfModal() {
-        console.log('ðŸ¢ Initializing bedrijf modal...');
+        console.log('🏢 Initializing bedrijf modal...');
 
         this.bedrijfModal = new BedrijfModal();
 
         // Callback when bedrijf is saved
         this.bedrijfModal.onSave = async (bedrijf) => {
-            console.log('âœ… Bedrijf saved:', bedrijf);
+            console.log('✅ Bedrijf saved:', bedrijf);
 
             // Reload bedrijven view if active
             if (this.currentView === 'bedrijven') {
@@ -488,7 +480,7 @@ export class App {
      * Initialize all views
      */
     initViews() {
-        console.log('ðŸ‘ï¸ Initializing views...');
+        console.log('👁️ Initializing views...');
 
         this.views = {
             totaal: new TotaalView(),
@@ -523,9 +515,9 @@ export class App {
             try {
                 await bedrijvenService.deleteBedrijf(bedrijfId);
                 await this.views.bedrijven.reload();
-                console.log('âœ… Bedrijf deleted');
+                console.log('✅ Bedrijf deleted');
             } catch (error) {
-                console.error('âŒ Delete bedrijf error:', error);
+                console.error('❌ Delete bedrijf error:', error);
                 alert('Er ging iets fout bij het verwijderen.');
             }
         };
@@ -544,9 +536,9 @@ export class App {
             try {
                 await tenderbureausService.deactivateBureau(bureauId);
                 await this.views.tenderbureaus.reload();
-                console.log('âœ… Bureau deactivated');
+                console.log('✅ Bureau deactivated');
             } catch (error) {
-                console.error('âŒ Deactivate bureau error:', error);
+                console.error('❌ Deactivate bureau error:', error);
                 alert('Er ging iets fout bij het deactiveren.');
             }
         };
@@ -571,28 +563,28 @@ export class App {
                 try {
                     await teamService.deleteTeamMember(memberId);
                     await this.views.team.reload();
-                    console.log('âœ… Teamlid deleted');
+                    console.log('✅ Teamlid deleted');
                 } catch (error) {
-                    console.error('âŒ Delete teamlid error:', error);
+                    console.error('❌ Delete teamlid error:', error);
                     alert('Er ging iets fout bij het verwijderen.');
                 }
             }
         };
 
-        console.log('âœ… All views initialized');
+        console.log('✅ All views initialized');
     }
 
     /**
      * Load all data from API
      */
     async loadData() {
-        console.log('ðŸ“¥ Loading data...');
+        console.log('📥 Loading data...');
 
         try {
             // Load ALL tenders - RLS filtert automatisch op bureau
             this.tenders = await apiService.getTenders();
 
-            console.log(`âœ… Loaded ${this.tenders.length} tenders`);
+            console.log(`✅ Loaded ${this.tenders.length} tenders`);
 
             // Update all views with new data
             this.updateViews();
@@ -601,7 +593,7 @@ export class App {
             this.updateHeaderCounts();
 
         } catch (error) {
-            console.error('âŒ Load data error:', error);
+            console.error('❌ Load data error:', error);
             throw error;
         }
     }
@@ -702,7 +694,7 @@ export class App {
     async showView(viewName) {
         // Close all open modals before switching view
         this.closeAllModals();
-        console.log(`ðŸ‘ï¸ Showing view: ${viewName}`);
+        console.log(`👁️ Showing view: ${viewName}`);
 
         // Unmount current view
         if (this.views[this.currentView]) {
@@ -744,7 +736,7 @@ export class App {
      * Handle tab change
      */
     handleTabChange(tab) {
-        console.log(`ðŸ”– Tab change: ${tab}`);
+        console.log(`📖 Tab change: ${tab}`);
         this.showView(tab);
     }
 
@@ -752,7 +744,7 @@ export class App {
      * Handle view type change (lijst/planning/kanban)
      */
     handleViewTypeChange(viewType) {
-        console.log(`ðŸ”„ View type change: ${viewType}`);
+        console.log(`🔄 View type change: ${viewType}`);
         this.currentViewType = viewType;
 
         if (viewType !== 'lijst') {
@@ -764,7 +756,7 @@ export class App {
      * Handle search
      */
     handleSearch(query) {
-        console.log(`ðŸ” Search: ${query}`);
+        console.log(`🔍 Search: ${query}`);
 
         const view = this.views[this.currentView];
         if (view && view.setSearch) {
@@ -776,7 +768,7 @@ export class App {
      * Handle team filter
      */
     handleTeamFilter(team) {
-        console.log(`ðŸ‘¥ Team filter: ${team}`);
+        console.log(`👥 Team filter: ${team}`);
 
         const view = this.views[this.currentView];
         if (view && view.setTeamFilter) {
@@ -788,7 +780,7 @@ export class App {
      * Handle status filter
      */
     handleStatusFilter(status) {
-        console.log(`ðŸŽ¯ Status filter: ${status}`);
+        console.log(`🎯 Status filter: ${status}`);
 
         const view = this.views[this.currentView];
         if (view && view.setStatusFilter) {
@@ -800,7 +792,7 @@ export class App {
      * Handle create tender
      */
     handleCreateTender() {
-        console.log('âž• Create tender');
+        console.log('➕ Create tender');
         this.tenderAanmaken.open();
     }
 
@@ -808,7 +800,7 @@ export class App {
      * Handle tender click - Open tender in edit modal
      */
     handleTenderClick(tenderId) {
-        console.log(`ðŸ“‹ Tender clicked: ${tenderId}`);
+        console.log(`📋 Tender clicked: ${tenderId}`);
 
         const tender = this.tenders.find(t => t.id === tenderId);
 
@@ -823,7 +815,7 @@ export class App {
      * Handle status change
      */
     async handleStatusChange(tenderId, newStatus) {
-        console.log(`ðŸ”„ Status change: ${tenderId} â†’ ${newStatus}`);
+        console.log(`🔄 Status change: ${tenderId} → ${newStatus}`);
 
         try {
             await apiService.updateTender(tenderId, { status: newStatus });
@@ -833,9 +825,9 @@ export class App {
                 tender.status = newStatus;
             }
 
-            console.log('âœ… Status updated');
+            console.log('✅ Status updated');
         } catch (error) {
-            console.error('âŒ Status update error:', error);
+            console.error('❌ Status update error:', error);
             alert('Status wijzigen mislukt.');
             await this.loadData();
         }
@@ -845,7 +837,7 @@ export class App {
      * Handle context action (from dynamic header)
      */
     handleContextAction(action, data) {
-        console.log(`ðŸŽ¯ Context action: ${action}`, data);
+        console.log(`🎯 Context action: ${action}`, data);
 
         switch (action) {
             case 'create':
@@ -863,12 +855,9 @@ export class App {
 
     /**
      * Handle menu action
-     * ============================================================
-     * GEWIJZIGD: Reset bureau service bij logout
-     * ============================================================
      */
     handleMenuAction(action) {
-        console.log(`ðŸ“‹ Menu action: ${action}`);
+        console.log(`📋 Menu action: ${action}`);
 
         switch (action) {
             case 'tenders':
@@ -925,17 +914,19 @@ export class App {
     /**
      * Logout
      * ============================================================
-     * GEWIJZIGD: Reset bureau service
+     * v2.2: Custom logout confirmation modal
      * ============================================================
      */
     async logout() {
-        if (confirm('Weet je zeker dat je wilt uitloggen?')) {
+        // Gebruik custom modal in plaats van browser confirm()
+        const confirmed = await confirmLogout();
+        
+        if (confirmed) {
             try {
-                // ============================================================
-                // NIEUW: Reset bureau service voor schone state
-                // ============================================================
+                // Reset bureau service voor schone state
                 bureauAccessService.reset();
 
+                const supabase = getSupabase();
                 await supabase.auth.signOut();
                 window.location.href = '/login.html';
             } catch (error) {
@@ -982,7 +973,7 @@ export class App {
         if (this.contentContainer) {
             this.contentContainer.innerHTML = `
                 <div class="error-state">
-                    <div class="error-icon">âŒ</div>
+                    <div class="error-icon">❌</div>
                     <h3>${message}</h3>
                     <button class="btn btn-primary" onclick="window.location.reload()">
                         Opnieuw proberen

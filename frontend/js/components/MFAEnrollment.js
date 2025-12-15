@@ -4,7 +4,8 @@
  * Toont QR code voor authenticator app setup
  */
 
-import { supabase } from '/js/config.js';
+// Gebruik de globale Supabase client (window.supabase)
+const supabase = window.supabase;
 
 // Referentie naar globale Icons (geladen via icons.js)
 const Icons = window.Icons || {};
@@ -15,7 +16,7 @@ export class MFAEnrollment {
         this.factorId = null;
         this.qrCode = null;
         this.secret = null;
-        
+
         // Callbacks
         this.onSuccess = null;
         this.onCancel = null;
@@ -34,7 +35,7 @@ export class MFAEnrollment {
      */
     async startEnrollment() {
         this.render('loading');
-        
+
         try {
             // Start enrollment met Supabase
             const { data, error } = await supabase.auth.mfa.enroll({
@@ -49,7 +50,7 @@ export class MFAEnrollment {
             this.secret = data.totp.secret;
 
             console.log('✅ MFA enrollment started, factor ID:', this.factorId);
-            
+
             this.render('qr');
 
         } catch (error) {
@@ -86,10 +87,10 @@ export class MFAEnrollment {
             if (verifyError) throw verifyError;
 
             console.log('✅ MFA enrollment verified successfully!');
-            
+
             // Log audit
             await this.logAudit('mfa_enrolled', true);
-            
+
             // Show success
             this.render('success');
 
@@ -134,7 +135,7 @@ export class MFAEnrollment {
                 console.warn('Unenroll failed:', e);
             }
         }
-        
+
         if (this.onCancel) {
             this.onCancel();
         }
@@ -355,10 +356,10 @@ export class MFAEnrollment {
         codeInput?.addEventListener('input', (e) => {
             // Only allow numbers
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
-            
+
             // Clear error
             this.clearError();
-            
+
             // Auto-submit when 6 digits entered
             if (e.target.value.length === 6) {
                 this.verifyCode(e.target.value);
@@ -410,14 +411,14 @@ export class MFAEnrollment {
     setLoading(loading) {
         const verifyBtn = this.container.querySelector('#btn-verify-mfa');
         const codeInput = this.container.querySelector('#mfa-code-input');
-        
+
         if (verifyBtn) {
             verifyBtn.disabled = loading;
-            verifyBtn.innerHTML = loading 
-                ? 'Verifiëren...' 
+            verifyBtn.innerHTML = loading
+                ? 'Verifiëren...'
                 : `${Icons.checkCircle ? Icons.checkCircle({ size: 18, color: '#ffffff' }) : ''} Verifiëren & Activeren`;
         }
-        
+
         if (codeInput) {
             codeInput.disabled = loading;
         }

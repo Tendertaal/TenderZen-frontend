@@ -30,8 +30,7 @@ class Settings(BaseSettings):
     
     # Supabase Configuration
     supabase_url: str = Field(..., alias="SUPABASE_URL")
-    supabase_service_role_key: str = Field(..., alias="SUPABASE_SERVICE_ROLE_KEY")
-    supabase_anon_key: str = Field(..., alias="SUPABASE_ANON_KEY")
+    supabase_secret_key: str = Field(..., alias="SUPABASE_SECRET_KEY")
     
     # JWT Configuration
     jwt_secret: str = Field(..., alias="JWT_SECRET")

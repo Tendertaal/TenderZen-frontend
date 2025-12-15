@@ -3,7 +3,18 @@
  * Handles login flow met twee-factor authenticatie
  */
 
-import { supabase } from '/js/config.js';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+
+// Create client using UMD global (window.supabase is de UMD bundle)
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+    }
+});
+window.supabase = supabaseClient;
+console.log('✅ Supabase initialized (UMD)');
 import { MFAVerify } from '/js/components/MFAVerify.js';
 import { MFAEnrollment } from '/js/components/MFAEnrollment.js';
 

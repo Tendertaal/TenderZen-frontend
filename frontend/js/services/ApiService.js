@@ -1,13 +1,12 @@
 // frontend/js/services/ApiService.js
 // API Service voor communicatie met backend
-// v1.1 - Fix voor DELETE requests (204 No Content)
+// v1.2 - Fix voor supabaseClient global
 
-import { MOCK_MODE, MOCK_TOKEN, MOCK_USER, API_CONFIG } from '../config.js';
+import { MOCK_MODE, MOCK_TOKEN, MOCK_USER, API_CONFIG, getSupabase } from '../config.js';
 
 class ApiService {
     constructor() {
         this.baseURL = API_CONFIG.baseURL;
-        this.supabase = null;
         
         if (MOCK_MODE) {
             console.log('🔧 ApiService: Running in MOCK MODE');
@@ -15,6 +14,28 @@ class ApiService {
         } else {
             console.log('🔧 ApiService: Running in PRODUCTION MODE');
         }
+    }
+
+    // ========================================
+    // HELPER: Get Supabase Client
+    // ========================================
+    
+    /**
+     * Get the Supabase client instance
+     * @returns {object|null} Supabase client
+     */
+    getSupabaseClient() {
+        // Probeer eerst de getSupabase functie uit config
+        const client = getSupabase();
+        if (client) return client;
+        
+        // Fallback naar window.supabaseClient
+        if (window.supabaseClient && window.supabaseClient.auth) {
+            return window.supabaseClient;
+        }
+        
+        console.error('❌ No Supabase client available');
+        return null;
     }
 
     // ========================================
@@ -34,7 +55,14 @@ class ApiService {
 
         // PRODUCTION MODE: Get real Supabase token
         try {
-            const { data: { session } } = await window.supabase.auth.getSession();
+            const supabase = this.getSupabaseClient();
+            
+            if (!supabase) {
+                console.error('❌ Supabase client not available');
+                return null;
+            }
+            
+            const { data: { session } } = await supabase.auth.getSession();
             
             if (!session) {
                 console.warn('⚠️ No active session found');
@@ -61,7 +89,14 @@ class ApiService {
 
         // PRODUCTION MODE: Get real user from Supabase
         try {
-            const { data: { user } } = await window.supabase.auth.getUser();
+            const supabase = this.getSupabaseClient();
+            
+            if (!supabase) {
+                console.error('❌ Supabase client not available');
+                return null;
+            }
+            
+            const { data: { user } } = await supabase.auth.getUser();
             return user;
         } catch (error) {
             console.error('❌ Error getting current user:', error);

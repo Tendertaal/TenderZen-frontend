@@ -4,7 +4,8 @@
  * Scherm voor het invoeren van MFA code bij login
  */
 
-import { supabase } from '/js/config.js';
+// Gebruik de globale Supabase client (window.supabase)
+const supabase = window.supabase;
 
 // Referentie naar globale Icons (geladen via icons.js)
 const Icons = window.Icons || {};
@@ -15,7 +16,7 @@ export class MFAVerify {
         this.factors = [];
         this.selectedFactorId = null;
         this.challengeId = null;
-        
+
         // Callbacks
         this.onSuccess = null;
         this.onCancel = null;
@@ -34,10 +35,10 @@ export class MFAVerify {
      */
     async loadFactors() {
         this.render('loading');
-        
+
         try {
             const { data, error } = await supabase.auth.mfa.listFactors();
-            
+
             if (error) throw error;
 
             // Get verified TOTP factors
@@ -50,10 +51,10 @@ export class MFAVerify {
 
             // Use first factor by default
             this.selectedFactorId = this.factors[0].id;
-            
+
             // Create challenge
             await this.createChallenge();
-            
+
             this.render('verify');
 
         } catch (error) {
@@ -103,7 +104,7 @@ export class MFAVerify {
             if (error) throw error;
 
             console.log('✅ MFA verification successful!');
-            
+
             // Log audit
             await this.logAudit('mfa_verified', true);
 
@@ -114,16 +115,16 @@ export class MFAVerify {
 
         } catch (error) {
             console.error('❌ MFA verify error:', error);
-            
+
             // Log failed attempt
             await this.logAudit('mfa_verify_failed', false);
-            
+
             this.showError('Ongeldige code. Probeer opnieuw.');
             this.setLoading(false);
-            
+
             // Create new challenge for retry
             await this.createChallenge();
-            
+
             // Clear input
             const input = this.container.querySelector('#mfa-verify-input');
             if (input) {
@@ -154,7 +155,7 @@ export class MFAVerify {
      */
     async cancel() {
         await supabase.auth.signOut();
-        
+
         if (this.onCancel) {
             this.onCancel();
         }
@@ -200,7 +201,7 @@ export class MFAVerify {
     renderVerify() {
         const factor = this.factors.find(f => f.id === this.selectedFactorId);
         const factorName = factor?.friendly_name || 'Authenticator';
-        
+
         return `
             <div class="mfa-verify-container">
                 <div class="mfa-verify-card">
@@ -322,14 +323,14 @@ export class MFAVerify {
 
         // Code input
         const codeInput = this.container.querySelector('#mfa-verify-input');
-        
+
         codeInput?.addEventListener('input', (e) => {
             // Only allow numbers
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
-            
+
             // Clear error
             this.clearError();
-            
+
             // Auto-submit when 6 digits
             if (e.target.value.length === 6) {
                 this.verifyCode(e.target.value);
@@ -400,12 +401,12 @@ export class MFAVerify {
     setLoading(loading) {
         const verifyBtn = this.container.querySelector('#btn-mfa-verify');
         const codeInput = this.container.querySelector('#mfa-verify-input');
-        
+
         if (verifyBtn) {
             verifyBtn.disabled = loading;
             verifyBtn.textContent = loading ? 'Verifiëren...' : 'Verifiëren';
         }
-        
+
         if (codeInput) {
             codeInput.disabled = loading;
         }

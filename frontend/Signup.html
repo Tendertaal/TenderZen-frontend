@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="nl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,6 +37,7 @@
                 opacity: 0;
                 transform: translateY(-20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -151,9 +153,19 @@
         }
 
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
         }
 
         .success-message {
@@ -183,7 +195,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .password-requirements {
@@ -215,6 +229,7 @@
     }
     </script>
 </head>
+
 <body>
     <div class="signup-container">
         <div class="logo">📋</div>
@@ -231,38 +246,18 @@
         <form id="signup-form">
             <div class="form-group">
                 <label for="name">Naam</label>
-                <input 
-                    type="text" 
-                    id="name" 
-                    name="name" 
-                    placeholder="Jouw naam"
-                    required
-                    autocomplete="name"
-                >
+                <input type="text" id="name" name="name" placeholder="Jouw naam" required autocomplete="name">
             </div>
 
             <div class="form-group">
                 <label for="email">Email</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    placeholder="jouw@email.nl"
-                    required
-                    autocomplete="email"
-                >
+                <input type="email" id="email" name="email" placeholder="jouw@email.nl" required autocomplete="email">
             </div>
 
             <div class="form-group">
                 <label for="password">Wachtwoord</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    placeholder="••••••••"
-                    required
-                    autocomplete="new-password"
-                >
+                <input type="password" id="password" name="password" placeholder="••••••••" required
+                    autocomplete="new-password">
                 <ul class="password-requirements" id="password-requirements">
                     <li id="req-length">Minimaal 8 karakters</li>
                     <li id="req-uppercase">Minimaal 1 hoofdletter</li>
@@ -272,14 +267,8 @@
 
             <div class="form-group">
                 <label for="password-confirm">Bevestig wachtwoord</label>
-                <input 
-                    type="password" 
-                    id="password-confirm" 
-                    name="password-confirm" 
-                    placeholder="••••••••"
-                    required
-                    autocomplete="new-password"
-                >
+                <input type="password" id="password-confirm" name="password-confirm" placeholder="••••••••" required
+                    autocomplete="new-password">
             </div>
 
             <button type="submit" class="signup-btn" id="signup-btn">
@@ -293,17 +282,13 @@
     </div>
 
     <script type="module">
+        import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './js/config.js';
         import { createClient } from '@supabase/supabase-js';
 
         // ========================================
         // SUPABASE CONFIGURATIE
         // ========================================
-        // ⚠️ VERVANG DEZE MET JOUW SUPABASE CREDENTIALS
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-
-        // Initialize Supabase client
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
         window.supabase = supabase;
 
         // ========================================
@@ -362,7 +347,7 @@
 
         function setLoading(isLoading) {
             signupBtn.disabled = isLoading;
-            
+
             if (isLoading) {
                 signupBtn.innerHTML = '<span class="loading-spinner"></span> Account aanmaken...';
             } else {
@@ -376,7 +361,7 @@
         async function checkExistingSession() {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
-                
+
                 if (session) {
                     console.log('✅ Gebruiker is al ingelogd, redirect naar app...');
                     window.location.href = 'index.html';
@@ -436,12 +421,12 @@
                 // Check if email confirmation is required
                 if (data.user && !data.session) {
                     showSuccess('✅ Account aangemaakt! Check je email om je account te bevestigen.');
-                    
+
                     // Clear form
                     signupForm.reset();
                 } else {
                     showSuccess('✅ Account aangemaakt! Doorsturen...');
-                    
+
                     // Redirect after a moment
                     setTimeout(() => {
                         window.location.href = 'index.html';
@@ -450,9 +435,9 @@
 
             } catch (error) {
                 console.error('❌ Signup error:', error);
-                
+
                 let errorMsg = 'Er is een fout opgetreden bij het aanmaken van je account.';
-                
+
                 if (error.message.includes('User already registered')) {
                     errorMsg = 'Dit email adres is al in gebruik.';
                 } else if (error.message.includes('Password')) {
@@ -460,7 +445,7 @@
                 } else if (error.message) {
                     errorMsg = error.message;
                 }
-                
+
                 showError(errorMsg);
             } finally {
                 setLoading(false);
@@ -471,4 +456,5 @@
         console.log('📝 Supabase URL:', SUPABASE_URL);
     </script>
 </body>
+
 </html>

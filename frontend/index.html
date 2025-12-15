@@ -11,32 +11,8 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/nl.js"></script>
 
-    <!-- Load Supabase library - UMD bundle (GEEN import map!) -->
+    <!-- Load Supabase library - UMD bundle -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-
-    <!-- Initialize Supabase AFTER library is loaded -->
-    <script>
-        const SUPABASE_URL = 'https://ayamyedredynntdaldlu.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5YW15ZWRyZWR5bm50ZGFsZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMTQ1NDcsImV4cCI6MjA3ODc5MDU0N30.fOL5bDKrgMnSu-zZ63Eg4vXPhF3ycNxk3-7nIyR8ryg';
-
-        // Wait for supabase to be available
-        if (typeof supabase !== 'undefined' && supabase.createClient) {
-            try {
-                window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-                    auth: {
-                        autoRefreshToken: true,
-                        persistSession: true,
-                        detectSessionInUrl: true
-                    }
-                });
-                console.log('✅ Supabase initialized');
-            } catch (error) {
-                console.error('❌ Supabase init failed:', error);
-            }
-        } else {
-            console.error('❌ Supabase library not loaded');
-        }
-    </script>
 
     <!-- CSS Files -->
     <link rel="stylesheet" href="css/main.css?v=3">

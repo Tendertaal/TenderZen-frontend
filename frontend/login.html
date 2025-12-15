@@ -278,6 +278,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <!-- Load TenderZen Icons Library -->
     <script src="js/icons.js"></script>
+    <!-- Load Config (als gewoon script, NIET als module) -->
+    <script src="js/config.js" type="module"></script>
 </head>
 
 <body>
@@ -457,16 +459,41 @@
     </div>
 
     <script>
+        // ========================================
+        // WACHT TOT CONFIG GELADEN IS
+        // ========================================
+        function waitForConfig(callback, maxAttempts = 50) {
+            let attempts = 0;
+            const check = () => {
+                if (window.SUPABASE_URL && window.SUPABASE_PUBLISHABLE_KEY) {
+                    callback();
+                } else if (attempts < maxAttempts) {
+                    attempts++;
+                    setTimeout(check, 100);
+                } else {
+                    console.error('❌ Config kon niet worden geladen na', maxAttempts, 'pogingen');
+                }
+            };
+            check();
+        }
+
         // ICONS INITIALISATIE
         function initializeIcons() {
             if (!window.Icons || !window.IconColors) {
                 setTimeout(initializeIcons, 100);
                 return;
             }
-            // Logo
+            // Logo - gebruik fileText of briefcase als clipboard niet bestaat
             const logoIcon = document.getElementById('logo-icon');
             if (logoIcon) {
-                logoIcon.innerHTML = Icons.clipboard({ size: 48, color: IconColors.purple });
+                // Probeer verschillende icons
+                if (Icons.fileText) {
+                    logoIcon.innerHTML = Icons.fileText({ size: 48, color: IconColors.purple });
+                } else if (Icons.briefcase) {
+                    logoIcon.innerHTML = Icons.briefcase({ size: 48, color: IconColors.purple });
+                } else {
+                    logoIcon.textContent = '📋';
+                }
             }
             // Magic link knop
             const magicLinkIcon = document.getElementById('magic-link-icon');
@@ -483,6 +510,7 @@
                 mfaEnrollIcon.innerHTML = Icons.shield({ size: 40, color: IconColors.purple });
             }
         }
+
         // Wacht tot icons.js geladen is
         window.addEventListener('DOMContentLoaded', () => {
             if (window.Icons) {
@@ -491,510 +519,528 @@
                 setTimeout(initializeIcons, 100);
             }
         });
-        // ========================================
-        // SUPABASE CONFIG - UMD VERSION
-        // ========================================
-        const SUPABASE_URL = "https://ayamyedredynntdaldlu.supabase.co";
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5YW15ZWRyZWR5bm50ZGFsZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMTQ1NDcsImV4cCI6MjA3ODc5MDU0N30.fOL5bDKrgMnSu-zZ63Eg4vXPhF3ycNxk3-7nIyR8ryg';
-
-        // Create client using UMD global
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-            auth: {
-                autoRefreshToken: true,
-                persistSession: true,
-                detectSessionInUrl: true
-            }
-        });
-        window.supabase = supabaseClient;
-        console.log('✅ Supabase initialized (UMD)');
 
         // ========================================
-        // STATE
+        // MAIN APP - WACHT OP CONFIG
         // ========================================
-        let mfaFactorId = null;
-        let mfaChallengeId = null;
-        let enrollmentFactorId = null;
-
-        // ========================================
-        // DEBUG LOGGING
-        // ========================================
-        const debugLog = document.getElementById('debug-log');
-        let debugVisible = false;
-
-        window.toggleDebug = function () {
-            debugVisible = !debugVisible;
-            debugLog.classList.toggle('show', debugVisible);
-        };
-
-        function log(message, type = 'info') {
-            console.log(message);
-            const time = new Date().toLocaleTimeString();
-            const line = document.createElement('div');
-            line.className = type;
-            line.textContent = `[${time}] ${message}`;
-            debugLog.appendChild(line);
-            debugLog.scrollTop = debugLog.scrollHeight;
-        }
-
-        // ========================================
-        // UI HELPERS
-        // ========================================
-        function showSection(sectionId) {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('mfa-verify-section').classList.remove('show');
-            document.getElementById('mfa-enroll-section').classList.remove('show');
-
-            if (sectionId === 'login') {
-                document.getElementById('login-section').classList.remove('hidden');
-            } else if (sectionId === 'mfa-verify') {
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('mfa-verify-section').classList.add('show');
-            } else if (sectionId === 'mfa-enroll') {
-                document.getElementById('login-section').classList.add('hidden');
-                document.getElementById('mfa-enroll-section').classList.add('show');
-            }
-        }
-
-        function showError(elementId, message) {
-            const el = document.getElementById(elementId);
-            el.textContent = message;
-            el.classList.add('show');
-        }
-
-        function hideErrors() {
-            document.querySelectorAll('.error-message, .success-message, .info-message').forEach(el => {
-                el.classList.remove('show');
-            });
-        }
-
-        // ========================================
-        // MFA CHECKS
-        // ========================================
-        async function checkMFARequired() {
-            try {
-                const { data: { user } } = await supabaseClient.auth.getUser();
-                if (!user) {
-                    log('No user found', 'warn');
-                    return false;
-                }
-
-                log(`Checking mfa_required for user: ${user.id}`);
-
-                const { data, error } = await supabaseClient
-                    .from('users')
-                    .select('is_super_admin, mfa_required')
-                    .eq('id', user.id)
-                    .maybeSingle();
-
-                if (error) {
-                    log(`Error checking mfa_required: ${error.message}`, 'error');
-                    return false;
-                }
-
-                if (!data) {
-                    log('No user record found in users table', 'warn');
-                    return false;
-                }
-
-                log(`User data: is_super_admin=${data.is_super_admin}, mfa_required=${data.mfa_required}`);
-
-                const required = data.mfa_required === true || data.is_super_admin === true;
-                log(`MFA required: ${required}`);
-                return required;
-
-            } catch (error) {
-                log(`Exception in checkMFARequired: ${error.message}`, 'error');
-                return false;
-            }
-        }
-
-        async function checkMFAFactors() {
-            try {
-                const { data, error } = await supabaseClient.auth.mfa.listFactors();
-
-                if (error) {
-                    log(`Error listing MFA factors: ${error.message}`, 'error');
-                    return [];
-                }
-
-                const verifiedFactors = [...(data.totp || []), ...(data.phone || [])]
-                    .filter(f => f.status === 'verified');
-
-                log(`Found ${verifiedFactors.length} verified MFA factors`);
-                return verifiedFactors;
-
-            } catch (error) {
-                log(`Exception in checkMFAFactors: ${error.message}`, 'error');
-                return [];
-            }
-        }
-
-        async function checkAAL() {
-            try {
-                const { data, error } = await supabaseClient.auth.mfa.getAuthenticatorAssuranceLevel();
-
-                if (error) {
-                    log(`Error checking AAL: ${error.message}`, 'error');
-                    return null;
-                }
-
-                log(`AAL: currentLevel=${data.currentLevel}, nextLevel=${data.nextLevel}`);
-                return data;
-
-            } catch (error) {
-                log(`Exception in checkAAL: ${error.message}`, 'error');
-                return null;
-            }
-        }
-
-        // ========================================
-        // LOGIN FLOW
-        // ========================================
-        async function handleLogin(email, password) {
-            log('=== LOGIN START ===');
-            log(`Attempting login for: ${email}`);
-
-            try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-                if (error) {
-                    log(`Login failed: ${error.message}`, 'error');
-                    throw error;
-                }
-
-                log('✅ Login successful!');
-                log(`User ID: ${data.user.id}`);
-
-                // Step 1: Check AAL
-                log('--- Checking AAL ---');
-                const aalData = await checkAAL();
-
-                if (aalData && aalData.nextLevel === 'aal2' && aalData.currentLevel === 'aal1') {
-                    log('→ User has MFA, needs to verify', 'info');
-                    await startMFAVerify();
-                    return;
-                }
-
-                // Step 2: Check if MFA is required
-                log('--- Checking if MFA required ---');
-                const mfaRequired = await checkMFARequired();
-
-                // Step 3: Check if user has MFA factors
-                log('--- Checking MFA factors ---');
-                const factors = await checkMFAFactors();
-
-                if (mfaRequired && factors.length === 0) {
-                    log('→ MFA required but not enrolled, starting enrollment', 'info');
-                    await startMFAEnrollment();
-                    return;
-                }
-
-                // No MFA needed, redirect
-                log('✅ No MFA needed, redirecting to app...');
-                window.location.href = 'index.html';
-
-            } catch (error) {
-                log(`Login error: ${error.message}`, 'error');
-                throw error;
-            }
-        }
-
-        // ========================================
-        // MFA VERIFY
-        // ========================================
-        async function startMFAVerify() {
-            log('=== START MFA VERIFY ===');
-
-            try {
-                const factors = await checkMFAFactors();
-
-                if (factors.length === 0) {
-                    log('No MFA factors found!', 'error');
-                    return;
-                }
-
-                mfaFactorId = factors[0].id;
-                log(`Using factor ID: ${mfaFactorId}`);
-
-                const { data, error } = await supabaseClient.auth.mfa.challenge({
-                    factorId: mfaFactorId
-                });
-
-                if (error) {
-                    log(`Challenge error: ${error.message}`, 'error');
-                    throw error;
-                }
-
-                mfaChallengeId = data.id;
-                log(`Challenge created: ${mfaChallengeId}`);
-
-                showSection('mfa-verify');
-                document.getElementById('mfa-verify-code').focus();
-
-            } catch (error) {
-                log(`startMFAVerify error: ${error.message}`, 'error');
-            }
-        }
-
-        window.verifyMFA = async function () {
-            const code = document.getElementById('mfa-verify-code').value.trim();
-
-            if (code.length !== 6) {
-                showError('mfa-verify-error', 'Voer een 6-cijferige code in');
-                return;
-            }
-
-            log(`Verifying MFA code: ${code}`);
-            document.getElementById('mfa-verify-btn').disabled = true;
-
-            try {
-                const { data, error } = await supabaseClient.auth.mfa.verify({
-                    factorId: mfaFactorId,
-                    challengeId: mfaChallengeId,
-                    code: code
-                });
-
-                if (error) {
-                    log(`MFA verify failed: ${error.message}`, 'error');
-                    showError('mfa-verify-error', 'Ongeldige code. Probeer opnieuw.');
-                    document.getElementById('mfa-verify-btn').disabled = false;
-                    document.getElementById('mfa-verify-code').value = '';
-
-                    // Create new challenge
-                    const { data: newChallenge } = await supabaseClient.auth.mfa.challenge({
-                        factorId: mfaFactorId
-                    });
-                    if (newChallenge) mfaChallengeId = newChallenge.id;
-                    return;
-                }
-
-                log('✅ MFA verified successfully!');
-                window.location.href = 'index.html';
-
-            } catch (error) {
-                log(`verifyMFA exception: ${error.message}`, 'error');
-                document.getElementById('mfa-verify-btn').disabled = false;
-            }
-        };
-
-        window.cancelMFA = async function () {
-            await supabaseClient.auth.signOut();
-            showSection('login');
-        };
-
-        // ========================================
-        // MFA ENROLLMENT
-        // ========================================
-        async function startMFAEnrollment() {
-            log('=== START MFA ENROLLMENT ===');
-
-            try {
-                const { data, error } = await supabaseClient.auth.mfa.enroll({
-                    factorType: 'totp',
-                    friendlyName: 'TenderPlanner'
-                });
-
-                if (error) {
-                    log(`Enrollment error: ${error.message}`, 'error');
-                    throw error;
-                }
-
-                enrollmentFactorId = data.id;
-                log(`Enrollment started, factor ID: ${enrollmentFactorId}`);
-                log(`QR code available`);
-
-                document.getElementById('qr-code').src = data.totp.qr_code;
-                document.getElementById('secret-code').textContent = data.totp.secret.match(/.{1,4}/g).join(' ');
-
-                showSection('mfa-enroll');
-                document.getElementById('mfa-enroll-code').focus();
-
-            } catch (error) {
-                log(`startMFAEnrollment error: ${error.message}`, 'error');
-            }
-        }
-
-        window.verifyEnrollment = async function () {
-            const code = document.getElementById('mfa-enroll-code').value.trim();
-
-            if (code.length !== 6) {
-                showError('mfa-enroll-error', 'Voer een 6-cijferige code in');
-                return;
-            }
-
-            log(`Verifying enrollment code: ${code}`);
-            document.getElementById('mfa-enroll-btn').disabled = true;
-
-            try {
-                // Create challenge
-                const { data: challengeData, error: challengeError } = await supabaseClient.auth.mfa.challenge({
-                    factorId: enrollmentFactorId
-                });
-
-                if (challengeError) {
-                    log(`Challenge error: ${challengeError.message}`, 'error');
-                    throw challengeError;
-                }
-
-                // Verify
-                const { data, error } = await supabaseClient.auth.mfa.verify({
-                    factorId: enrollmentFactorId,
-                    challengeId: challengeData.id,
-                    code: code
-                });
-
-                if (error) {
-                    log(`Enrollment verify failed: ${error.message}`, 'error');
-                    showError('mfa-enroll-error', 'Ongeldige code. Probeer opnieuw.');
-                    document.getElementById('mfa-enroll-btn').disabled = false;
-                    document.getElementById('mfa-enroll-code').value = '';
-                    return;
-                }
-
-                log('✅ MFA enrollment successful!');
-                alert('✅ 2FA is nu actief! Je wordt doorgestuurd...');
-                window.location.href = 'index.html';
-
-            } catch (error) {
-                log(`verifyEnrollment exception: ${error.message}`, 'error');
-                document.getElementById('mfa-enroll-btn').disabled = false;
-            }
-        };
-
-        window.cancelEnrollment = async function () {
-            if (enrollmentFactorId) {
-                try {
-                    await supabaseClient.auth.mfa.unenroll({ factorId: enrollmentFactorId });
-                } catch (e) {
-                    console.warn('Unenroll failed:', e);
-                }
-            }
-            await supabaseClient.auth.signOut();
-            showSection('login');
-        };
-
-        // ========================================
-        // FORM HANDLERS
-        // ========================================
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            hideErrors();
-
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-            const btn = document.getElementById('login-btn');
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loading-spinner"></span> Inloggen...';
-
-            try {
-                await handleLogin(email, password);
-            } catch (error) {
-                let msg = 'Er is een fout opgetreden.';
-                if (error.message.includes('Invalid login credentials')) {
-                    msg = 'Onjuiste email of wachtwoord.';
-                }
-                showError('error-message', msg);
-                btn.disabled = false;
-                btn.innerHTML = 'Inloggen';
-            }
-        });
-
-        // Auto-submit MFA codes on 6 digits
-        ['mfa-verify-code', 'mfa-enroll-code'].forEach(id => {
-            const input = document.getElementById(id);
-            input.addEventListener('input', (e) => {
-                e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                if (e.target.value.length === 6) {
-                    if (id === 'mfa-verify-code') verifyMFA();
-                    else verifyEnrollment();
-                }
-            });
-        });
-
-        // Magic Link
-        document.getElementById('magic-link-btn').addEventListener('click', async () => {
-            const email = document.getElementById('email').value.trim();
-
-            if (!email) {
-                showError('error-message', 'Vul eerst je email in om een magic link te ontvangen.');
-                document.getElementById('email').focus();
-                return;
-            }
-
-            const btn = document.getElementById('magic-link-btn');
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Versturen...';
-
-            try {
-                const { error } = await supabaseClient.auth.signInWithOtp({
-                    email,
-                    options: {
-                        emailRedirectTo: window.location.origin + '/index.html'
+        waitForConfig(() => {
+            console.log('✅ Config geladen, initialiseren...');
+
+            // ========================================
+            // SUPABASE CONFIG - UMD VERSION
+            // ========================================
+            let supabaseClient;
+            
+            // Check of client al bestaat (van config.js)
+            if (window.supabaseClient && window.supabaseClient.auth) {
+                supabaseClient = window.supabaseClient;
+                console.log('✅ Using existing Supabase client');
+            } 
+            // Anders maak nieuwe client van library
+            else if (window.supabase && window.supabase.createClient) {
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+                    auth: {
+                        autoRefreshToken: true,
+                        persistSession: true,
+                        detectSessionInUrl: true
                     }
                 });
-
-                if (error) throw error;
-
-                const successEl = document.getElementById('success-message');
-                successEl.textContent = '✅ Magic link verstuurd! Check je inbox.';
-                successEl.classList.add('show');
-                btn.innerHTML = '✉️ Login met Magic Link';
-
-            } catch (error) {
-                showError('error-message', error.message || 'Er ging iets mis.');
-                btn.innerHTML = '✉️ Login met Magic Link';
-            } finally {
-                btn.disabled = false;
+                window.supabaseClient = supabaseClient;
+                console.log('✅ Supabase client created from library');
             }
+            else {
+                console.error('❌ Supabase library not available');
+                return;
+            }
+
+            // ========================================
+            // STATE
+            // ========================================
+            let mfaFactorId = null;
+            let mfaChallengeId = null;
+            let enrollmentFactorId = null;
+
+            // ========================================
+            // DEBUG LOGGING
+            // ========================================
+            const debugLog = document.getElementById('debug-log');
+            let debugVisible = false;
+
+            window.toggleDebug = function () {
+                debugVisible = !debugVisible;
+                debugLog.classList.toggle('show', debugVisible);
+            };
+
+            function log(message, type = 'info') {
+                console.log(message);
+                const time = new Date().toLocaleTimeString();
+                const line = document.createElement('div');
+                line.className = type;
+                line.textContent = `[${time}] ${message}`;
+                debugLog.appendChild(line);
+                debugLog.scrollTop = debugLog.scrollHeight;
+            }
+
+            // ========================================
+            // UI HELPERS
+            // ========================================
+            function showSection(sectionId) {
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('mfa-verify-section').classList.remove('show');
+                document.getElementById('mfa-enroll-section').classList.remove('show');
+
+                if (sectionId === 'login') {
+                    document.getElementById('login-section').classList.remove('hidden');
+                } else if (sectionId === 'mfa-verify') {
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('mfa-verify-section').classList.add('show');
+                } else if (sectionId === 'mfa-enroll') {
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('mfa-enroll-section').classList.add('show');
+                }
+            }
+
+            function showError(elementId, message) {
+                const el = document.getElementById(elementId);
+                el.textContent = message;
+                el.classList.add('show');
+            }
+
+            function hideErrors() {
+                document.querySelectorAll('.error-message, .success-message, .info-message').forEach(el => {
+                    el.classList.remove('show');
+                });
+            }
+
+            // ========================================
+            // MFA CHECKS
+            // ========================================
+            async function checkMFARequired() {
+                try {
+                    const { data: { user } } = await supabaseClient.auth.getUser();
+                    if (!user) {
+                        log('No user found', 'warn');
+                        return false;
+                    }
+
+                    log(`Checking mfa_required for user: ${user.id}`);
+
+                    const { data, error } = await supabaseClient
+                        .from('users')
+                        .select('is_super_admin, mfa_required')
+                        .eq('id', user.id)
+                        .maybeSingle();
+
+                    if (error) {
+                        log(`Error checking mfa_required: ${error.message}`, 'error');
+                        return false;
+                    }
+
+                    if (!data) {
+                        log('No user record found in users table', 'warn');
+                        return false;
+                    }
+
+                    log(`User data: is_super_admin=${data.is_super_admin}, mfa_required=${data.mfa_required}`);
+
+                    const required = data.mfa_required === true || data.is_super_admin === true;
+                    log(`MFA required: ${required}`);
+                    return required;
+
+                } catch (error) {
+                    log(`Exception in checkMFARequired: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+            async function checkMFAFactors() {
+                try {
+                    const { data, error } = await supabaseClient.auth.mfa.listFactors();
+
+                    if (error) {
+                        log(`Error listing MFA factors: ${error.message}`, 'error');
+                        return [];
+                    }
+
+                    const verifiedFactors = [...(data.totp || []), ...(data.phone || [])]
+                        .filter(f => f.status === 'verified');
+
+                    log(`Found ${verifiedFactors.length} verified MFA factors`);
+                    return verifiedFactors;
+
+                } catch (error) {
+                    log(`Exception in checkMFAFactors: ${error.message}`, 'error');
+                    return [];
+                }
+            }
+
+            async function checkAAL() {
+                try {
+                    const { data, error } = await supabaseClient.auth.mfa.getAuthenticatorAssuranceLevel();
+
+                    if (error) {
+                        log(`Error checking AAL: ${error.message}`, 'error');
+                        return null;
+                    }
+
+                    log(`AAL: currentLevel=${data.currentLevel}, nextLevel=${data.nextLevel}`);
+                    return data;
+
+                } catch (error) {
+                    log(`Exception in checkAAL: ${error.message}`, 'error');
+                    return null;
+                }
+            }
+
+            // ========================================
+            // LOGIN FLOW
+            // ========================================
+            async function handleLogin(email, password) {
+                log('=== LOGIN START ===');
+                log(`Attempting login for: ${email}`);
+
+                try {
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+                    if (error) {
+                        log(`Login failed: ${error.message}`, 'error');
+                        throw error;
+                    }
+
+                    log('✅ Login successful!');
+                    log(`User ID: ${data.user.id}`);
+
+                    // Step 1: Check AAL
+                    log('--- Checking AAL ---');
+                    const aalData = await checkAAL();
+
+                    if (aalData && aalData.nextLevel === 'aal2' && aalData.currentLevel === 'aal1') {
+                        log('→ User has MFA, needs to verify', 'info');
+                        await startMFAVerify();
+                        return;
+                    }
+
+                    // Step 2: Check if MFA is required
+                    log('--- Checking if MFA required ---');
+                    const mfaRequired = await checkMFARequired();
+
+                    // Step 3: Check if user has MFA factors
+                    log('--- Checking MFA factors ---');
+                    const factors = await checkMFAFactors();
+
+                    if (mfaRequired && factors.length === 0) {
+                        log('→ MFA required but not enrolled, starting enrollment', 'info');
+                        await startMFAEnrollment();
+                        return;
+                    }
+
+                    // No MFA needed, redirect
+                    log('✅ No MFA needed, redirecting to app...');
+                    window.location.href = 'index.html';
+
+                } catch (error) {
+                    log(`Login error: ${error.message}`, 'error');
+                    throw error;
+                }
+            }
+
+            // ========================================
+            // MFA VERIFY
+            // ========================================
+            async function startMFAVerify() {
+                log('=== START MFA VERIFY ===');
+
+                try {
+                    const factors = await checkMFAFactors();
+
+                    if (factors.length === 0) {
+                        log('No MFA factors found!', 'error');
+                        return;
+                    }
+
+                    mfaFactorId = factors[0].id;
+                    log(`Using factor ID: ${mfaFactorId}`);
+
+                    const { data, error } = await supabaseClient.auth.mfa.challenge({
+                        factorId: mfaFactorId
+                    });
+
+                    if (error) {
+                        log(`Challenge error: ${error.message}`, 'error');
+                        throw error;
+                    }
+
+                    mfaChallengeId = data.id;
+                    log(`Challenge created: ${mfaChallengeId}`);
+
+                    showSection('mfa-verify');
+                    document.getElementById('mfa-verify-code').focus();
+
+                } catch (error) {
+                    log(`startMFAVerify error: ${error.message}`, 'error');
+                }
+            }
+
+            window.verifyMFA = async function () {
+                const code = document.getElementById('mfa-verify-code').value.trim();
+
+                if (code.length !== 6) {
+                    showError('mfa-verify-error', 'Voer een 6-cijferige code in');
+                    return;
+                }
+
+                log(`Verifying MFA code: ${code}`);
+                document.getElementById('mfa-verify-btn').disabled = true;
+
+                try {
+                    const { data, error } = await supabaseClient.auth.mfa.verify({
+                        factorId: mfaFactorId,
+                        challengeId: mfaChallengeId,
+                        code: code
+                    });
+
+                    if (error) {
+                        log(`MFA verify failed: ${error.message}`, 'error');
+                        showError('mfa-verify-error', 'Ongeldige code. Probeer opnieuw.');
+                        document.getElementById('mfa-verify-btn').disabled = false;
+                        document.getElementById('mfa-verify-code').value = '';
+
+                        // Create new challenge
+                        const { data: newChallenge } = await supabaseClient.auth.mfa.challenge({
+                            factorId: mfaFactorId
+                        });
+                        if (newChallenge) mfaChallengeId = newChallenge.id;
+                        return;
+                    }
+
+                    log('✅ MFA verified successfully!');
+                    window.location.href = 'index.html';
+
+                } catch (error) {
+                    log(`verifyMFA exception: ${error.message}`, 'error');
+                    document.getElementById('mfa-verify-btn').disabled = false;
+                }
+            };
+
+            window.cancelMFA = async function () {
+                await supabaseClient.auth.signOut();
+                showSection('login');
+            };
+
+            // ========================================
+            // MFA ENROLLMENT
+            // ========================================
+            async function startMFAEnrollment() {
+                log('=== START MFA ENROLLMENT ===');
+
+                try {
+                    const { data, error } = await supabaseClient.auth.mfa.enroll({
+                        factorType: 'totp',
+                        friendlyName: 'TenderPlanner'
+                    });
+
+                    if (error) {
+                        log(`Enrollment error: ${error.message}`, 'error');
+                        throw error;
+                    }
+
+                    enrollmentFactorId = data.id;
+                    log(`Enrollment started, factor ID: ${enrollmentFactorId}`);
+                    log(`QR code available`);
+
+                    document.getElementById('qr-code').src = data.totp.qr_code;
+                    document.getElementById('secret-code').textContent = data.totp.secret.match(/.{1,4}/g).join(' ');
+
+                    showSection('mfa-enroll');
+                    document.getElementById('mfa-enroll-code').focus();
+
+                } catch (error) {
+                    log(`startMFAEnrollment error: ${error.message}`, 'error');
+                }
+            }
+
+            window.verifyEnrollment = async function () {
+                const code = document.getElementById('mfa-enroll-code').value.trim();
+
+                if (code.length !== 6) {
+                    showError('mfa-enroll-error', 'Voer een 6-cijferige code in');
+                    return;
+                }
+
+                log(`Verifying enrollment code: ${code}`);
+                document.getElementById('mfa-enroll-btn').disabled = true;
+
+                try {
+                    // Create challenge
+                    const { data: challengeData, error: challengeError } = await supabaseClient.auth.mfa.challenge({
+                        factorId: enrollmentFactorId
+                    });
+
+                    if (challengeError) {
+                        log(`Challenge error: ${challengeError.message}`, 'error');
+                        throw challengeError;
+                    }
+
+                    // Verify
+                    const { data, error } = await supabaseClient.auth.mfa.verify({
+                        factorId: enrollmentFactorId,
+                        challengeId: challengeData.id,
+                        code: code
+                    });
+
+                    if (error) {
+                        log(`Enrollment verify failed: ${error.message}`, 'error');
+                        showError('mfa-enroll-error', 'Ongeldige code. Probeer opnieuw.');
+                        document.getElementById('mfa-enroll-btn').disabled = false;
+                        document.getElementById('mfa-enroll-code').value = '';
+                        return;
+                    }
+
+                    log('✅ MFA enrollment successful!');
+                    alert('✅ 2FA is nu actief! Je wordt doorgestuurd...');
+                    window.location.href = 'index.html';
+
+                } catch (error) {
+                    log(`verifyEnrollment exception: ${error.message}`, 'error');
+                    document.getElementById('mfa-enroll-btn').disabled = false;
+                }
+            };
+
+            window.cancelEnrollment = async function () {
+                if (enrollmentFactorId) {
+                    try {
+                        await supabaseClient.auth.mfa.unenroll({ factorId: enrollmentFactorId });
+                    } catch (e) {
+                        console.warn('Unenroll failed:', e);
+                    }
+                }
+                await supabaseClient.auth.signOut();
+                showSection('login');
+            };
+
+            // ========================================
+            // FORM HANDLERS
+            // ========================================
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideErrors();
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                const btn = document.getElementById('login-btn');
+
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading-spinner"></span> Inloggen...';
+
+                try {
+                    await handleLogin(email, password);
+                } catch (error) {
+                    let msg = 'Er is een fout opgetreden.';
+                    if (error.message.includes('Invalid login credentials')) {
+                        msg = 'Onjuiste email of wachtwoord.';
+                    }
+                    showError('error-message', msg);
+                    btn.disabled = false;
+                    btn.innerHTML = 'Inloggen';
+                }
+            });
+
+            // Auto-submit MFA codes on 6 digits
+            ['mfa-verify-code', 'mfa-enroll-code'].forEach(id => {
+                const input = document.getElementById(id);
+                input.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    if (e.target.value.length === 6) {
+                        if (id === 'mfa-verify-code') verifyMFA();
+                        else verifyEnrollment();
+                    }
+                });
+            });
+
+            // Magic Link
+            document.getElementById('magic-link-btn').addEventListener('click', async () => {
+                const email = document.getElementById('email').value.trim();
+
+                if (!email) {
+                    showError('error-message', 'Vul eerst je email in om een magic link te ontvangen.');
+                    document.getElementById('email').focus();
+                    return;
+                }
+
+                const btn = document.getElementById('magic-link-btn');
+                btn.disabled = true;
+                btn.innerHTML = '⏳ Versturen...';
+
+                try {
+                    const { error } = await supabaseClient.auth.signInWithOtp({
+                        email,
+                        options: {
+                            emailRedirectTo: window.location.origin + '/index.html'
+                        }
+                    });
+
+                    if (error) throw error;
+
+                    const successEl = document.getElementById('success-message');
+                    successEl.textContent = '✅ Magic link verstuurd! Check je inbox.';
+                    successEl.classList.add('show');
+                    btn.innerHTML = '✉️ Login met Magic Link';
+
+                } catch (error) {
+                    showError('error-message', error.message || 'Er ging iets mis.');
+                    btn.innerHTML = '✉️ Login met Magic Link';
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+
+            // ========================================
+            // CHECK EXISTING SESSION
+            // ========================================
+            async function checkExistingSession() {
+                log('=== CHECKING EXISTING SESSION ===');
+
+                try {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+
+                    if (!session) {
+                        log('No existing session');
+                        return;
+                    }
+
+                    log(`Session found for: ${session.user.email}`);
+
+                    // Check AAL
+                    const aalData = await checkAAL();
+
+                    if (aalData && aalData.nextLevel === 'aal2' && aalData.currentLevel === 'aal1') {
+                        log('Session needs MFA verification');
+                        await startMFAVerify();
+                        return;
+                    }
+
+                    // Check if MFA required but not enrolled
+                    const mfaRequired = await checkMFARequired();
+                    const factors = await checkMFAFactors();
+
+                    if (mfaRequired && factors.length === 0) {
+                        log('MFA required but not enrolled');
+                        await startMFAEnrollment();
+                        return;
+                    }
+
+                    log('Session is fully authenticated, redirecting...');
+                    window.location.href = 'index.html';
+
+                } catch (error) {
+                    log(`Session check error: ${error.message}`, 'error');
+                }
+            }
+
+            // Initialize
+            log('🔐 Login page loaded');
+            checkExistingSession();
         });
-
-        // ========================================
-        // CHECK EXISTING SESSION
-        // ========================================
-        async function checkExistingSession() {
-            log('=== CHECKING EXISTING SESSION ===');
-
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-
-                if (!session) {
-                    log('No existing session');
-                    return;
-                }
-
-                log(`Session found for: ${session.user.email}`);
-
-                // Check AAL
-                const aalData = await checkAAL();
-
-                if (aalData && aalData.nextLevel === 'aal2' && aalData.currentLevel === 'aal1') {
-                    log('Session needs MFA verification');
-                    await startMFAVerify();
-                    return;
-                }
-
-                // Check if MFA required but not enrolled
-                const mfaRequired = await checkMFARequired();
-                const factors = await checkMFAFactors();
-
-                if (mfaRequired && factors.length === 0) {
-                    log('MFA required but not enrolled');
-                    await startMFAEnrollment();
-                    return;
-                }
-
-                log('Session is fully authenticated, redirecting...');
-                window.location.href = 'index.html';
-
-            } catch (error) {
-                log(`Session check error: ${error.message}`, 'error');
-            }
-        }
-
-        // Initialize
-        log('🔐 Login page loaded');
-        checkExistingSession();
     </script>
 </body>
 
