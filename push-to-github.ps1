@@ -3,6 +3,6 @@
 
 cd "C:\TenderZen"
 git add .
-$commitMsg = Read-Host "Commit message"
+${commitMsg} = "Auto-commit $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 git commit -m "$commitMsg"
 git push origin main
