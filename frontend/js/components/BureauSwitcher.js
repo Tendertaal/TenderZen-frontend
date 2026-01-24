@@ -16,6 +16,7 @@
  */
 
 import { bureauAccessService } from '/js/services/BureauAccessService.js';
+import { UserService } from '/js/services/UserService.js';
 
 export class BureauSwitcher {
     constructor() {
@@ -23,10 +24,11 @@ export class BureauSwitcher {
         this.isOpen = false;
         this.bureaus = [];
         this.currentBureau = null;
-        
+        this.isSuperAdmin = false;
+
         // Callback
         this.onBureauChange = null;
-        
+
         // Bind methods
         this._handleClickOutside = this._handleClickOutside.bind(this);
         this._handleKeyDown = this._handleKeyDown.bind(this);
@@ -40,12 +42,21 @@ export class BureauSwitcher {
             // Laad bureaus
             this.bureaus = await bureauAccessService.getUserBureaus();
             this.currentBureau = bureauAccessService.getCurrentBureau();
-            
+
+            // Check if user is super-admin (authoritative)
+            try {
+                const me = await UserService.getMe();
+                this.isSuperAdmin = !!(me && me.is_super_admin);
+            } catch (e) {
+                console.warn('Could not determine super-admin status', e);
+                this.isSuperAdmin = false;
+            }
+
             // Als nog geen bureau geselecteerd, initialiseer
             if (!this.currentBureau && this.bureaus.length > 0) {
                 this.currentBureau = await bureauAccessService.initializeBureauContext();
             }
-            
+
             // Listen voor changes
             bureauAccessService.onBureauChange((event, data) => {
                 if (event === 'bureauChanged') {
@@ -53,7 +64,7 @@ export class BureauSwitcher {
                     this._updateDisplay();
                 }
             });
-            
+
             return this;
         } catch (error) {
             console.error('❌ Error initializing BureauSwitcher:', error);
@@ -68,7 +79,7 @@ export class BureauSwitcher {
         this.element = document.createElement('div');
         this.element.className = 'bureau-switcher';
         this.element.innerHTML = this._getHTML();
-        
+
         this._bindEvents();
         return this.element;
     }
@@ -79,7 +90,7 @@ export class BureauSwitcher {
     _getHTML() {
         const current = this.currentBureau;
         const hasMutipleBureaus = this.bureaus.length > 1;
-        
+
         // Als geen bureau of maar 1 bureau, toon alleen de naam
         if (!current) {
             return `
@@ -88,7 +99,7 @@ export class BureauSwitcher {
                 </div>
             `;
         }
-        
+
         if (!hasMutipleBureaus) {
             return `
                 <div class="bureau-switcher__current bureau-switcher__current--single">
@@ -97,8 +108,15 @@ export class BureauSwitcher {
                 </div>
             `;
         }
-        
+
         // Multiple bureaus: toon dropdown
+        const globalToggleHtml = this.isSuperAdmin ? `
+                <label class="bureau-switcher__global-toggle">
+                    <input type="checkbox" id="global-view-toggle" ${localStorage.getItem('tenderzen_global_view') === '1' ? 'checked' : ''} />
+                    <span>Global view</span>
+                </label>
+            ` : '';
+
         return `
             <button 
                 class="bureau-switcher__trigger" 
@@ -116,6 +134,7 @@ export class BureauSwitcher {
             <div class="bureau-switcher__dropdown" role="listbox" hidden>
                 <div class="bureau-switcher__dropdown-header">
                     Wissel bureau
+                    ${globalToggleHtml}
                 </div>
                 <div class="bureau-switcher__list">
                     ${this.bureaus.map(bureau => this._getBureauOption(bureau)).join('')}
@@ -131,10 +150,10 @@ export class BureauSwitcher {
         if (bureau.bureau_logo) {
             return `<img src="${bureau.bureau_logo}" alt="" class="bureau-switcher__logo">`;
         }
-        
+
         const initial = bureau.bureau_naam?.charAt(0)?.toUpperCase() || '?';
         const color = this._stringToColor(bureau.bureau_naam || '');
-        
+
         return `
             <div class="bureau-switcher__icon" style="background-color: ${color}">
                 ${initial}
@@ -148,7 +167,7 @@ export class BureauSwitcher {
     _getBureauOption(bureau) {
         const isCurrent = bureau.bureau_id === this.currentBureau?.bureau_id;
         const roleInfo = this._getRoleInfo(bureau.user_role);
-        
+
         return `
             <button 
                 class="bureau-switcher__option ${isCurrent ? 'bureau-switcher__option--active' : ''}"
@@ -181,7 +200,7 @@ export class BureauSwitcher {
         if (trigger) {
             trigger.addEventListener('click', () => this._toggleDropdown());
         }
-        
+
         // Option clicks
         this.element.querySelectorAll('.bureau-switcher__option').forEach(option => {
             option.addEventListener('click', (e) => {
@@ -189,10 +208,21 @@ export class BureauSwitcher {
                 this._selectBureau(bureauId);
             });
         });
-        
+
+        // Global view toggle (for super-admins)
+        const toggle = this.element.querySelector('#global-view-toggle');
+        if (toggle) {
+            toggle.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+                localStorage.setItem('tenderzen_global_view', enabled ? '1' : '0');
+                // Dispatch global event so app can react
+                window.dispatchEvent(new CustomEvent('globalViewToggled', { detail: { enabled } }));
+            });
+        }
+
         // Click outside
         document.addEventListener('click', this._handleClickOutside);
-        
+
         // Keyboard
         this.element.addEventListener('keydown', this._handleKeyDown);
     }
@@ -202,17 +232,17 @@ export class BureauSwitcher {
      */
     _toggleDropdown() {
         this.isOpen = !this.isOpen;
-        
+
         const trigger = this.element.querySelector('.bureau-switcher__trigger');
         const dropdown = this.element.querySelector('.bureau-switcher__dropdown');
-        
+
         if (trigger) {
             trigger.setAttribute('aria-expanded', this.isOpen);
         }
-        
+
         if (dropdown) {
             dropdown.hidden = !this.isOpen;
-            
+
             if (this.isOpen) {
                 // Focus eerste optie
                 const firstOption = dropdown.querySelector('.bureau-switcher__option');
@@ -226,14 +256,14 @@ export class BureauSwitcher {
      */
     _closeDropdown() {
         this.isOpen = false;
-        
+
         const trigger = this.element.querySelector('.bureau-switcher__trigger');
         const dropdown = this.element.querySelector('.bureau-switcher__dropdown');
-        
+
         if (trigger) {
             trigger.setAttribute('aria-expanded', 'false');
         }
-        
+
         if (dropdown) {
             dropdown.hidden = true;
         }
@@ -259,29 +289,29 @@ export class BureauSwitcher {
             }
             return;
         }
-        
+
         const options = Array.from(this.element.querySelectorAll('.bureau-switcher__option'));
         const currentIndex = options.findIndex(opt => opt === document.activeElement);
-        
+
         switch (e.key) {
             case 'Escape':
                 e.preventDefault();
                 this._closeDropdown();
                 this.element.querySelector('.bureau-switcher__trigger')?.focus();
                 break;
-                
+
             case 'ArrowDown':
                 e.preventDefault();
                 const nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
                 options[nextIndex]?.focus();
                 break;
-                
+
             case 'ArrowUp':
                 e.preventDefault();
                 const prevIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
                 options[prevIndex]?.focus();
                 break;
-                
+
             case 'Enter':
             case ' ':
                 e.preventDefault();
@@ -301,26 +331,26 @@ export class BureauSwitcher {
             this._closeDropdown();
             return;
         }
-        
+
         try {
             // Toon loading state
             this.element.classList.add('bureau-switcher--loading');
-            
+
             // Switch bureau
             const newBureau = await bureauAccessService.switchBureau(bureauId);
             this.currentBureau = newBureau;
-            
+
             // Update display
             this._updateDisplay();
-            
+
             // Close dropdown
             this._closeDropdown();
-            
+
             // Notify parent
             if (this.onBureauChange) {
                 this.onBureauChange(newBureau);
             }
-            
+
         } catch (error) {
             console.error('❌ Error switching bureau:', error);
             alert('Er ging iets fout bij het wisselen van bureau.');
@@ -334,7 +364,7 @@ export class BureauSwitcher {
      */
     _updateDisplay() {
         if (!this.element) return;
-        
+
         // Re-render
         this.element.innerHTML = this._getHTML();
         this._bindEvents();
@@ -362,12 +392,12 @@ export class BureauSwitcher {
         for (let i = 0; i < str.length; i++) {
             hash = str.charCodeAt(i) + ((hash << 5) - hash);
         }
-        
+
         const colors = [
             '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444',
             '#f59e0b', '#10b981', '#06b6d4', '#6366f1'
         ];
-        
+
         return colors[Math.abs(hash) % colors.length];
     }
 

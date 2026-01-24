@@ -31,6 +31,7 @@ import { confirmLogout } from './components/LogoutConfirmModal.js';
 // Import BureauAccessService
 // ============================================================
 import { bureauAccessService } from './services/BureauAccessService.js';
+import { UserService } from './services/UserService.js';
 
 // Views
 import { TotaalView } from './views/TotaalView.js';
@@ -118,6 +119,28 @@ export class App {
             // 5b. Initialize bureau switcher in header
             console.log('🔀 Initializing bureau switcher...');
             await this.header.initBureauSwitcher();
+
+            // Determine if user is super-admin (authoritative)
+            try {
+                const me = await UserService.getMe();
+                this.isSuperAdmin = !!(me && me.is_super_admin);
+            } catch (e) {
+                console.warn('Could not fetch /users/me:', e);
+                this.isSuperAdmin = false;
+            }
+
+            // Listen for global view toggle events
+            window.addEventListener('globalViewToggled', async (ev) => {
+                const enabled = ev.detail && ev.detail.enabled;
+                console.log('🌐 Global view toggled:', enabled);
+                // Reload data when toggled
+                try {
+                    await this.loadData();
+                    await this.refreshCurrentView();
+                } catch (err) {
+                    console.error('❌ Error reloading data after global toggle:', err);
+                }
+            });
 
             // 5c. Setup bureau change handler
             this.header.onBureauChange = (newBureau) => this.handleBureauChange(newBureau);
@@ -329,12 +352,12 @@ export class App {
 
         try {
             const supabase = getSupabase();
-            
+
             if (!supabase) {
                 console.error('❌ Supabase client not available');
                 return false;
             }
-            
+
             const { data: { session }, error } = await supabase.auth.getSession();
 
             if (error || !session) {
@@ -581,8 +604,20 @@ export class App {
         console.log('📥 Loading data...');
 
         try {
-            // Load ALL tenders - RLS filtert automatisch op bureau
-            this.tenders = await apiService.getTenders();
+            // Build filters for tenders
+            const filters = {};
+
+            // If super-admin enabled global view via toggle, request all tenders
+            const globalEnabled = localStorage.getItem('tenderzen_global_view') === '1';
+            if (this.isSuperAdmin && globalEnabled) {
+                filters.all = true;
+                // increase default page size for admin overview (server still enforces limits)
+                filters.limit = 100;
+            }
+
+
+            const tenders = await apiService.getTenders(filters);
+            this.tenders = Array.isArray(tenders) ? tenders : [];
 
             console.log(`✅ Loaded ${this.tenders.length} tenders`);
 
@@ -920,7 +955,7 @@ export class App {
     async logout() {
         // Gebruik custom modal in plaats van browser confirm()
         const confirmed = await confirmLogout();
-        
+
         if (confirmed) {
             try {
                 // Reset bureau service voor schone state

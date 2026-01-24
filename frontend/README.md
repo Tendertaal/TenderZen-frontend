@@ -84,29 +84,30 @@ return 'https://your-backend.onrender.com';
 
 1. Start een local server:
 
+
 ```bash
 # Optie 1: Python
-python -m http.server 8000
+python -m http.server 3000
 
 # Optie 2: Node.js
-npx http-server -p 8000
+npx http-server -p 3000
 
 # Optie 3: VS Code Live Server
 ```
 
-2. Open browser: `http://localhost:8000`
+2. Open browser: `http://localhost:3000`
 
 ### Met Backend
 
 1. Start backend eerst (zie backend README)
 2. Start frontend server
-3. Open `http://localhost:8000`
+3. Open `http://localhost:3000`
 
 ## 🔐 Eerste Login
 
 1. Ga naar Supabase Dashboard → Authentication
 2. Maak een test user aan
-3. Login op `http://localhost:8000/login.html`
+3. Login op `http://localhost:3000/login.html`
 
 ## 📡 API Integratie
 

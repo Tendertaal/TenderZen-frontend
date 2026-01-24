@@ -4,7 +4,7 @@ FastAPI Application Entry Point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.v1 import tenders
+from app.api.v1 import tenders, users  # ← users toegevoegd!
 from app.api.v1.password_history import router as password_router
 
 # Create FastAPI app
@@ -26,8 +26,9 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(users.router, prefix="/api/v1")  # ← users router toegevoegd!
 app.include_router(tenders.router, prefix="/api/v1")
-app.include_router(password_router, prefix="/api/v1")  # ← NIEUW
+app.include_router(password_router, prefix="/api/v1")
 
 
 @app.get("/")

@@ -9,7 +9,7 @@ export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_BCXkUIXADb3fZLjic7X5OQ_h
 // API CONFIGURATIE
 // ========================================
 export const API_CONFIG = {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3000', // ✅ FIXED: Backend FastAPI poort
     timeout: 10000,
     endpoints: {
         tenders: '/api/v1/tenders',
@@ -79,14 +79,14 @@ export function getSupabase() {
     if (supabaseClient) {
         return supabaseClient;
     }
-    
+
     // Check of window.supabaseClient al bestaat (eerder geïnitialiseerd)
     if (window.supabaseClient && isSupabaseClient(window.supabaseClient)) {
         supabaseClient = window.supabaseClient;
         console.log('✅ Using existing Supabase client');
         return supabaseClient;
     }
-    
+
     // Check of we de library hebben (origineel of window.supabase)
     const lib = supabaseLibrary || window.supabase;
     if (isSupabaseLibrary(lib)) {
@@ -102,7 +102,7 @@ export function getSupabase() {
         console.log('✅ Supabase client initialized from UMD');
         return supabaseClient;
     }
-    
+
     console.error('❌ Supabase library not loaded');
     return null;
 }

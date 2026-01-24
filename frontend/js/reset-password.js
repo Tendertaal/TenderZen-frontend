@@ -1,16 +1,12 @@
 // reset-password.js
 // Exporteer Supabase config en initialisatie naar een module
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+import { getSupabase } from './config.js';
 
-// Maak Supabase client aan met publishable key
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    detectSessionInUrl: true,
-    autoRefreshToken: true,
-    persistSession: true
-  }
-});
-window.supabase = supabaseClient;
+const supabaseClient = getSupabase();
+
+if (!supabaseClient) {
+  throw new Error('Supabase client kon niet worden geïnitialiseerd');
+}
 
 // De rest van de code uit de inline script van reset-password.html komt hieronder:
 
