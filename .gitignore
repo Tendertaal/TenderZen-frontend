@@ -1,63 +1,224 @@
+# ============================================
+# TenderZen Project - Professional .gitignore
+# ============================================
+# Purpose: Exclude sensitive data, build artifacts, dependencies,
+#          and environment-specific files from version control
+# Last updated: 2025-01-24
+# ============================================
 
-# Ignore Python virtual environments
-venv311/
-Backend/venv/
 
-# Ignore database and documentation folders
-Backend/db/
-Documentatie/
+# ============================================
+# PYTHON VIRTUAL ENVIRONMENTS
+# ============================================
+# Why: Virtual environments contain installed packages (100K+ files)
+#      and are platform/machine-specific. They should be recreated
+#      from requirements.txt on each machine.
+# Impact: Prevents 200MB+ of unnecessary files in repository
+venv/
+venv*/
+env/
+ENV/
+.venv/
+.env/
 
-# Ignore specific files
-INSTRUCTIE_RODE_DRAAD_SESSIE_GENERATOR IMPLEMENTATIE in TenderPlanner tool.md
-Backend/app/middleware/rate_limit_redis.py
 
-# Ignore Python cache and compiled files
+# ============================================
+# PYTHON COMPILED FILES & CACHE
+# ============================================
+# Why: .pyc files are Python bytecode (auto-generated on execution)
+#      __pycache__ contains cached compiled files
+#      These are machine-specific and automatically regenerated
+# Impact: Keeps repo clean, prevents conflicts between Python versions
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
 *.pyo
 *.pyd
 
-# Ignore logs and environment files
-*.log
-*.env
 
-# Ignore node and frontend dependencies
+# ============================================
+# ENVIRONMENT VARIABLES & SECRETS
+# ============================================
+# Why: CRITICAL SECURITY - Contains API keys, database credentials,
+#      JWT secrets, and other sensitive data. MUST NEVER be in git.
+# Impact: Prevents credential leaks, security breaches, and compliance violations
+# Best Practice: Use .env.example as template (without actual secrets)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+.env.development
+
+
+# ============================================
+# PACKAGE MANAGEMENT & DEPENDENCIES
+# ============================================
+# Why: Dependencies are defined in requirements.txt/package.json
+#      and should be installed per environment, not committed
+# Impact: Prevents 500MB+ node_modules, platform-specific binaries
 node_modules/
-frontend/node_modules/
+bower_components/
+jspm_packages/
 
-# Ignore Supabase build and env files
-supabase/.output/
-supabase/.env
-supabase/functions/*/node_modules/
-supabase/functions/*/.output/
-supabase/functions/*/.env
 
-# Editor and system files
+# ============================================
+# BUILD ARTIFACTS & DISTRIBUTIONS
+# ============================================
+# Why: Build outputs are generated from source code and vary per platform
+#      Should be created during deployment, not stored in git
+# Impact: Keeps repository size small, prevents distribution of stale builds
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+*.whl
+
+
+# ============================================
+# TESTING & COVERAGE
+# ============================================
+# Why: Test outputs and coverage reports are generated during CI/CD
+#      and vary per test run. They should not be version controlled.
+# Impact: Prevents noise in diffs, keeps CI reports fresh
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.cache/
+nosetests.xml
+
+
+# ============================================
+# LOGS & RUNTIME FILES
+# ============================================
+# Why: Logs contain runtime data (not source code) and can grow very large
+#      Should be handled by logging infrastructure, not git
+# Impact: Prevents bloated repository, log data belongs in monitoring tools
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pip-log.txt
+
+
+# ============================================
+# IDE & EDITOR FILES
+# ============================================
+# Why: IDE settings are personal preferences and vary per developer
+#      Team settings should be in .editorconfig or documented
+# Impact: Prevents conflicts between developers using different editors
+# Note: Shared workspace settings can go in .vscode/settings.json (team-wide)
+.vscode/
+.idea/
 *.swp
 *.swo
-*.bak
+*.swn
+*~
+.DS_Store
+Thumbs.db
+*.sublime-workspace
+*.sublime-project
+
+
+# ============================================
+# OPERATING SYSTEM FILES
+# ============================================
+# Why: OS-generated metadata files that have no value in version control
+#      and cause unnecessary noise in git status
+# Impact: Cleaner git status, no OS-specific conflicts
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+
+# ============================================
+# TEMPORARY & BACKUP FILES
+# ============================================
+# Why: Temporary files created by various tools during development
+#      Should be regenerated, not committed
+# Impact: Prevents accidental commits of work-in-progress or backups
 *.tmp
-*.orig
+*.temp
+*.bak
 *.old
+*.orig
+*.rej
+*.swp
+*~
+
+
+# ============================================
+# DATABASE FILES (SQLite)
+# ============================================
+# Why: Local SQLite databases contain runtime data, not schema
+#      Schema should be in migrations, data in seeds or fixtures
+# Impact: Prevents committing user data, keeps repo focused on code
+# Exception: If using SQLite in production, use different approach
+*.db
+*.sqlite
+*.sqlite3
+
+
+# ============================================
+# SUPABASE LOCAL DEVELOPMENT
+# ============================================
+# Why: Supabase generates local files during development
+#      These are environment-specific and should not be shared
+# Impact: Each developer runs their own local Supabase instance
+# Note: supabase/migrations/ SHOULD be committed (database schema)
+supabase/.branches/
+supabase/.temp/
+
+
+# ============================================
+# MEDIA & LARGE FILES
+# ============================================
+# Why: Binary files and media should use Git LFS or cloud storage
+#      Large files bloat repository and slow down clones
+# Impact: Keeps repo performant, use proper asset management
+# Note: If you need to commit images/pdfs, use Git LFS
 *.zip
 *.tar
 *.tar.gz
 *.rar
 *.7z
-*.egg-info/
-dist/
-build/
-coverage/
-htmlcov/
-*.egg
-*.eggs
-*.coverage
-*.tox
-*.mypy_cache/
-*.pytest_cache/
-.vscode/
-.idea/
-*.iml
-*.sublime-workspace
-*.sublime-project
-*.code-workspace
+*.dmg
+*.iso
+
+
+# ============================================
+# PROJECT-SPECIFIC EXCLUSIONS
+# ============================================
+# Add project-specific files that should not be committed
+# Example: generated documentation, local test databases, etc.
+
+
+# ============================================
+# SECURITY NOTE
+# ============================================
+# ALWAYS verify before committing:
+# 1. Run 'git status' to see what will be committed
+# 2. Check for .env files, API keys, passwords
+# 3. Review diffs with 'git diff --cached'
+# 4. Use 'git secrets' or pre-commit hooks for extra protection
+#
+# If you accidentally commit secrets:
+# 1. Rotate ALL exposed credentials immediately
+# 2. Use 'git filter-branch' or BFG Repo Cleaner to remove from history
+# 3. Force push (if repository is not yet public)
+# ============================================
