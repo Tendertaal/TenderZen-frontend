@@ -178,13 +178,24 @@ export class App {
             // Initialize bureau access service
             this.currentBureau = await bureauAccessService.initializeBureauContext();
 
-            if (!this.currentBureau) {
+            // Herstel selectie van 'Alle bureau's' uit localStorage (voor super_admin)
+            const savedBureauId = localStorage.getItem('selectedBureauId');
+            if (savedBureauId === 'ALL_BUREAUS' && this.isSuperAdmin) {
+                this.currentBureau = null;
+                console.log('⭐ Restored: Alle bureau\'s');
+            }
+
+            if (!this.currentBureau && !this.isSuperAdmin) {
                 console.warn('⚠️ Geen bureau gevonden voor deze gebruiker');
                 return null;
             }
 
-            console.log('✅ Bureau context:', this.currentBureau.bureau_naam);
-            console.log('👤 Rol in bureau:', this.currentBureau.user_role);
+            if (this.currentBureau) {
+                console.log('✅ Bureau context:', this.currentBureau.bureau_naam);
+                console.log('👤 Rol in bureau:', this.currentBureau.user_role);
+            } else {
+                console.log('⭐ Bureau context: Alle bureau\'s (super_admin)');
+            }
 
             return this.currentBureau;
 
@@ -199,9 +210,14 @@ export class App {
      * @param {Object} newBureau - Het nieuwe bureau
      */
     async handleBureauChange(newBureau) {
-        console.log('🔄 Bureau gewisseld naar:', newBureau.bureau_naam);
+        console.log('🔄 Bureau gewisseld naar:', newBureau?.bureau_naam || 'Alle bureau\'s');
 
         this.currentBureau = newBureau;
+        if (newBureau === null) {
+            localStorage.setItem('selectedBureauId', 'ALL_BUREAUS');
+        } else if (newBureau?.bureau_id) {
+            localStorage.setItem('selectedBureauId', newBureau.bureau_id);
+        }
 
         // Toon loading state
         this.showBureauLoading();
@@ -604,19 +620,13 @@ export class App {
         console.log('📥 Loading data...');
 
         try {
-            // Build filters for tenders
-            const filters = {};
-
-            // If super-admin enabled global view via toggle, request all tenders
-            const globalEnabled = localStorage.getItem('tenderzen_global_view') === '1';
-            if (this.isSuperAdmin && globalEnabled) {
-                filters.all = true;
-                // increase default page size for admin overview (server still enforces limits)
-                filters.limit = 100;
+            // Bepaal bureauId voor API call
+            let bureauId = this.currentBureau?.bureau_id || null;
+            if (this.isSuperAdmin && this.currentBureau === null) {
+                bureauId = null; // "Alle bureau's"
             }
 
-
-            const tenders = await apiService.getTenders(filters);
+            const tenders = await apiService.getTenders(bureauId);
             this.tenders = Array.isArray(tenders) ? tenders : [];
 
             console.log(`✅ Loaded ${this.tenders.length} tenders`);

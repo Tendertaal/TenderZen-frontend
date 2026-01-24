@@ -1,18 +1,13 @@
 /**
- * BureauSwitcher Component
- * TenderZen v2.0
+ * BureauSwitcher Component - FIXED & DEBUGGED
+ * TenderZen v2.2 - Met "Alle bureau's" support + Debug Logging
  * 
- * Dropdown component waarmee users kunnen wisselen tussen bureaus.
- * Wordt getoond in de header naast het logo.
- * 
- * Features:
- * - Toon huidige bureau
- * - Dropdown met alle beschikbare bureaus
- * - Snelle switch met keyboard support
- * - Rol indicatie per bureau
- * 
- * CHANGELOG:
- * - v1.0: Initial version
+ * FIXES in deze versie:
+ * 1. ✅ isSuperAdmin wordt EERST geladen (voor render)
+ * 2. ✅ localStorage check voor "ALL_BUREAUS"  
+ * 3. ✅ Correcte initialisatie volgorde
+ * 4. ✅ Uitgebreide debug logging
+ * 5. ✅ Separate render methods voor super_admin vs regular
  */
 
 import { bureauAccessService } from '/js/services/BureauAccessService.js';
@@ -32,42 +27,94 @@ export class BureauSwitcher {
         // Bind methods
         this._handleClickOutside = this._handleClickOutside.bind(this);
         this._handleKeyDown = this._handleKeyDown.bind(this);
+
+        console.log('🏗️ BureauSwitcher constructor called');
     }
 
     /**
      * Initialize en laad data
+     * ============================================================
+     * FIX: isSuperAdmin EERST laden, dan bureaus, dan render
+     * ============================================================
      */
     async init() {
-        try {
-            // Laad bureaus
-            this.bureaus = await bureauAccessService.getUserBureaus();
-            this.currentBureau = bureauAccessService.getCurrentBureau();
+        console.log('🚀 BureauSwitcher.init() started');
 
-            // Check if user is super-admin (authoritative)
+        try {
+            // ============================================================
+            // STAP 1: Check super-admin status EERST (kritisch!)
+            // ============================================================
+            console.log('📊 STAP 1: Checking super-admin status...');
             try {
                 const me = await UserService.getMe();
                 this.isSuperAdmin = !!(me && me.is_super_admin);
+                console.log('✅ UserService.getMe() result:', me);
+                console.log('✅ is_super_admin from backend:', me?.is_super_admin);
+                console.log('✅ this.isSuperAdmin set to:', this.isSuperAdmin);
             } catch (e) {
-                console.warn('Could not determine super-admin status', e);
+                console.error('❌ Could not determine super-admin status:', e);
                 this.isSuperAdmin = false;
+                console.log('⚠️ Defaulting this.isSuperAdmin to:', this.isSuperAdmin);
             }
 
-            // Als nog geen bureau geselecteerd, initialiseer
-            if (!this.currentBureau && this.bureaus.length > 0) {
-                this.currentBureau = await bureauAccessService.initializeBureauContext();
+            // ============================================================
+            // STAP 2: Laad bureaus
+            // ============================================================
+            console.log('📊 STAP 2: Loading bureaus...');
+            this.bureaus = await bureauAccessService.getUserBureaus();
+            console.log('✅ Loaded bureaus:', this.bureaus.length, this.bureaus);
+
+            // ============================================================
+            // STAP 3: Bepaal current bureau (met localStorage check)
+            // ============================================================
+            console.log('📊 STAP 3: Determining current bureau...');
+            const savedBureauId = localStorage.getItem('selectedBureauId');
+            console.log('💾 localStorage.selectedBureauId:', savedBureauId);
+
+            if (savedBureauId === 'ALL_BUREAUS') {
+                if (this.isSuperAdmin) {
+                    this.currentBureau = null;
+                    console.log('⭐ Restored: Alle bureau\'s (super_admin with saved preference)');
+                } else {
+                    console.warn('⚠️ ALL_BUREAUS in localStorage but user is NOT super_admin!');
+                    // Fall back to regular bureau
+                    this.currentBureau = bureauAccessService.getCurrentBureau();
+                    if (!this.currentBureau && this.bureaus.length > 0) {
+                        this.currentBureau = await bureauAccessService.initializeBureauContext();
+                    }
+                }
+            } else {
+                // Regulier bureau selecteren
+                this.currentBureau = bureauAccessService.getCurrentBureau();
+                console.log('📋 getCurrentBureau() returned:', this.currentBureau);
+
+                // Als nog geen bureau geselecteerd, initialiseer
+                if (!this.currentBureau && this.bureaus.length > 0) {
+                    console.log('🔄 No current bureau, initializing...');
+                    this.currentBureau = await bureauAccessService.initializeBureauContext();
+                    console.log('✅ Initialized to:', this.currentBureau);
+                }
             }
 
-            // Listen voor changes
+            console.log('✅ Final currentBureau:', this.currentBureau);
+
+            // ============================================================
+            // STAP 4: Listen for bureau changes
+            // ============================================================
             bureauAccessService.onBureauChange((event, data) => {
                 if (event === 'bureauChanged') {
+                    console.log('🔄 Bureau changed event:', data);
                     this.currentBureau = data;
                     this._updateDisplay();
                 }
             });
 
+            console.log('✅ BureauSwitcher.init() completed successfully');
             return this;
+
         } catch (error) {
             console.error('❌ Error initializing BureauSwitcher:', error);
+            console.error('Stack trace:', error.stack);
             throw error;
         }
     }
@@ -76,22 +123,49 @@ export class BureauSwitcher {
      * Render de component
      */
     render() {
+        console.log('🎨 BureauSwitcher.render() called');
+        console.log('   - isSuperAdmin:', this.isSuperAdmin);
+        console.log('   - currentBureau:', this.currentBureau);
+        console.log('   - bureaus count:', this.bureaus.length);
+
         this.element = document.createElement('div');
         this.element.className = 'bureau-switcher';
         this.element.innerHTML = this._getHTML();
 
         this._bindEvents();
+
+        console.log('✅ Render complete');
         return this.element;
     }
 
     /**
      * Genereer HTML
+     * ============================================================
+     * FIX: Super_admins krijgen ALTIJD dropdown met "Alle bureau's"
+     * ============================================================
      */
     _getHTML() {
         const current = this.currentBureau;
-        const hasMutipleBureaus = this.bureaus.length > 1;
 
-        // Als geen bureau of maar 1 bureau, toon alleen de naam
+        console.log('🎨 _getHTML() generating markup:', {
+            isSuperAdmin: this.isSuperAdmin,
+            currentBureau: current?.bureau_naam || 'Alle bureau\'s (null)',
+            bureauCount: this.bureaus.length
+        });
+
+        // ============================================================
+        // Super_admins: Toon dropdown met "Alle bureau's" optie
+        // ============================================================
+        if (this.isSuperAdmin) {
+            console.log('⭐ Rendering SUPER_ADMIN dropdown with "Alle bureau\'s"');
+            return this._renderSuperAdminDropdown(current);
+        }
+
+        console.log('👤 Rendering REGULAR user dropdown (no "Alle bureau\'s")');
+
+        // Niet super_admin: reguliere logica
+        const hasMultipleBureaus = this.bureaus.length > 1;
+
         if (!current) {
             return `
                 <div class="bureau-switcher__current bureau-switcher__current--empty">
@@ -100,7 +174,7 @@ export class BureauSwitcher {
             `;
         }
 
-        if (!hasMutipleBureaus) {
+        if (!hasMultipleBureaus) {
             return `
                 <div class="bureau-switcher__current bureau-switcher__current--single">
                     ${this._getBureauIcon(current)}
@@ -109,13 +183,93 @@ export class BureauSwitcher {
             `;
         }
 
-        // Multiple bureaus: toon dropdown
-        const globalToggleHtml = this.isSuperAdmin ? `
-                <label class="bureau-switcher__global-toggle">
-                    <input type="checkbox" id="global-view-toggle" ${localStorage.getItem('tenderzen_global_view') === '1' ? 'checked' : ''} />
-                    <span>Global view</span>
-                </label>
-            ` : '';
+        // Multiple bureaus: toon dropdown (zonder "Alle bureau's")
+        return this._renderRegularDropdown(current);
+    }
+
+    /**
+     * Render dropdown voor super_admins
+     * ============================================================
+     * INCLUSIEF "Alle bureau's" optie bovenaan
+     * ============================================================
+     */
+    _renderSuperAdminDropdown(current) {
+        console.log('⭐ _renderSuperAdminDropdown() - creating super admin view');
+
+        // Check of "Alle bureau's" actief is
+        const isAlleBureausActive = (current === null);
+        console.log('   - isAlleBureausActive:', isAlleBureausActive);
+
+        // "Alle bureau's" optie (ALTIJD bovenaan voor super_admins)
+        const alleBureausOption = `
+            <button 
+                class="bureau-switcher__option bureau-switcher__option--all ${isAlleBureausActive ? 'bureau-switcher__option--active' : ''}"
+                data-bureau-id="ALL_BUREAUS"
+                role="option"
+                aria-selected="${isAlleBureausActive}"
+            >
+                <div class="bureau-switcher__icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    ⭐
+                </div>
+                <div class="bureau-switcher__option-info">
+                    <span class="bureau-switcher__option-name">Alle bureau's</span>
+                    <span class="bureau-switcher__option-role" style="color: #667eea; font-weight: 600;">Super Admin</span>
+                </div>
+                ${isAlleBureausActive ? `
+                    <svg class="bureau-switcher__check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                ` : ''}
+            </button>
+            <div class="bureau-switcher__separator" style="height: 1px; background: #e0e0e0; margin: 4px 16px;"></div>
+        `;
+
+        // Bepaal wat er in de button getoond moet worden
+        const displayIcon = current
+            ? this._getBureauIcon(current)
+            : '<div class="bureau-switcher__icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">⭐</div>';
+
+        const displayName = current
+            ? this._escapeHtml(current.bureau_naam)
+            : 'Alle bureau\'s';
+
+        console.log('   - Display name:', displayName);
+        console.log('   - Rendering', this.bureaus.length, 'regular bureau options');
+
+        return `
+            <button 
+                class="bureau-switcher__trigger" 
+                aria-haspopup="listbox" 
+                aria-expanded="false"
+                title="Wissel van bureau"
+            >
+                ${displayIcon}
+                <span class="bureau-switcher__name">${displayName}</span>
+                <svg class="bureau-switcher__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+            <div class="bureau-switcher__dropdown" role="listbox" hidden>
+                <div class="bureau-switcher__dropdown-header">
+                    <strong>Wissel bureau</strong>
+                    <span style="font-size: 12px; color: #667eea;">⭐ Super Admin</span>
+                </div>
+                <div class="bureau-switcher__list">
+                    ${alleBureausOption}
+                    ${this.bureaus.map(bureau => this._getBureauOption(bureau)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * Render dropdown voor reguliere users
+     * ============================================================
+     * ZONDER "Alle bureau's" optie
+     * ============================================================
+     */
+    _renderRegularDropdown(current) {
+        console.log('👤 _renderRegularDropdown() - creating regular user view');
 
         return `
             <button 
@@ -130,11 +284,9 @@ export class BureauSwitcher {
                     <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
             </button>
-            
             <div class="bureau-switcher__dropdown" role="listbox" hidden>
                 <div class="bureau-switcher__dropdown-header">
                     Wissel bureau
-                    ${globalToggleHtml}
                 </div>
                 <div class="bureau-switcher__list">
                     ${this.bureaus.map(bureau => this._getBureauOption(bureau)).join('')}
@@ -195,6 +347,8 @@ export class BureauSwitcher {
      * Bind event listeners
      */
     _bindEvents() {
+        console.log('🔗 Binding event listeners');
+
         // Trigger click
         const trigger = this.element.querySelector('.bureau-switcher__trigger');
         if (trigger) {
@@ -202,23 +356,21 @@ export class BureauSwitcher {
         }
 
         // Option clicks
-        this.element.querySelectorAll('.bureau-switcher__option').forEach(option => {
+        const options = this.element.querySelectorAll('.bureau-switcher__option');
+        console.log('   - Found', options.length, 'bureau options');
+
+        options.forEach(option => {
             option.addEventListener('click', (e) => {
                 const bureauId = e.currentTarget.dataset.bureauId;
-                this._selectBureau(bureauId);
+                console.log('🖱️ Bureau option clicked:', bureauId);
+
+                if (bureauId === 'ALL_BUREAUS') {
+                    this._selectAlleBureaus();
+                } else {
+                    this._selectBureau(bureauId);
+                }
             });
         });
-
-        // Global view toggle (for super-admins)
-        const toggle = this.element.querySelector('#global-view-toggle');
-        if (toggle) {
-            toggle.addEventListener('change', (e) => {
-                const enabled = e.target.checked;
-                localStorage.setItem('tenderzen_global_view', enabled ? '1' : '0');
-                // Dispatch global event so app can react
-                window.dispatchEvent(new CustomEvent('globalViewToggled', { detail: { enabled } }));
-            });
-        }
 
         // Click outside
         document.addEventListener('click', this._handleClickOutside);
@@ -228,10 +380,45 @@ export class BureauSwitcher {
     }
 
     /**
+     * Selecteer "Alle bureau's" (super_admin only)
+     * ============================================================
+     * BELANGRIJK: Trigger data reload via callback
+     * ============================================================
+     */
+    async _selectAlleBureaus() {
+        console.log('⭐ _selectAlleBureaus() called');
+        console.log('   - Setting currentBureau to null');
+
+        // Zet currentBureau op null
+        this.currentBureau = null;
+
+        // Sla op in localStorage
+        localStorage.setItem('selectedBureauId', 'ALL_BUREAUS');
+        console.log('   - Saved to localStorage: ALL_BUREAUS');
+
+        // Update display
+        this._updateDisplay();
+
+        // Close dropdown
+        this._closeDropdown();
+
+        // Trigger callback (KRITISCH voor data reload!)
+        if (this.onBureauChange) {
+            console.log('🔄 Triggering onBureauChange(null) callback');
+            this.onBureauChange(null);
+        } else {
+            console.warn('⚠️ No onBureauChange callback registered!');
+        }
+
+        console.log('✅ _selectAlleBureaus() completed');
+    }
+
+    /**
      * Toggle dropdown open/closed
      */
     _toggleDropdown() {
         this.isOpen = !this.isOpen;
+        console.log('🔽 Toggle dropdown:', this.isOpen ? 'OPEN' : 'CLOSED');
 
         const trigger = this.element.querySelector('.bureau-switcher__trigger');
         const dropdown = this.element.querySelector('.bureau-switcher__dropdown');
@@ -317,7 +504,11 @@ export class BureauSwitcher {
                 e.preventDefault();
                 if (document.activeElement?.classList.contains('bureau-switcher__option')) {
                     const bureauId = document.activeElement.dataset.bureauId;
-                    this._selectBureau(bureauId);
+                    if (bureauId === 'ALL_BUREAUS') {
+                        this._selectAlleBureaus();
+                    } else {
+                        this._selectBureau(bureauId);
+                    }
                 }
                 break;
         }
@@ -328,17 +519,23 @@ export class BureauSwitcher {
      */
     async _selectBureau(bureauId) {
         if (bureauId === this.currentBureau?.bureau_id) {
+            console.log('ℹ️ Bureau already selected, just closing dropdown');
             this._closeDropdown();
             return;
         }
 
         try {
+            console.log('🔄 _selectBureau() called with:', bureauId);
+
             // Toon loading state
             this.element.classList.add('bureau-switcher--loading');
 
             // Switch bureau
             const newBureau = await bureauAccessService.switchBureau(bureauId);
             this.currentBureau = newBureau;
+            localStorage.setItem('selectedBureauId', bureauId);
+
+            console.log('✅ Bureau switched to:', newBureau.bureau_naam);
 
             // Update display
             this._updateDisplay();
@@ -348,7 +545,10 @@ export class BureauSwitcher {
 
             // Notify parent
             if (this.onBureauChange) {
+                console.log('🔄 Triggering onBureauChange(bureau) callback');
                 this.onBureauChange(newBureau);
+            } else {
+                console.warn('⚠️ No onBureauChange callback registered!');
             }
 
         } catch (error) {
@@ -363,11 +563,17 @@ export class BureauSwitcher {
      * Update de display na bureau change
      */
     _updateDisplay() {
-        if (!this.element) return;
+        console.log('🔄 _updateDisplay() called');
+        if (!this.element) {
+            console.warn('⚠️ No element to update!');
+            return;
+        }
 
         // Re-render
         this.element.innerHTML = this._getHTML();
         this._bindEvents();
+
+        console.log('✅ Display updated');
     }
 
     /**
@@ -415,6 +621,7 @@ export class BureauSwitcher {
      * Cleanup
      */
     destroy() {
+        console.log('🗑️ BureauSwitcher.destroy() called');
         document.removeEventListener('click', this._handleClickOutside);
         if (this.element) {
             this.element.remove();

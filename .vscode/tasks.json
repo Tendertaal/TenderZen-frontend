@@ -28,7 +28,7 @@
     {
       "label": "🌐 Frontend Server",
       "type": "shell",
-        "command": "py",
+      "command": "py",
       "args": [
         "-m",
         "http.server",

@@ -7,7 +7,7 @@ import { MOCK_MODE, MOCK_TOKEN, MOCK_USER, API_CONFIG, getSupabase } from '../co
 class ApiService {
     constructor() {
         this.baseURL = API_CONFIG.baseURL;
-        
+
         if (MOCK_MODE) {
             console.log('🔧 ApiService: Running in MOCK MODE');
             console.log('👤 Mock User:', MOCK_USER);
@@ -19,7 +19,7 @@ class ApiService {
     // ========================================
     // HELPER: Get Supabase Client
     // ========================================
-    
+
     /**
      * Get the Supabase client instance
      * @returns {object|null} Supabase client
@@ -28,12 +28,12 @@ class ApiService {
         // Probeer eerst de getSupabase functie uit config
         const client = getSupabase();
         if (client) return client;
-        
+
         // Fallback naar window.supabaseClient
         if (window.supabaseClient && window.supabaseClient.auth) {
             return window.supabaseClient;
         }
-        
+
         console.error('❌ No Supabase client available');
         return null;
     }
@@ -41,7 +41,7 @@ class ApiService {
     // ========================================
     // AUTHENTICATION
     // ========================================
-    
+
     /**
      * Get authentication token
      * @returns {string|null} JWT token
@@ -56,14 +56,14 @@ class ApiService {
         // PRODUCTION MODE: Get real Supabase token
         try {
             const supabase = this.getSupabaseClient();
-            
+
             if (!supabase) {
                 console.error('❌ Supabase client not available');
                 return null;
             }
-            
+
             const { data: { session } } = await supabase.auth.getSession();
-            
+
             if (!session) {
                 console.warn('⚠️ No active session found');
                 return null;
@@ -90,12 +90,12 @@ class ApiService {
         // PRODUCTION MODE: Get real user from Supabase
         try {
             const supabase = this.getSupabaseClient();
-            
+
             if (!supabase) {
                 console.error('❌ Supabase client not available');
                 return null;
             }
-            
+
             const { data: { user } } = await supabase.auth.getUser();
             return user;
         } catch (error) {
@@ -107,7 +107,7 @@ class ApiService {
     // ========================================
     // HTTP REQUEST HANDLER
     // ========================================
-    
+
     /**
      * Generic request handler
      * @param {string} endpoint - API endpoint
@@ -118,10 +118,10 @@ class ApiService {
         try {
             // Get auth token
             const token = await this.getAuthToken();
-            
+
             // Build full URL
             const url = `${this.baseURL}${endpoint}`;
-            
+
             // Build headers
             const headers = {
                 'Content-Type': 'application/json',
@@ -159,18 +159,18 @@ class ApiService {
                 } catch (e) {
                     errorData = await response.text();
                 }
-                
+
                 console.error('❌ API Error:', {
                     status: response.status,
                     statusText: response.statusText,
                     error: errorData
                 });
-                
+
                 // Throw with detailed error
-                const errorMessage = typeof errorData === 'object' 
+                const errorMessage = typeof errorData === 'object'
                     ? JSON.stringify(errorData, null, 2)
                     : errorData;
-                    
+
                 throw new Error(`HTTP ${response.status}: ${errorMessage}`);
             }
 
@@ -178,9 +178,9 @@ class ApiService {
             // DELETE requests often return empty body
             const text = await response.text();
             const data = text ? JSON.parse(text) : { success: true };
-            
+
             console.log('✅ API Success:', data);
-            
+
             return data;
 
         } catch (error) {
@@ -192,33 +192,20 @@ class ApiService {
     // ========================================
     // TENDER ENDPOINTS
     // ========================================
-    
+
     /**
-     * Get all tenders with optional filters
-     * @param {object} filters - Query filters (optional)
+     * Get all tenders, optionally filtered by bureauId (null = alle bureaus voor super_admin)
+     * @param {string|null} bureauId
      * @returns {Promise<array>} List of tenders
      */
-    async getTenders(filters = {}) {
+    async getTenders(bureauId = null) {
         let endpoint = API_CONFIG.endpoints.tenders + '/';
-        
-        // Only add query parameters if we have actual filter values
-        // IMPORTANT: Skip empty strings, null, undefined
-        const params = new URLSearchParams();
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value !== null && value !== undefined && value !== '' && value !== false) {
-                params.append(key, value);
-            }
-        });
-        
-        // Only append params if there are actual filters
-        const queryString = params.toString();
-        if (queryString) {
-            endpoint += '?' + queryString;
-            console.log('📡 getTenders with filters:', queryString);
+        if (bureauId !== null) {
+            endpoint += `?tenderbureau_id=${encodeURIComponent(bureauId)}`;
+            console.log('📡 getTenders for bureau:', bureauId);
         } else {
-            console.log('📡 getTenders without filters (ALL tenders)');
+            console.log('📡 getTenders for ALL bureaus (super_admin)');
         }
-
         return await this.request(endpoint, {
             method: 'GET'
         });
@@ -242,7 +229,7 @@ class ApiService {
      */
     async createTender(tenderData) {
         console.log('📝 Creating tender:', tenderData);
-        
+
         // Sanitize data: convert empty strings to null
         const sanitized = {};
         Object.keys(tenderData).forEach(key => {
@@ -254,9 +241,9 @@ class ApiService {
                 sanitized[key] = value;
             }
         });
-        
+
         console.log('🧹 Sanitized data:', sanitized);
-        
+
         return await this.request(API_CONFIG.endpoints.tenders + '/', {
             method: 'POST',
             body: JSON.stringify(sanitized)
@@ -271,7 +258,7 @@ class ApiService {
      */
     async updateTender(id, updates) {
         console.log(`📝 Updating tender ${id}:`, updates);
-        
+
         return await this.request(`${API_CONFIG.endpoints.tenders}/${id}`, {
             method: 'PUT',
             body: JSON.stringify(updates)
@@ -285,7 +272,7 @@ class ApiService {
      */
     async deleteTender(id) {
         console.log(`🗑️ Deleting tender ${id}`);
-        
+
         return await this.request(`${API_CONFIG.endpoints.tenders}/${id}`, {
             method: 'DELETE'
         });
@@ -294,7 +281,7 @@ class ApiService {
     // ========================================
     // HEALTH CHECK
     // ========================================
-    
+
     /**
      * Check API health
      * @returns {Promise<object>} Health status
