@@ -1,0 +1,63 @@
+
+# Ignore Python virtual environments
+venv311/
+Backend/venv/
+
+# Ignore database and documentation folders
+Backend/db/
+Documentatie/
+
+# Ignore specific files
+INSTRUCTIE_RODE_DRAAD_SESSIE_GENERATOR IMPLEMENTATIE in TenderPlanner tool.md
+Backend/app/middleware/rate_limit_redis.py
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore logs and environment files
+*.log
+*.env
+
+# Ignore node and frontend dependencies
+node_modules/
+frontend/node_modules/
+
+# Ignore Supabase build and env files
+supabase/.output/
+supabase/.env
+supabase/functions/*/node_modules/
+supabase/functions/*/.output/
+supabase/functions/*/.env
+
+# Editor and system files
+*.swp
+*.swo
+*.bak
+*.tmp
+*.orig
+*.old
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+*.egg-info/
+dist/
+build/
+coverage/
+htmlcov/
+*.egg
+*.eggs
+*.coverage
+*.tox
+*.mypy_cache/
+*.pytest_cache/
+.vscode/
+.idea/
+*.iml
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
