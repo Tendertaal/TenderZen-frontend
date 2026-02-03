@@ -1,9 +1,17 @@
 /**
  * HeadersRow Component
- * TenderZen v2.1
+ * TenderZen v2.3
+ * 
+ * CHANGELOG v2.3:
+ * - ✅ Structuur matcht nu exact met tender cards
+ * - ✅ section-timeline wrapper toegevoegd
+ * 
+ * CHANGELOG v2.2:
+ * - Classes gefixed om te matchen met headers-row.css
+ * - Sorteer indicators werken nu (↑↓ pijlen)
  * 
  * CHANGELOG v2.1:
- * - ⭐ Team en Status kolommen verwijderd (nu in card)
+ * - Team en Status kolommen verwijderd (nu in card)
  * - Alleen Aanbesteding + Timeline kolommen
  */
 
@@ -35,62 +43,68 @@ export class HeadersRow {
         this.element = document.createElement('div');
         this.element.className = 'headers-row';
         
+        // Structuur matcht nu met tender cards:
+        // - section-aanbesteding (420px fixed)
+        // - section-timeline (flex: 1, bevat timeline kolommen)
+        
         this.element.innerHTML = `
-            <!-- Aanbesteding kolom -->
-            <div class="header-cell header-aanbesteding">
+            <!-- Aanbesteding kolom - zelfde als section-aanbesteding -->
+            <div class="column-header aanbesteding">
                 ${this.getIcon('clipboardList', 14)}
                 <span>Aanbesteding</span>
             </div>
             
-            <!-- Timeline kolommen -->
-            <div class="header-cell header-timeline sortable" data-column="publicatie_datum">
-                ${this.getIcon('calendarView', 14)}
-                <span>Publicatie</span>
-            </div>
-            
-            <div class="header-cell header-timeline sortable" data-column="schouw_datum">
-                ${this.getIcon('eye', 14)}
-                <span>Schouw</span>
-            </div>
-            
-            <div class="header-cell header-timeline sortable" data-column="nvi1_datum">
-                ${this.getIcon('info', 14)}
-                <span>NVI 1</span>
-            </div>
-            
-            <div class="header-cell header-timeline sortable" data-column="nvi2_datum">
-                ${this.getIcon('info', 14)}
-                <span>NVI 2</span>
-            </div>
-            
-            <div class="header-cell header-timeline sortable" data-column="presentatie_datum">
-                ${this.getIcon('users', 14)}
-                <span>Presentatie</span>
-            </div>
-            
-            <div class="header-cell header-timeline sortable" data-column="interne_deadline">
-                ${this.getIcon('clock', 14)}
-                <span>Intern</span>
-            </div>
-            
-            <div class="header-cell header-timeline header-deadline sortable" data-column="deadline_indiening">
-                ${this.getIcon('zap', 14)}
-                <span>Deadline</span>
-            </div>
-            
-            <div class="header-cell header-timeline sortable" data-column="voorlopige_gunning">
-                ${this.getIcon('checkCircle', 14)}
-                <span>Voorl. Gunning</span>
-            </div>
-            
-            <div class="header-cell header-timeline sortable" data-column="definitieve_gunning">
-                ${this.getIcon('checkCircle', 14)}
-                <span>Def. Gunning</span>
-            </div>
-            
-            <div class="header-cell header-timeline sortable" data-column="start_uitvoering">
-                ${this.getIcon('play', 14)}
-                <span>Start</span>
+            <!-- Timeline wrapper - zelfde als section-timeline -->
+            <div class="header-timeline-wrapper">
+                <div class="column-header timeline sortable" data-column="publicatie_datum">
+                    ${this.getIcon('calendar', 14)}
+                    <span>Publicatie</span>
+                </div>
+                
+                <div class="column-header timeline sortable" data-column="schouw_datum">
+                    ${this.getIcon('eye', 14)}
+                    <span>Schouw</span>
+                </div>
+                
+                <div class="column-header timeline sortable" data-column="nvi1_datum">
+                    ${this.getIcon('info', 14)}
+                    <span>NVI 1</span>
+                </div>
+                
+                <div class="column-header timeline sortable" data-column="nvi2_datum">
+                    ${this.getIcon('info', 14)}
+                    <span>NVI 2</span>
+                </div>
+                
+                <div class="column-header timeline sortable" data-column="presentatie_datum">
+                    ${this.getIcon('users', 14)}
+                    <span>Presentatie</span>
+                </div>
+                
+                <div class="column-header timeline sortable" data-column="interne_deadline">
+                    ${this.getIcon('clock', 14)}
+                    <span>Intern</span>
+                </div>
+                
+                <div class="column-header timeline critical sortable" data-column="deadline_indiening">
+                    ${this.getIcon('zap', 14)}
+                    <span>Deadline</span>
+                </div>
+                
+                <div class="column-header timeline sortable" data-column="voorlopige_gunning">
+                    ${this.getIcon('checkCircle', 14)}
+                    <span>Voorl. Gunning</span>
+                </div>
+                
+                <div class="column-header timeline sortable" data-column="definitieve_gunning">
+                    ${this.getIcon('checkCircle', 14)}
+                    <span>Def. Gunning</span>
+                </div>
+                
+                <div class="column-header timeline sortable" data-column="start_uitvoering">
+                    ${this.getIcon('play', 14)}
+                    <span>Start</span>
+                </div>
             </div>
         `;
 
@@ -129,13 +143,25 @@ export class HeadersRow {
      * Update sort indicators
      */
     updateSortIndicators(activeHeader) {
-        // Remove all sort classes
+        // Remove all sort classes and icons
         this.element.querySelectorAll('.sortable').forEach(header => {
             header.classList.remove('sorted-asc', 'sorted-desc');
+            const oldIcon = header.querySelector('.sort-icon');
+            if (oldIcon) oldIcon.remove();
         });
 
-        // Add sort class to active header
+        // Add sort class and icon to active header
         activeHeader.classList.add(`sorted-${this.sortDirection}`);
+        
+        // Add chevron icon
+        const iconName = this.sortDirection === 'asc' ? 'chevronUp' : 'chevronDown';
+        const iconHtml = this.getIcon(iconName, 14);
+        if (iconHtml) {
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'sort-icon';
+            iconSpan.innerHTML = iconHtml;
+            activeHeader.appendChild(iconSpan);
+        }
     }
 }
 

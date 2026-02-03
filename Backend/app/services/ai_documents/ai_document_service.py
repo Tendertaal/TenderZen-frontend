@@ -22,7 +22,13 @@ class AIDocumentService:
     def __init__(self, db: Client, claude_api_key: Optional[str] = None):
         self.db = db
         self.file_service = FileUploadService(db)
-        self.claude_service = ClaudeAPIService(api_key=claude_api_key)
+        
+        # ✅ Claude API is optioneel - alleen initialiseren als key beschikbaar is
+        if claude_api_key:
+            self.claude_service = ClaudeAPIService(api_key=claude_api_key)
+        else:
+            self.claude_service = None
+            print("⚠️ ANTHROPIC_API_KEY not found - AI generation disabled")
     
     # ============================================
     # TEMPLATE MANAGEMENT

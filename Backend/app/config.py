@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     # Optional Features (AI, Email, etc.)
     openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
     sendgrid_api_key: Optional[str] = Field(default=None, alias="SENDGRID_API_KEY")
+    anthropic_api_key: Optional[str] = Field(default=None, alias="ANTHROPIC_API_KEY")
     
     # CORS Settings
     cors_origins: list[str] = Field(
@@ -74,6 +75,11 @@ class Settings(BaseSettings):
         return bool(self.openai_api_key)
     
     @property
+    def anthropic_enabled(self) -> bool:
+        """Check if Anthropic/Claude features are enabled"""
+        return bool(self.anthropic_api_key)
+    
+    @property
     def email_enabled(self) -> bool:
         """Check if email features are enabled"""
         return bool(self.sendgrid_api_key)
@@ -99,6 +105,7 @@ class Settings(BaseSettings):
             f"Settings(environment={self.environment}, "
             f"port={self.port}, "
             f"ai_enabled={self.ai_enabled}, "
+            f"anthropic_enabled={self.anthropic_enabled}, "
             f"email_enabled={self.email_enabled})"
         )
 
@@ -126,6 +133,7 @@ if __name__ == "__main__":
     print(f"Frontend URL: {settings.frontend_url}")
     print(f"Supabase URL: {settings.supabase_url}")
     print(f"AI Enabled: {settings.ai_enabled}")
+    print(f"Anthropic Enabled: {settings.anthropic_enabled}")
     print(f"Email Enabled: {settings.email_enabled}")
     print(f"Rate Limit: {settings.rate_limit_max_requests} requests per {settings.rate_limit_window_minutes} minutes")
     print("=" * 50)

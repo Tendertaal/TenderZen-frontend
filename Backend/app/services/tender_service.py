@@ -1,17 +1,13 @@
 """
 Tender business logic - with team assignments support
-TenderZen v2.2 - Multi-Tenancy Support + Bedrijven Refactor
-
-FIXES:
-- Filter op tenderbureau_id ipv alleen created_by
-- Collega's binnen hetzelfde bureau kunnen elkaars tenders zien
-- Super-admins kunnen alle tenders zien
+TenderZen v2.3 - Smart Import Support
 
 CHANGELOG:
 - v1.0: Initial version
 - v2.0: Multi-tenancy fix - filter op tenderbureau_id
 - v2.1: Bedrijfsvelden verwijderd uit tenders (nu via bedrijf_id JOIN)
 - v2.2: Fix Decimal serialization for JSON (geraamde_waarde, minimale_omzet, etc.)
+- v2.3: smart_import_id en ai_model_used toegevoegd aan SELECT queries
 """
 from typing import List, Optional
 from decimal import Decimal
@@ -202,6 +198,7 @@ class TenderService:
         - Super-admins kunnen optioneel alle bureaus zien
         
         v2.1: Nu met JOIN naar bedrijven tabel voor bedrijfsgegevens
+        v2.3: smart_import_id en ai_model_used toegevoegd
         
         Args:
             user_id: UUID van de ingelogde user
@@ -223,9 +220,9 @@ class TenderService:
                 print(f"⚠️ No tenderbureau found for user {user_id}")
                 return []
             
-            # Query alle tenders van dit bureau (met tenderbureau naam EN bedrijf)
+            # v2.3: smart_import_id en ai_model_used expliciet toegevoegd
             result = self.db.table('tenders')\
-                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, smart_import_id, ai_model_used, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .eq('tenderbureau_id', bureau_id)\
                 .order('created_at', desc=True)\
                 .execute()
@@ -257,6 +254,7 @@ class TenderService:
     async def get_all_tenders_all_bureaus(self, user_id: str) -> List[dict]:
         """
         Get all tenders across all bureaus (super-admin only).
+        v2.3: smart_import_id en ai_model_used toegevoegd
         """
         try:
             # Check if super admin
@@ -265,9 +263,9 @@ class TenderService:
                 print(f"⚠️ User {user_id} is not super admin")
                 return []
             
-            # Query alle tenders (met tenderbureau naam EN bedrijf)
+            # v2.3: smart_import_id en ai_model_used expliciet toegevoegd
             result = self.db.table('tenders')\
-                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, smart_import_id, ai_model_used, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .order('created_at', desc=True)\
                 .execute()
             
@@ -302,13 +300,16 @@ class TenderService:
         MULTI-TENANCY:
         - User moet in hetzelfde tenderbureau zitten als de tender
         - Of super-admin zijn
+        
+        v2.3: smart_import_id en ai_model_used toegevoegd
         """
         try:
             user_bureau_id = await self._get_user_tenderbureau_id(user_id)
             is_super = await self._is_super_admin(user_id)
             
+            # v2.3: smart_import_id en ai_model_used expliciet toegevoegd
             query = self.db.table('tenders')\
-                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, smart_import_id, ai_model_used, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .eq('id', tender_id)
             
             # Filter op bureau (tenzij super-admin)
@@ -516,6 +517,7 @@ class TenderService:
     async def get_tenders_by_fase(self, user_id: str, fase: str, tenderbureau_id: Optional[str] = None) -> List[dict]:
         """
         Get tenders by fase for user's tenderbureau.
+        v2.3: smart_import_id en ai_model_used toegevoegd
         """
         try:
             # Bepaal het tenderbureau
@@ -524,8 +526,9 @@ class TenderService:
             if not bureau_id:
                 return []
             
+            # v2.3: smart_import_id en ai_model_used expliciet toegevoegd
             result = self.db.table('tenders')\
-                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, plaats)')\
+                .select('*, smart_import_id, ai_model_used, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, plaats)')\
                 .eq('tenderbureau_id', bureau_id)\
                 .eq('fase', fase)\
                 .order('created_at', desc=True)\

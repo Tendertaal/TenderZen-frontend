@@ -1,20 +1,112 @@
+/* Smart Import Button */
+#smart-import-btn {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    margin-right: 8px;
+}
+
+#smart-import-btn:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
 /**
- * Tender Cards Styles
- * TenderZen v2.0
+ * Tender Cards Styles - TenderZen v3.0
  * 
- * CHANGELOG:
- * - CSS variables toegepast
- * - TenderZen kleuren
- * - Icon support
- * - Verbeterde hover states
- * - Phase-specifieke styling
- * - â­ Dynamische status select met alle fases
- * - â­ Opgeschoond - geen duplicaten meer
- * - â­ NIEUW: Minimalistisch card design
+ * OPGESCHOOND: 20250130
+ * - Geen gradients meer
+ * - Geen dubbele code
+ * - Cleane structuur
  */
 
 /* ============================================
-   WRAPPER
+   CSS VARIABLES (indien niet elders gedefinieerd)
+   ============================================ */
+
+:root {
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-10: 40px;
+    --space-16: 64px;
+
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-full: 9999px;
+
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-lg: 18px;
+
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    --line-height-tight: 1.25;
+
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.2s ease;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+    --bg-surface: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+
+    --border-light: #f1f5f9;
+    --border-default: #e2e8f0;
+
+    --text-primary: #0f172a;
+    --text-secondary: #334155;
+    --text-tertiary: #64748b;
+    --text-muted: #94a3b8;
+
+    --color-primary-50: #eef2ff;
+    --color-primary-300: #a5b4fc;
+    --color-primary-400: #818cf8;
+    --color-primary-500: #6366f1;
+    --color-primary-600: #4f46e5;
+
+    --color-success-50: #ecfdf5;
+    --color-success-100: #d1fae5;
+    --color-success-700: #047857;
+
+    --color-warning-50: #fffbeb;
+    --color-warning-100: #fef3c7;
+    --color-warning-400: #fbbf24;
+    --color-warning-700: #b45309;
+
+    --color-error-50: #fef2f2;
+    --color-error-100: #fee2e2;
+    --color-error-400: #f87171;
+    --color-error-500: #ef4444;
+    --color-error-600: #dc2626;
+    --color-error-700: #b91c1c;
+
+    --color-gray-200: #e5e7eb;
+    --color-gray-600: #4b5563;
+
+    --color-info-600: #2563eb;
+    --color-info-700: #1d4ed8;
+}
+
+/* ============================================
+   WRAPPER & CONTAINERS
    ============================================ */
 
 .tenders-wrapper {
@@ -23,13 +115,6 @@
     padding: var(--space-1);
 }
 
-.tenders-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-/* Tender List View - container voor sticky headers */
 .tender-list-view {
     width: 100%;
     min-width: max-content;
@@ -38,12 +123,8 @@
 .tender-cards-container {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4, 16px);
+    gap: var(--space-4);
 }
-
-/* ============================================
-   APP CONTENT - Scroll container voor sticky
-   ============================================ */
 
 #app-content {
     overflow-y: auto;
@@ -52,7 +133,7 @@
 }
 
 /* ============================================
-   HEADERS ROW - Kolom titels
+   HEADERS ROW
    ============================================ */
 
 .headers-row {
@@ -88,10 +169,9 @@
     color: var(--text-muted);
 }
 
-/* Header cell widths - MOETEN MATCHEN met tender-row secties */
 .headers-row .header-aanbesteding {
-    width: 420px;
-    min-width: 420px;
+    width: 450px;
+    min-width: 450px;
     justify-content: flex-start;
     padding-left: var(--space-5);
 }
@@ -111,7 +191,6 @@
     min-width: 110px;
 }
 
-/* Highlight voor deadline kolom */
 .headers-row .header-cell.deadline-highlight {
     background: var(--color-error-50);
     color: var(--color-error-600);
@@ -122,32 +201,27 @@
 }
 
 /* ============================================
-   TENDER ROW - Horizontale kaart
+   TENDER ROW - Basis
    ============================================ */
 
 .tender-row {
     display: flex;
     align-items: stretch;
-    background: var(--bg-surface);
+    background: #ffffff;
     border-radius: var(--radius-xl);
+    border: 1px solid #e2e8f0;
+    /* ⭐ Subtiele border rond hele kaart */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
     transition: all var(--transition-normal);
     overflow: visible;
+    /* Nodig voor dropdown */
     min-width: max-content;
-    cursor: pointer;
     position: relative;
     z-index: 1;
 }
 
-/* Wanneer dropdown open is, verhoog z-index zodat menu over andere kaarten valt */
 .tender-row.dropdown-open {
     z-index: 100;
-}
-
-.tender-row::before,
-.tender-row::after {
-    content: none;
-    display: none;
 }
 
 .tender-row:hover {
@@ -155,65 +229,28 @@
     transform: translateY(-3px);
 }
 
-.tender-row.collapsed .card-content {
-    display: none;
-}
-
-/* Phase-specific left border */
-.tender-row.phase-acquisitie {
-    border-left: 5px solid #f59e0b;
-}
-
+/* Phase-specific styling - GEEN border-left meer, fase badge is voldoende */
+.tender-row.phase-acquisitie,
 .tender-row.phase-inschrijvingen,
-.tender-row.phase-schrijven {
-    border-left: 5px solid #8b5cf6;
-}
-
-.tender-row.phase-ingediend {
-    border-left: 5px solid #10b981;
-}
-
+.tender-row.phase-schrijven,
+.tender-row.phase-ingediend,
 .tender-row.phase-archief {
-    border-left: 5px solid #64748b;
+    border-left: none;
+}
+
+/* Verloren tenders krijgen lichtere opacity */
+.tender-row.phase-archief[data-status="verloren"] {
+    opacity: 0.85;
 }
 
 /* ============================================
-   TOGGLE BUTTON
-   ============================================ */
-
-.toggle-btn {
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-md);
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    transition: all var(--transition-fast);
-    z-index: 10;
-    color: var(--text-tertiary);
-}
-
-.toggle-btn:hover {
-    background: var(--bg-tertiary);
-    border-color: var(--border-default);
-    color: var(--text-secondary);
-}
-
-/* ============================================
-   SECTIE 1: AANBESTEDING - MINIMALISTISCH DESIGN
+   SECTIE AANBESTEDING - v3.0 Design
    ============================================ */
 
 .section-aanbesteding {
-    width: 420px;
-    min-width: 420px;
+    width: 450px;
+    /* ⭐ Iets breder voor meer ruimte */
+    min-width: 450px;
     padding: 20px 24px;
     border-right: 1px solid var(--border-light);
     display: flex;
@@ -221,71 +258,151 @@
     gap: 16px;
     position: relative;
     overflow: visible;
+    /* Nodig voor dropdown */
+    background: #ffffff;
+    /* Match border-radius van tender-row */
+    border-top-left-radius: var(--radius-xl);
+    border-bottom-left-radius: var(--radius-xl);
 }
 
-/* Phase-specific backgrounds - subtiele gradient */
-.phase-acquisitie .section-aanbesteding {
-    background: linear-gradient(90deg, #fef3c7 0%, #fef9e7 60px, var(--bg-surface) 120px);
-}
+/* ============================================
+   CARD HEADER ROW - Fase + Status + Actions
+   ============================================ */
 
-.phase-inschrijvingen .section-aanbesteding,
-.phase-schrijven .section-aanbesteding {
-    background: linear-gradient(90deg, #ede9fe 0%, #f5f3ff 60px, var(--bg-surface) 120px);
-}
-
-.phase-ingediend .section-aanbesteding {
-    background: linear-gradient(90deg, #d1fae5 0%, #ecfdf5 60px, var(--bg-surface) 120px);
-}
-
-.phase-archief .section-aanbesteding {
-    background: linear-gradient(90deg, #f1f5f9 0%, #f8fafc 60px, var(--bg-surface) 120px);
-}
-
-/* Gewonnen tender - groene tint */
-.tender-row.phase-archief[data-status="gewonnen"] {
-    border-left-color: #10b981;
-}
-
-.tender-row.phase-archief[data-status="gewonnen"] .section-aanbesteding {
-    background: linear-gradient(90deg, #d1fae5 0%, #ecfdf5 60px, var(--bg-surface) 120px);
-}
-
-/* Verloren tender - rode tint */
-.tender-row.phase-archief[data-status="verloren"] {
-    border-left-color: #ef4444;
-    opacity: 0.85;
-}
-
-.tender-row.phase-archief[data-status="verloren"] .section-aanbesteding {
-    background: linear-gradient(90deg, #fee2e2 0%, #fef2f2 60px, var(--bg-surface) 120px);
-}
-
-/* Card Header Row */
 .card-header-row {
     display: flex;
-    align-items: flex-start;
     justify-content: space-between;
-    gap: 16px;
-    overflow: visible;
+    align-items: center;
+    gap: 12px;
 }
 
-.card-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.card-actions {
+.card-header-left {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-    overflow: visible;
+    flex: 1;
+    min-width: 0;
+    /* ⭐ Staat krimpen toe */
 }
 
-/* ⭐ Custom Status Dropdown - volledig gestyled */
+.card-header-right {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    /* ⭐ Buttons behouden hun grootte */
+}
+
+/* Fase + Status groepering */
+.fase-status-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+
+/* ============================================
+   FASE BADGE
+   ============================================ */
+
+.fase-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: 1px solid;
+    flex-shrink: 0;
+    /* ⭐ Badge krimpt niet */
+    white-space: nowrap;
+    /* ⭐ Geen wrap */
+}
+
+.fase-badge--acquisitie {
+    background-color: #fef3c7;
+    color: #92400e;
+    border-color: #f59e0b;
+}
+
+.fase-badge--inschrijvingen {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    border-color: #8b5cf6;
+}
+
+.fase-badge--ingediend {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-color: #10b981;
+}
+
+.fase-badge--archief {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #94a3b8;
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    /* ⭐ Minimale breedte */
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #64748b;
+    flex-shrink: 0;
+    /* ⭐ Krimpt niet */
+}
+
+.action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.action-btn.doc-button:hover {
+    border-color: #8b5cf6;
+    color: #7c3aed;
+}
+
+.action-btn.edit-button:hover {
+    border-color: #f59e0b;
+    color: #d97706;
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+.action-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================
+   STATUS DROPDOWN
+   ============================================ */
+
 .status-dropdown {
     position: relative;
-    flex-shrink: 0;
+    flex-shrink: 1;
+    /* ⭐ Mag krimpen */
+    min-width: 100px;
+    /* ⭐ Minimale breedte */
+    max-width: 180px;
+    /* ⭐ Maximale breedte */
     z-index: 1;
 }
 
@@ -296,9 +413,10 @@
 .status-dropdown-trigger {
     display: flex;
     align-items: center;
-    gap: 8px;
-    min-width: 150px;
-    padding: 8px 12px;
+    gap: 6px;
+    width: 100%;
+    /* ⭐ Vul beschikbare ruimte */
+    padding: 6px 10px;
     font-size: 13px;
     font-weight: 500;
     font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -323,11 +441,19 @@
 .status-dropdown-value {
     flex: 1;
     text-align: left;
+    overflow: hidden;
+    /* ⭐ Verberg overflow */
+    text-overflow: ellipsis;
+    /* ⭐ Toon ... bij te lange tekst */
+    white-space: nowrap;
+    /* ⭐ Geen wrap */
 }
 
 .status-dropdown-chevron {
     color: #64748b;
     transition: transform 0.2s ease;
+    flex-shrink: 0;
+    /* ⭐ Chevron krimpt niet */
 }
 
 .status-dropdown.is-open .status-dropdown-chevron {
@@ -363,7 +489,6 @@
     border-bottom: 1px solid #f1f5f9;
 }
 
-/* Group Labels - fase kleuren */
 .status-dropdown-label {
     padding: 8px 14px 6px;
     font-size: 10px;
@@ -415,7 +540,6 @@
     color: #667eea;
 }
 
-/* Speciale status kleuren */
 .status-dropdown-option.status--gewonnen {
     color: #059669;
     font-weight: 600;
@@ -426,7 +550,7 @@
     font-weight: 600;
 }
 
-/* Scrollbar styling */
+/* Scrollbar */
 .status-dropdown-menu::-webkit-scrollbar {
     width: 6px;
 }
@@ -444,76 +568,27 @@
     background: #94a3b8;
 }
 
-/* Fase Tag */
-.fase-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
+/* ============================================
+   CARD CONTENT - Naam + Info
+   ============================================ */
+
+.card-content {
+    flex: 1;
+    min-width: 0;
 }
 
-/* ⭐ Fase + Doc button row */
-.fase-doc-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
-}
-
-.fase-doc-row .doc-button {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
-    padding: 0;
-    border-radius: 8px;
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #667eea;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    flex-shrink: 0;
-}
-
-.fase-doc-row .doc-button:hover {
-    background: #667eea;
-    border-color: #667eea;
-    color: white;
-}
-
-.fase-tag .fase-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-.fase-tag--acquisitie { color: #f59e0b; }
-.fase-tag--inschrijvingen { color: #8b5cf6; }
-.fase-tag--ingediend { color: #10b981; }
-.fase-tag--archief { color: #64748b; }
-
-/* Tender Name */
 .tender-name {
     font-size: 16px;
     font-weight: 600;
     color: #0f172a;
-    margin: 0 0 4px 0;
-    line-height: 1.3;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
 }
 
-/* Info Lines */
 .info-lines {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 4px;
 }
 
 .info-line {
@@ -538,14 +613,17 @@
 }
 
 .info-line--inschrijver {
-    color: #94a3b8;
+    color: #64748b;
 }
 
 .info-line--tenderbureau {
     color: #94a3b8;
 }
 
-/* Card Footer Row */
+/* ============================================
+   CARD FOOTER - Team + Meta
+   ============================================ */
+
 .card-footer-row {
     display: flex;
     align-items: center;
@@ -599,7 +677,6 @@
     background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
 }
 
-/* ⭐ v2.1: Extra rol-kleuren */
 .avatar--coordinator {
     background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
 }
@@ -624,13 +701,11 @@
     background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
 }
 
-/* Overflow indicator */
 .avatar--overflow {
     background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
     font-size: 9px;
 }
 
-/* Add button */
 .avatar--add {
     background: #f1f5f9;
     color: #94a3b8;
@@ -680,455 +755,7 @@
 }
 
 /* ============================================
-   LEGACY STYLES (voor backwards compatibility)
-   ============================================ */
-
-.card-main-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-/* Title Row */
-.card-title-row {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-    padding-right: var(--space-10);
-}
-
-/* Client Info */
-.card-client {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--font-size-sm);
-    margin-top: var(--space-1);
-}
-
-.client-icon {
-    display: flex;
-    color: #2563eb;
-}
-
-.client-name {
-    font-weight: var(--font-weight-semibold);
-    color: #1e40af;
-}
-
-/* Type Badge (legacy) */
-.card-type {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    padding: var(--space-1) var(--space-2);
-    background: #dbeafe;
-    color: #1e40af;
-    border: 2px solid #3b82f6;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-bold);
-    width: fit-content;
-    margin-top: var(--space-2);
-}
-
-.card-type .type-icon {
-    display: flex;
-    color: #2563eb;
-}
-
-/* Leads Button */
-.leads-btn {
-    width: 100%;
-    margin-top: var(--space-3);
-    padding: var(--space-2-5) var(--space-3);
-    background: var(--workload-bg);
-    border: 1px solid var(--workload-border);
-    border-radius: var(--radius-lg);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-info-700);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-}
-
-.leads-btn:hover {
-    background: var(--workload-hover-bg);
-    border-color: var(--workload-hover-border);
-}
-
-.leads-btn .btn-icon {
-    display: flex;
-}
-
-.leads-btn .leads-count {
-    background: var(--color-info-600);
-    color: white;
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-full);
-    font-size: var(--font-size-xs);
-}
-
-/* Workload Block */
-.workload-block {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2-5) var(--space-3);
-    background: #dbeafe;
-    border: 2px solid #3b82f6;
-    border-radius: var(--radius-lg);
-    margin-top: var(--space-3);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.workload-block:hover {
-    background: #bfdbfe;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-}
-
-.workload-block .workload-icon {
-    display: flex;
-    color: #2563eb;
-}
-
-.workload-block .workload-label {
-    font-size: var(--font-size-sm);
-    color: #1e40af;
-    font-weight: var(--font-weight-semibold);
-}
-
-.workload-block input {
-    width: 60px;
-    padding: var(--space-1-5) var(--space-2);
-    border: 2px solid #3b82f6;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-bold);
-    text-align: center;
-    color: #1e40af;
-    background: white;
-}
-
-.workload-block input:focus {
-    outline: none;
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-.workload-block .workload-unit {
-    font-size: var(--font-size-sm);
-    color: #1e40af;
-    font-weight: var(--font-weight-semibold);
-}
-
-/* Deadline Block */
-.deadline-block {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    padding: var(--space-2-5) var(--space-3);
-    background: #fef3c7;
-    border: 2px solid #f59e0b;
-    border-radius: var(--radius-lg);
-    margin-top: var(--space-3);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.deadline-block:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
-}
-
-.deadline-block .deadline-icon {
-    display: flex;
-    color: #d97706;
-}
-
-.deadline-block .deadline-label {
-    font-size: var(--font-size-sm);
-    color: #92400e;
-    font-weight: var(--font-weight-semibold);
-}
-
-.deadline-block .deadline-value {
-    font-size: var(--font-size-sm);
-    color: #92400e;
-    font-weight: var(--font-weight-bold);
-}
-
-/* Urgent Deadline */
-.deadline-block.urgent {
-    background: #fee2e2;
-    border-color: #ef4444;
-    animation: pulse 2s infinite;
-}
-
-.deadline-block.urgent .deadline-icon {
-    color: #dc2626;
-}
-
-.deadline-block.urgent .deadline-label,
-.deadline-block.urgent .deadline-value {
-    color: #991b1b;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.02); }
-}
-
-/* ============================================
-   SECTIE 2: TEAM
-   ============================================ */
-
-.section-team {
-    width: 200px;
-    min-width: 200px;
-    padding: var(--space-3) var(--space-4);
-    border-right: 1px solid var(--border-light);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: var(--space-2);
-}
-
-.team-role {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.role-label {
-    font-size: 10px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-tertiary);
-    min-width: 55px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.assigned-person {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-1) var(--space-2);
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-xs);
-    color: var(--text-secondary);
-    flex: 1;
-}
-
-.avatar-small {
-    width: 22px;
-    height: 22px;
-    border-radius: var(--radius-full);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 9px;
-    font-weight: var(--font-weight-bold);
-    color: white;
-}
-
-.unassigned {
-    padding: var(--space-1) var(--space-2);
-    border: 1px dashed var(--border-default);
-    border-radius: var(--radius-md);
-    font-size: 10px;
-    color: var(--text-muted);
-    text-align: center;
-    flex: 1;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-1);
-}
-
-.unassigned:hover {
-    border-color: var(--color-primary-400);
-    color: var(--color-primary-600);
-    background: var(--color-primary-50);
-}
-
-.unassigned .unassigned-icon {
-    display: flex;
-}
-
-/* ============================================
-   SECTIE 3: STATUS - DYNAMISCHE KLEUREN
-   ============================================ */
-
-.section-status {
-    width: 180px;
-    min-width: 180px;
-    padding: var(--space-3) var(--space-4);
-    border-right: 1px solid var(--border-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.status-select-wrapper {
-    display: flex;
-    align-items: center;
-    width: 100%;
-}
-
-/* Status Select - Clean design */
-.status-select {
-    --fase-color: #6366f1;
-    
-    width: 100%;
-    padding: 8px 12px;
-    padding-right: 28px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #334155;
-    background-color: #ffffff;
-    cursor: pointer;
-    outline: none;
-    transition: all 0.2s ease;
-    
-    /* Custom dropdown arrow */
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-}
-
-.status-select:hover {
-    border-color: #cbd5e1;
-    background-color: #f8fafc;
-}
-
-.status-select:focus {
-    border-color: var(--fase-color);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-/* Optgroup headers - fase labels */
-.status-select optgroup {
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #64748b;
-    background: #f8fafc;
-    padding: 8px 0;
-}
-
-/* Fase-specifieke optgroup kleuren */
-.status-select optgroup[data-fase="acquisitie"] {
-    color: #b45309;
-}
-
-.status-select optgroup[data-fase="inschrijvingen"] {
-    color: #7c3aed;
-}
-
-.status-select optgroup[data-fase="ingediend"] {
-    color: #059669;
-}
-
-.status-select optgroup[data-fase="archief"] {
-    color: #475569;
-}
-
-/* Options */
-.status-select option {
-    font-weight: 500;
-    font-size: 13px;
-    padding: 8px 12px;
-    color: #334155;
-}
-
-/* Speciale status kleuren in dropdown */
-.status-select option[value="gewonnen"] {
-    color: #059669;
-}
-
-.status-select option[value="verloren"] {
-    color: #dc2626;
-}
-
-/* ============================================
-   PHASE BADGES
-   ============================================ */
-
-.phase-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 8px;
-    border-radius: var(--radius-md);
-    font-size: 10px;
-    font-weight: var(--font-weight-semibold);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.phase-badge .badge-dot {
-    font-size: 8px;
-}
-
-.phase-badge--acquisitie {
-    background: #fef3c7;
-    border: 1px solid #f59e0b;
-    color: #92400e;
-}
-
-.phase-badge--acquisitie .badge-dot {
-    color: #f59e0b;
-}
-
-.phase-badge--inschrijvingen {
-    background: #ede9fe;
-    border: 1px solid #8b5cf6;
-    color: #5b21b6;
-}
-
-.phase-badge--inschrijvingen .badge-dot {
-    color: #8b5cf6;
-}
-
-.phase-badge--ingediend {
-    background: #d1fae5;
-    border: 1px solid #10b981;
-    color: #065f46;
-}
-
-.phase-badge--ingediend .badge-dot {
-    color: #10b981;
-}
-
-.phase-badge--archief {
-    background: #f1f5f9;
-    border: 1px solid #94a3b8;
-    color: #475569;
-}
-
-.phase-badge--archief .badge-dot {
-    color: #64748b;
-}
-
-/* ============================================
-   SECTIE 4: TIMELINE
+   SECTIE TIMELINE - Optie 2: Subtiele achtergrond
    ============================================ */
 
 .section-timeline {
@@ -1136,173 +763,156 @@
     flex: 1;
 }
 
+/* Laatste cell krijgt afgeronde rechter hoeken */
+.section-timeline .timeline-cell:last-child {
+    border-top-right-radius: var(--radius-xl);
+    border-bottom-right-radius: var(--radius-xl);
+}
+
 .timeline-cell {
     width: 110px;
     min-width: 110px;
-    padding: var(--space-3) var(--space-2);
+    padding: 16px 8px;
     border-right: 1px solid var(--border-light);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--space-1);
+    gap: 6px;
 }
 
 .timeline-cell:last-child {
     border-right: none;
 }
 
-.timeline-cell-header {
-    font-size: 9px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-align: center;
-}
-
+/* Basis date display - groter rechthoekig blok zoals mockup */
 .date-display {
-    width: 100%;
-    padding: var(--space-2) var(--space-1-5);
-    border: 2px solid var(--color-primary-400);
-    border-radius: var(--radius-md);
+    padding: 20px 16px;
+    /* ⭐ Grotere padding */
+    border-radius: 10px;
     text-align: center;
-    font-size: var(--font-size-sm);
-    color: var(--text-primary);
-    font-weight: var(--font-weight-semibold);
-    background: var(--bg-surface);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    line-height: var(--line-height-tight);
-    cursor: pointer;
     transition: all var(--transition-fast);
-}
-
-.date-display:hover {
-    border-color: var(--color-primary-500);
-    box-shadow: var(--shadow-sm);
+    min-height: 80px;
+    /* ⭐ Grotere hoogte */
+    min-width: 80px;
+    /* ⭐ Grotere breedte */
 }
 
 .date-display .date-day {
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-bold);
+    font-size: 28px;
+    /* ⭐ Groter */
+    font-weight: 700;
+    color: #334155;
+    line-height: 1;
 }
 
 .date-display .date-month {
-    font-size: 10px;
+    font-size: 12px;
+    /* ⭐ Groter */
     text-transform: uppercase;
-    color: var(--text-tertiary);
-    font-weight: var(--font-weight-medium);
+    color: #64748b;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
 }
 
-/* Date Display States */
-.date-display.completed {
-    background: var(--bg-secondary);
-    border-color: var(--border-default);
-    color: var(--text-tertiary);
-    position: relative;
+/* Gevulde datum - subtiele achtergrond */
+.date-display.filled {
+    background: #f1f5f9;
+    /* ⭐ Iets donkerder grijs zoals mockup */
 }
 
-.date-display.completed .date-day,
-.date-display.completed .date-month {
-    color: var(--text-muted);
-}
-
-.date-display.completed::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 10%;
-    right: 10%;
-    height: 2px;
-    background: var(--text-muted);
-    transform: rotate(-5deg);
-    pointer-events: none;
-    z-index: 1;
-}
-
-.date-display.critical {
-    background: var(--color-error-50);
-    border-color: var(--color-error-400);
-    color: var(--color-error-700);
-    animation: pulse 2s infinite;
-}
-
-.date-display.critical .date-day,
-.date-display.critical .date-month {
-    color: var(--color-error-600);
-}
-
-.date-display.soon {
-    background: var(--color-warning-50);
-    border-color: var(--color-warning-400);
-}
-
-.date-display.soon .date-day,
-.date-display.soon .date-month {
-    color: var(--color-warning-700);
-}
-
+/* Lege datum - volledig onzichtbaar */
 .date-display.empty {
-    background: var(--bg-secondary);
-    border: 2px dashed var(--border-default);
-    color: var(--text-muted);
-    font-weight: var(--font-weight-normal);
+    background: transparent;
+    visibility: hidden;
 }
 
-.date-display.empty:hover {
-    border-color: var(--color-primary-300);
-    color: var(--color-primary-600);
+/* Deadline - paarse accent */
+.date-display.deadline {
+    background: #f3f0ff;
+    /* ⭐ Licht paars */
 }
 
-/* Days to Deadline Badge */
+.date-display.deadline .date-day {
+    color: #7c3aed;
+}
+
+.date-display.deadline .date-month {
+    color: #8b5cf6;
+}
+
+/* Urgente deadline */
+.date-display.urgent {
+    background: #fef2f2;
+}
+
+.date-display.urgent .date-day {
+    color: #dc2626;
+}
+
+.date-display.urgent .date-month {
+    color: #ef4444;
+}
+
+/* Binnenkort deadline */
+.date-display.soon {
+    background: #fffbeb;
+}
+
+.date-display.soon .date-day {
+    color: #d97706;
+}
+
+.date-display.soon .date-month {
+    color: #f59e0b;
+}
+
+/* Verstreken datum */
+.date-display.completed {
+    background: #f8fafc;
+}
+
+.date-display.completed .date-day {
+    color: #94a3b8;
+}
+
+.date-display.completed .date-month {
+    color: #cbd5e1;
+}
+
+/* Days to Deadline Badge - zoals mockup */
 .days-to-deadline {
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-sm);
-    font-size: 9px;
-    font-weight: var(--font-weight-bold);
-    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-top: 2px;
 }
 
 .days-to-deadline.ok {
-    background: var(--color-success-100);
-    color: var(--color-success-700);
+    background: #10b981;
+    /* ⭐ Groene achtergrond zoals mockup */
+    color: white;
 }
 
 .days-to-deadline.soon {
-    background: var(--color-warning-100);
-    color: var(--color-warning-700);
+    background: #f59e0b;
+    color: white;
 }
 
 .days-to-deadline.urgent {
-    background: var(--color-error-100);
-    color: var(--color-error-700);
-}
-
-.days-to-deadline.past {
-    background: var(--color-gray-200);
-    color: var(--color-gray-600);
-}
-
-/* ============================================
-   CARD CONTENT (Collapsible)
-   ============================================ */
-
-.card-content {
-    transition: all var(--transition-normal);
-}
-
-.tender-row.collapsed .card-content {
-    display: none;
+    background: #dc2626;
+    color: white;
 }
 
 /* ============================================
    EMPTY STATE
    ============================================ */
 
-.tenders-empty,
 .empty-state {
     display: flex;
     flex-direction: column;
@@ -1313,13 +923,11 @@
     color: var(--text-tertiary);
 }
 
-.tenders-empty .empty-icon,
 .empty-state-icon {
     color: var(--text-muted);
     margin-bottom: var(--space-4);
 }
 
-.tenders-empty .empty-title,
 .empty-state-title {
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
@@ -1327,7 +935,6 @@
     margin-bottom: var(--space-2);
 }
 
-.tenders-empty .empty-description,
 .empty-state-text {
     font-size: var(--font-size-sm);
     color: var(--text-tertiary);
@@ -1347,13 +954,30 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
     animation: shimmer 1.5s infinite;
 }
 
 @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
 }
 
 /* ============================================
@@ -1362,84 +986,100 @@
 
 @media (max-width: 1400px) {
     .section-aanbesteding {
-        width: 360px;
-        min-width: 360px;
+        width: 400px;
+        min-width: 400px;
     }
-    
+
     .headers-row .header-aanbesteding {
-        width: 360px;
-        min-width: 360px;
+        width: 400px;
+        min-width: 400px;
     }
-    
+
     .timeline-cell {
-        width: 90px;
-        min-width: 90px;
+        width: 100px;
+        min-width: 100px;
     }
-    
+
     .headers-row .header-timeline {
-        width: 90px;
-        min-width: 90px;
+        width: 100px;
+        min-width: 100px;
     }
-    
-    .section-status {
-        width: 160px;
-        min-width: 160px;
+
+    .date-display {
+        min-height: 70px;
+        min-width: 70px;
+        padding: 16px 12px;
     }
-    
-    .headers-row .header-status {
-        width: 160px;
-        min-width: 160px;
+
+    .date-display .date-day {
+        font-size: 24px;
     }
-    
-    .status-select {
-        font-size: 12px;
-        padding: 6px 10px;
-        padding-right: 24px;
+
+    .date-display .date-month {
+        font-size: 11px;
     }
-    
-    /* Kleiner avatars op smaller screens */
+
     .avatar {
         width: 26px;
         height: 26px;
         font-size: 9px;
         margin-left: -6px;
     }
-    
+
     .meta-item {
         font-size: 12px;
     }
-    
+
     .type-badge {
         font-size: 10px;
     }
 }
 
 @media (max-width: 1200px) {
-    .section-team {
-        width: 160px;
-        min-width: 160px;
-    }
-    
-    .headers-row .header-team {
-        width: 160px;
-        min-width: 160px;
-    }
-    
     .section-aanbesteding {
-        width: 320px;
-        min-width: 320px;
+        width: 360px;
+        min-width: 360px;
         padding: 16px 20px;
     }
-    
+
     .headers-row .header-aanbesteding {
-        width: 320px;
-        min-width: 320px;
+        width: 360px;
+        min-width: 360px;
     }
-    
+
+    .timeline-cell {
+        width: 90px;
+        min-width: 90px;
+    }
+
+    .headers-row .header-timeline {
+        width: 90px;
+        min-width: 90px;
+    }
+
+    .date-display {
+        min-height: 60px;
+        min-width: 60px;
+        padding: 12px 10px;
+    }
+
+    .date-display .date-day {
+        font-size: 20px;
+    }
+
+    .date-display .date-month {
+        font-size: 10px;
+    }
+
+    .days-to-deadline {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+
     .tender-name {
         font-size: 15px;
     }
-    
+
     .info-line {
         font-size: 12px;
     }
@@ -1450,7 +1090,7 @@
     .tenders-wrapper {
         position: relative;
     }
-    
+
     .tenders-wrapper::after {
         content: '';
         position: absolute;
@@ -1461,8 +1101,150 @@
         background: linear-gradient(90deg, transparent, rgba(248, 250, 252, 0.9));
         pointer-events: none;
     }
-    
+
     .tenders-wrapper.scrolled-right::after {
         display: none;
     }
+}
+
+/* ============================================
+   TENDER SEARCH RESULTS STYLING
+   TenderZen v2.1 - Toevoegen aan tender-cards.css
+   ============================================ */
+
+/* ============================================
+   SEARCH RESULTS INFO BAR
+   ============================================ */
+
+.search-results-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%);
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #4338ca;
+}
+
+.search-results-count {
+    font-weight: 700;
+    color: #4f46e5;
+}
+
+.search-results-info strong {
+    font-weight: 600;
+}
+
+/* ============================================
+   SEARCH HIGHLIGHT IN TENDER CARDS
+   ============================================ */
+
+.search-highlight {
+    background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
+    color: #854d0e;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: inherit;
+}
+
+/* ============================================
+   NO SEARCH RESULTS EMPTY STATE
+   ============================================ */
+
+.empty-state--search {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state--search .empty-state-icon {
+    color: #94a3b8;
+    margin-bottom: 16px;
+}
+
+.empty-state--search .empty-state-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.empty-state--search .empty-state-text {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.empty-state--search .empty-state-text strong {
+    color: #4f46e5;
+    font-weight: 600;
+}
+
+.empty-state--search .empty-state-hint {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .search-results-info {
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+}
+
+/**
+ * TENDER CARDS CSS PATCH - Sticky Header Fix
+ * TenderZen v3.1
+ * 
+ * Voeg dit toe aan het EINDE van tender-cards.css OF
+ * vervang de bestaande .tenders-wrapper en #app-content regels
+ * 
+ * PROBLEEM: .tenders-wrapper had overflow-x: auto wat sticky brak
+ * OPLOSSING: overflow alleen op #app-content, niet op .tenders-wrapper
+ */
+
+/* ============================================
+   FIX: Verwijder overflow van tenders-wrapper
+   ============================================ */
+
+.tenders-wrapper {
+    width: 100%;
+    /* overflow-x: auto; ← VERWIJDERD - dit brak sticky */
+    padding: var(--space-1, 4px);
+}
+
+/* ============================================
+   FIX: #app-content is nu de enige scroll container
+   ============================================ */
+
+#app-content {
+    overflow-y: auto;
+    overflow-x: auto;  /* Horizontaal scrollen hier */
+    flex: 1;
+}
+
+/* ============================================
+   FIX: tender-list-view krijgt min-width voor horizontaal scrollen
+   ============================================ */
+
+.tender-list-view {
+    width: 100%;
+    min-width: max-content;  /* Zorgt voor horizontaal scrollen indien nodig */
+}
+
+/* ============================================
+   STICKY HEADER - Nu correct werkend
+   ============================================ */
+
+.headers-row {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    background: var(--bg-surface, #ffffff) !important;
 }

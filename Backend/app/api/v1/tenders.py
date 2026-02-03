@@ -14,15 +14,14 @@ from app.services.tender_service import TenderService
 router = APIRouter(prefix="/tenders", tags=["tenders"])
 
 
-@router.get("/", response_model=List[TenderResponse])
-
+@router.get("", response_model=List[TenderResponse])
 async def get_tenders(
     tenderbureau_id: Optional[str] = Query(None, description="ID van het bureau, of None voor alle bureaus (super_admin only)"),
     current_user: dict = Depends(get_current_user),
     db: Client = Depends(get_supabase_async)
 ):
     """Get all tenders for current user or all bureaus (super_admin only)"""
-    print(f"📱 GET /tenders/ for user: {current_user['id']} | tenderbureau_id={tenderbureau_id}")
+    print(f"📱 GET /tenders for user: {current_user['id']} | tenderbureau_id={tenderbureau_id}")
     service = TenderService(db)
     is_super = await service._is_super_admin(current_user['id'])
     if tenderbureau_id is None and is_super:
@@ -54,7 +53,7 @@ async def get_tender(
     return tender
 
 
-@router.post("/", response_model=TenderResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TenderResponse, status_code=status.HTTP_201_CREATED)
 async def create_tender(
     tender: TenderCreate,
     current_user: dict = Depends(get_current_user),

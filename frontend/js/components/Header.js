@@ -1,60 +1,58 @@
 /**
  * Header Component
- * TenderZen v2.4 - Multi-Bureau Support + Button Fix + Iconen Beheer + Archief Tab
+ * TenderZen v2.9 - Smart Import Only (geen + Tender knop meer)
  * 
- * De header bestaat uit twee delen:
- * 1. Main Header - Altijd zichtbaar (logo, BUREAU SWITCHER, menu, profile)
- * 2. Sub Header - Dynamisch per context (tenders, bedrijven, etc.)
+ * CHANGELOG v2.9:
+ * - VERWIJDERD: "+ Tender" knop (handmatig aanmaken)
+ * - GEWIJZIGD: "Smart Import" knop is nu de primaire create knop (groene stijl)
+ * - Workflow: Tenders worden nu via Smart Import aangemaakt, details via Edit knop
  * 
- * CHANGELOG v2.4:
- * - NIEUW: Archief tab toegevoegd aan tender sub-header
- * - NIEUW: archief count in tenderCounts
- * - NIEUW: phase-indicator.archief styling
+ * CHANGELOG v2.8:
+ * - NIEUW: onSearchClear callback voor terug navigatie na zoeken
+ * - removeSearchChip roept nu onSearchClear aan
  * 
- * CHANGELOG v2.3:
- * - NIEUW: Iconen beheer menu-item voor super-admins
+ * CHANGELOG v2.7:
+ * - NIEUW: setSearchResultsCount() - update resultaten teller in filter chips
+ * - NIEUW: Resultaten count geïntegreerd in filter chips balk
+ * - NIEUW: "X resultaten" direct naast de chip
  * 
- * CHANGELOG v2.2:
- * - FIX: Context create button event listener werkt nu correct
- * 
- * CHANGELOG v2.1:
- * - BureauSwitcher toegevoegd voor multi-bureau support
- * 
- * GEBRUIK:
- * header.setContext('tenders', { counts: {...} });
- * header.setContext('bedrijven', { count: 5, onAdd: () => {} });
- * header.setContext('tenderbureaus', { count: 3, onAdd: () => {} });
- * header.setContext('settings', { activeTab: 'security' });
+ * CHANGELOG v2.6:
+ * - Filter chips balk voor actieve zoekterm
+ * - Enter → zoekterm wordt chip
  */
 
 // Referentie naar globale Icons (geladen via icons.js)
 const Icons = window.Icons || {};
 
-// NIEUW: Import BureauSwitcher
+// Import BureauSwitcher
 import { BureauSwitcher } from '/js/components/BureauSwitcher.js';
 import { bureauAccessService } from '/js/services/BureauAccessService.js';
+import { SmartImportWizard } from '/js/components/SmartImportWizard.js';
 
 export class Header {
     constructor() {
         this.container = null;
         this.menuOpen = false;
         this.profileMenuOpen = false;
-        
+
         // Current context
         this.currentContext = 'tenders';
         this.contextData = {};
-        
+
         // Tender specific state
         this.activeTab = 'totaal';
         this.activeView = 'lijst';
+        this.searchQuery = '';           // Huidige waarde in zoekbalk (voor live filtering)
+        this.activeSearchChip = '';      // Actieve filter chip (na Enter)
+        this.searchResultsCount = null;  // ⭐ v2.7: Resultaten count
         this.tenderCounts = {
             totaal: 0,
             acquisitie: 0,
             inschrijvingen: 0,
             ingediend: 0,
-            archief: 0  // ⭐ v2.4: Archief count toegevoegd
+            archief: 0
         };
-        
+
         // User state
         this.isSuperAdmin = false;
         this.userProfile = {
@@ -63,23 +61,25 @@ export class Header {
             role: '',
             initials: ''
         };
-        
+
         // Team members for filter
         this.teamMembers = [];
         this.currentTeamFilter = null;
         this.currentStatusFilter = null;
-        
+
         // Callbacks
         this.onTabChange = null;
         this.onViewChange = null;
         this.onSearch = null;
-        this.onCreateTender = null;
+        this.onSearchClear = null;  // ⭐ v2.8: Callback voor terug navigatie na zoeken
+        this.onCreateTender = null;  // ⭐ v2.9: Deprecated - niet meer gebruikt
+        this.onSmartImport = null; // Callback voor Smart Import
         this.onMenuAction = null;
-        this.onContextAction = null; // Generic action callback for any context
+        this.onContextAction = null;
         this.onTeamFilter = null;
         this.onStatusFilter = null;
-        
-        // NIEUW: Bureau state en callback
+
+        // Bureau state en callback
         this.bureauSwitcher = null;
         this.currentBureau = null;
         this.onBureauChange = null;
@@ -87,12 +87,18 @@ export class Header {
 
     /**
      * Set the current context (changes sub-header)
-     * @param {string} context - 'tenders' | 'bedrijven' | 'tenderbureaus' | 'settings' | 'team'
-     * @param {object} data - Context-specific data
      */
     setContext(context, data = {}) {
         this.currentContext = context;
         this.contextData = data;
+
+        // Clear search when changing context
+        if (context !== 'tenders') {
+            this.searchQuery = '';
+            this.activeSearchChip = '';
+            this.searchResultsCount = null;
+        }
+
         this.updateSubHeader();
     }
 
@@ -116,38 +122,31 @@ export class Header {
     }
 
     /**
-     * NIEUW: Initialize the bureau switcher component
-     * Call this after render() and after user is authenticated
+     * Initialize the bureau switcher component
      */
     async initBureauSwitcher() {
         try {
-            // Create and initialize the switcher
             this.bureauSwitcher = new BureauSwitcher();
             await this.bureauSwitcher.init();
-            
-            // Get current bureau
+
             this.currentBureau = bureauAccessService.getCurrentBureau();
-            
-            // Set callback for bureau changes
+
             this.bureauSwitcher.onBureauChange = (newBureau) => {
                 this.currentBureau = newBureau;
-                
-                // Notify parent (App)
                 if (this.onBureauChange) {
                     this.onBureauChange(newBureau);
                 }
             };
-            
-            // Render into container
+
             const container = document.getElementById('bureau-switcher-container');
             if (container) {
                 container.innerHTML = '';
                 container.appendChild(this.bureauSwitcher.render());
             }
-            
+
             console.log('✅ Bureau switcher initialized');
             return this.currentBureau;
-            
+
         } catch (error) {
             console.error('❌ Error initializing bureau switcher:', error);
             throw error;
@@ -236,8 +235,6 @@ export class Header {
         if (tenderbureausMenuItem) {
             tenderbureausMenuItem.style.display = this.isSuperAdmin ? 'flex' : 'none';
         }
-        
-        // NIEUW: Update iconen menu item visibility
         const iconenMenuItem = document.querySelector('[data-action="iconen"]');
         if (iconenMenuItem) {
             iconenMenuItem.style.display = this.isSuperAdmin ? 'flex' : 'none';
@@ -261,7 +258,6 @@ export class Header {
 
     /**
      * Update badges without re-rendering
-     * ⭐ v2.4: Archief badge toegevoegd
      */
     updateBadges() {
         const badges = {
@@ -269,7 +265,7 @@ export class Header {
             'acquisitie': document.querySelector('[data-tab="acquisitie"] .badge'),
             'inschrijvingen': document.querySelector('[data-tab="inschrijvingen"] .badge'),
             'ingediend': document.querySelector('[data-tab="ingediend"] .badge'),
-            'archief': document.querySelector('[data-tab="archief"] .badge')  // ⭐ v2.4
+            'archief': document.querySelector('[data-tab="archief"] .badge')
         };
 
         Object.entries(badges).forEach(([tab, badge]) => {
@@ -281,11 +277,9 @@ export class Header {
 
     /**
      * Update team filter options
-     * @param {Array} teamMembers - Array of team member names
      */
     updateTeamOptions(teamMembers) {
         this.teamMembers = teamMembers || [];
-        // Team filter is optional - only update if element exists
         const teamOptionsContainer = document.getElementById('team-options');
         if (teamOptionsContainer && this.teamMembers.length > 0) {
             teamOptionsContainer.innerHTML = this.teamMembers.map(member => `
@@ -305,80 +299,249 @@ export class Header {
     }
 
     /**
-     * Render TenderZen Logo
+     * ⭐ v2.7: Set search results count (called from App.js/TenderListView)
+     * @param {number} count - Aantal zoekresultaten
      */
-    renderLogo() {
-        return `
-            <div class="logo-container">
-                <div class="logo-icon">
-                    <svg width="32" height="36" viewBox="0 0 48 52" fill="none">
-                        <defs>
-                            <linearGradient id="logoGradient" x1="24" y1="5" x2="24" y2="49" gradientUnits="userSpaceOnUse">
-                                <stop offset="0%" stop-color="#c084fc"/>
-                                <stop offset="50%" stop-color="#818cf8"/>
-                                <stop offset="100%" stop-color="#667eea"/>
-                            </linearGradient>
-                        </defs>
-                        <ellipse cx="24" cy="10" rx="9" ry="5.5" fill="url(#logoGradient)" opacity="0.6"/>
-                        <ellipse cx="24" cy="25" rx="12" ry="6.5" fill="url(#logoGradient)" opacity="0.8"/>
-                        <ellipse cx="24" cy="42" rx="15" ry="7" fill="url(#logoGradient)"/>
-                    </svg>
-                </div>
-                <span class="logo-text">TenderZen</span>
-            </div>
-        `;
+    setSearchResultsCount(count) {
+        this.searchResultsCount = count;
+        this.updateFilterChipsBar();
     }
 
     /**
-     * Render the complete header
+     * Create search filter chip (called on Enter)
+     */
+    createSearchChip(query) {
+        if (!query || query.trim() === '') return;
+
+        const trimmedQuery = query.trim();
+        this.activeSearchChip = trimmedQuery;
+        this.searchQuery = trimmedQuery;
+
+        // Clear the search input
+        const searchInput = document.getElementById('tender-search-input');
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.blur();
+        }
+
+        // Update filter chips bar
+        this.updateFilterChipsBar();
+
+        // Notify listeners
+        if (this.onSearch) {
+            this.onSearch(trimmedQuery);
+        }
+
+        console.log(`🏷️ Filter chip aangemaakt: "${trimmedQuery}"`);
+    }
+
+    /**
+     * Edit search chip (click on chip text)
+     */
+    editSearchChip() {
+        if (!this.activeSearchChip) return;
+
+        const searchInput = document.getElementById('tender-search-input');
+        if (searchInput) {
+            searchInput.value = this.activeSearchChip;
+            searchInput.focus();
+            searchInput.select();
+        }
+
+        // Remove chip but keep filter active
+        this.activeSearchChip = '';
+        this.updateFilterChipsBar();
+
+        console.log('✏️ Filter chip bewerken');
+    }
+
+    /**
+     * Remove search chip
+     * ⭐ v2.8: Roept onSearchClear aan voor terug navigatie
+     */
+    removeSearchChip() {
+        this.activeSearchChip = '';
+        this.searchQuery = '';
+        this.searchResultsCount = null;
+
+        // Clear search input
+        const searchInput = document.getElementById('tender-search-input');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        // Update UI
+        this.updateFilterChipsBar();
+
+        // ⭐ v2.8: Notify listeners - gebruik onSearchClear voor terug navigatie
+        if (this.onSearchClear) {
+            this.onSearchClear();
+        } else if (this.onSearch) {
+            // Fallback naar oude gedrag
+            this.onSearch('');
+        }
+
+        console.log('🗑️ Filter chip verwijderd');
+    }
+
+    /**
+     * ⭐ v2.7: Update filter chips bar with integrated results count
+     */
+    updateFilterChipsBar() {
+        const chipsContainer = document.getElementById('filter-chips-bar');
+
+        if (!chipsContainer) return;
+
+        if (this.activeSearchChip) {
+            // Build results text - geïntegreerd naast de chip
+            let resultsText = '';
+            if (this.searchResultsCount !== null) {
+                const resultWord = this.searchResultsCount === 1 ? 'resultaat' : 'resultaten';
+                resultsText = `<span class="filter-results-count">${this.searchResultsCount} ${resultWord}</span>`;
+            }
+
+            chipsContainer.innerHTML = `
+                <div class="filter-chips-content">
+                    <div class="filter-chip filter-chip--search" id="search-filter-chip">
+                        <span class="filter-chip-icon">
+                            ${Icons.search ? Icons.search({ size: 14, color: '#6366f1' }) : '🔍'}
+                        </span>
+                        <span class="filter-chip-text" id="search-chip-text">${this.escapeHtml(this.activeSearchChip)}</span>
+                        <button class="filter-chip-remove" id="search-chip-remove" title="Filter verwijderen">
+                            ${Icons.x ? Icons.x({ size: 14, color: '#6366f1' }) : '×'}
+                        </button>
+                    </div>
+                    ${resultsText}
+                </div>
+            `;
+            chipsContainer.classList.add('has-chips');
+
+            // Attach chip event listeners
+            this.attachChipListeners();
+        } else {
+            chipsContainer.innerHTML = '';
+            chipsContainer.classList.remove('has-chips');
+        }
+    }
+
+    /**
+     * Attach event listeners for filter chips
+     */
+    attachChipListeners() {
+        const self = this;
+
+        // Click on chip text to edit
+        const chipText = document.getElementById('search-chip-text');
+        if (chipText) {
+            chipText.addEventListener('click', () => {
+                self.editSearchChip();
+            });
+        }
+
+        // Click on X to remove
+        const chipRemove = document.getElementById('search-chip-remove');
+        if (chipRemove) {
+            chipRemove.addEventListener('click', (e) => {
+                e.stopPropagation();
+                self.removeSearchChip();
+            });
+        }
+    }
+
+    /**
+     * Escape HTML for safe display
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    /**
+     * Clear search and notify listeners
+     */
+    clearSearch() {
+        this.searchQuery = '';
+        this.activeSearchChip = '';
+        this.searchResultsCount = null;
+
+        const searchInput = document.getElementById('tender-search-input');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+
+        this.updateFilterChipsBar();
+
+        if (this.onSearch) {
+            this.onSearch('');
+        }
+    }
+
+    /**
+     * Get current search query
+     */
+    getSearchQuery() {
+        return this.activeSearchChip || this.searchQuery;
+    }
+
+    /**
+     * ⭐ v2.7: Check if search chip is active
+     */
+    hasActiveSearchChip() {
+        return !!this.activeSearchChip;
+    }
+
+    /**
+     * Render the header
      */
     render() {
         const container = document.createElement('div');
         container.className = 'header-wrapper';
-        container.id = 'header-wrapper';
-
         container.innerHTML = `
-            <!-- Main Header Bar (Always visible) -->
+            <!-- Main Header -->
             <header class="header">
                 <div class="header-left">
-                    ${this.renderLogo()}
-                    
-                    <!-- NIEUW: Bureau Switcher Container -->
-                    <div id="bureau-switcher-container" class="bureau-switcher-container">
-                        <!-- BureauSwitcher wordt hier gerenderd via initBureauSwitcher() -->
+                    <!-- Logo -->
+                    <div class="logo-container" id="logo">
+                        <div class="logo-icon">
+                            ${Icons.logo ? Icons.logo({ size: 32 }) : ''}
+                        </div>
+                        <span class="logo-text">TenderZen</span>
                     </div>
+
+                    <!-- Bureau Switcher (wordt dynamisch geladen) -->
+                    <div id="bureau-switcher-container"></div>
                 </div>
 
                 <div class="header-right">
-                    <!-- Menu Dropdown -->
+                    <!-- Menu -->
                     <div class="menu-dropdown">
                         <button class="menu-btn" id="menu-btn">
-                            <span class="menu-icon">${Icons.grid ? Icons.grid({ size: 18 }) : ''}</span>
+                            <span class="menu-icon">${Icons.menu ? Icons.menu({ size: 18 }) : ''}</span>
                             <span>Menu</span>
-                            <span class="chevron-icon">${Icons.chevronDown ? Icons.chevronDown({ size: 14 }) : ''}</span>
+                            <span class="chevron-icon">${Icons.chevronDown ? Icons.chevronDown({ size: 16 }) : ''}</span>
                         </button>
                         <div class="menu-content" id="menu-content">
                             <a class="menu-item" data-action="tenders">
-                                <span class="menu-item-icon">${Icons.fileText ? Icons.fileText({ size: 18 }) : ''}</span>
+                                <span class="menu-item-icon">${Icons.clipboardList ? Icons.clipboardList({ size: 18 }) : ''}</span>
                                 <span class="menu-item-label">Tenders</span>
                             </a>
                             <a class="menu-item" data-action="bedrijven">
                                 <span class="menu-item-icon">${Icons.building ? Icons.building({ size: 18 }) : ''}</span>
                                 <span class="menu-item-label">Bedrijven</span>
                             </a>
-                            <div class="menu-divider"></div>
                             <a class="menu-item" data-action="team">
                                 <span class="menu-item-icon">${Icons.users ? Icons.users({ size: 18 }) : ''}</span>
-                                <span class="menu-item-label">Teamleden beheren</span>
+                                <span class="menu-item-label">Team</span>
                             </a>
                             <div class="menu-divider"></div>
                             <a class="menu-item" data-action="reports">
-                                <span class="menu-item-icon">${Icons.barChart ? Icons.barChart({ size: 18 }) : ''}</span>
+                                <span class="menu-item-icon">${Icons.chartBar ? Icons.chartBar({ size: 18 }) : ''}</span>
                                 <span class="menu-item-label">Rapportages</span>
                             </a>
-                            <a class="menu-item" data-action="settings">
-                                <span class="menu-item-icon">${Icons.settings ? Icons.settings({ size: 18 }) : ''}</span>
-                                <span class="menu-item-label">Instellingen</span>
+                            <a class="menu-item" data-action="export">
+                                <span class="menu-item-icon">${Icons.download ? Icons.download({ size: 18 }) : ''}</span>
+                                <span class="menu-item-label">Exporteren</span>
                             </a>
                             ${this.isSuperAdmin ? `
                             <div class="menu-divider"></div>
@@ -396,7 +559,7 @@ export class Header {
                         </div>
                     </div>
 
-                    <!-- Profile Avatar (simplified) -->
+                    <!-- Profile Avatar -->
                     <div class="profile-dropdown">
                         <button class="profile-avatar-btn" id="profile-btn" title="${this.userProfile.naam || 'Profiel'}">
                             <div class="profile-avatar" id="header-avatar">${this.userProfile.initials || '?'}</div>
@@ -469,16 +632,22 @@ export class Header {
     }
 
     /**
-     * Render Tenders sub-header (tabs + view toggle)
-     * ⭐ v2.4: Archief tab toegevoegd
+     * ⭐ v2.9: Render Tenders sub-header - ALLEEN Smart Import knop (geen + Tender)
      */
     renderTendersSubHeader() {
+        // Build results text for initial render
+        let resultsText = '';
+        if (this.activeSearchChip && this.searchResultsCount !== null) {
+            const resultWord = this.searchResultsCount === 1 ? 'resultaat' : 'resultaten';
+            resultsText = `<span class="filter-results-count">${this.searchResultsCount} ${resultWord}</span>`;
+        }
+
         return `
             <div class="sub-header sub-header-tenders">
                 <div class="sub-header-left">
                     <button class="main-tab ${this.activeTab === 'totaal' ? 'active' : ''}" data-tab="totaal">
                         <span class="tab-icon">${Icons.dashboard ? Icons.dashboard({ size: 18 }) : ''}</span>
-                        <span class="tab-label">Totaaloverzicht</span>
+                        <span class="tab-label">Overzicht</span>
                         <span class="badge">${this.tenderCounts.totaal}</span>
                     </button>
                     <button class="main-tab ${this.activeTab === 'acquisitie' ? 'active' : ''}" data-tab="acquisitie">
@@ -488,7 +657,7 @@ export class Header {
                     </button>
                     <button class="main-tab ${this.activeTab === 'inschrijvingen' ? 'active' : ''}" data-tab="inschrijvingen">
                         <span class="phase-indicator inschrijvingen"></span>
-                        <span class="tab-label">Inschrijvingen</span>
+                        <span class="tab-label">Lopend</span>
                         <span class="badge">${this.tenderCounts.inschrijvingen}</span>
                     </button>
                     <button class="main-tab ${this.activeTab === 'ingediend' ? 'active' : ''}" data-tab="ingediend">
@@ -496,7 +665,6 @@ export class Header {
                         <span class="tab-label">Ingediend</span>
                         <span class="badge">${this.tenderCounts.ingediend}</span>
                     </button>
-                    <!-- ⭐ v2.4: Archief tab -->
                     <button class="main-tab ${this.activeTab === 'archief' ? 'active' : ''}" data-tab="archief">
                         <span class="phase-indicator archief"></span>
                         <span class="tab-label">Archief</span>
@@ -505,6 +673,18 @@ export class Header {
                 </div>
 
                 <div class="sub-header-right">
+                    <!-- Zoekbalk voor tenders -->
+                    <div class="tender-search-container">
+                        <span class="tender-search-icon">
+                            ${Icons.search ? Icons.search({ size: 16, color: '#94a3b8', strokeWidth: 2 }) : ''}
+                        </span>
+                        <input type="text" 
+                               id="tender-search-input" 
+                               class="tender-search-input"
+                               placeholder="Zoek tender..."
+                               value="">
+                    </div>
+                    
                     <div class="view-toggle">
                         <button class="${this.activeView === 'lijst' ? 'active' : ''}" data-view="lijst">
                             <span class="view-icon">${Icons.listView ? Icons.listView({ size: 16 }) : ''}</span>
@@ -520,23 +700,41 @@ export class Header {
                         </button>
                     </div>
                     
-                    <button class="create-btn" id="create-tender-btn">
-                        ${Icons.plus ? Icons.plus({ size: 16, color: '#ffffff' }) : ''}
-                        <span>Tender</span>
+                    <!-- ⭐ v2.9: Smart Import is nu de primaire create knop -->
+                    <button id="smart-import-btn" class="create-btn" title="Smart Import - AI analyse van aanbestedingsdocumenten">
+                        ✨ <span>Smart Import</span>
                     </button>
                 </div>
+            </div>
+            
+            <!-- Filter Chips Bar -->
+            <div id="filter-chips-bar" class="filter-chips-bar ${this.activeSearchChip ? 'has-chips' : ''}">
+                ${this.activeSearchChip ? `
+                    <div class="filter-chips-content">
+                        <div class="filter-chip filter-chip--search" id="search-filter-chip">
+                            <span class="filter-chip-icon">
+                                ${Icons.search ? Icons.search({ size: 14, color: '#6366f1' }) : '🔍'}
+                            </span>
+                            <span class="filter-chip-text" id="search-chip-text">${this.escapeHtml(this.activeSearchChip)}</span>
+                            <button class="filter-chip-remove" id="search-chip-remove" title="Filter verwijderen">
+                                ${Icons.x ? Icons.x({ size: 14, color: '#6366f1' }) : '×'}
+                            </button>
+                        </div>
+                        ${resultsText}
+                    </div>
+                ` : ''}
             </div>
         `;
     }
 
     /**
-     * Render Bedrijven sub-header (Voorstel C: Underline stijl)
+     * Render Bedrijven sub-header
      */
     renderBedrijvenSubHeader() {
         const count = this.contextData.count || 0;
         const filters = this.contextData.filters || {};
         const filterOptions = this.contextData.filterOptions || {};
-        
+
         return `
             <div class="sub-header sub-header-context">
                 <div class="sub-header-left">
@@ -568,18 +766,17 @@ export class Header {
                         </select>
                         
                         <select id="context-filter-2" class="filter-select-compact">
-                            <option value="">Alle plaatsen</option>
-                            ${(filterOptions.plaatsen || []).map(p => `
-                                <option value="${p}" ${filters.plaats === p ? 'selected' : ''}>${p}</option>
-                            `).join('')}
+                            <option value="all">Alle bedrijven</option>
+                            <option value="active" ${filters.status === 'active' ? 'selected' : ''}>Actief</option>
+                            <option value="inactive" ${filters.status === 'inactive' ? 'selected' : ''}>Inactief</option>
                         </select>
                         
                         <button class="btn-icon-compact btn-reset-filters" id="context-reset-filters" title="Reset filters">
-                            ${Icons.x ? Icons.x({ size: 14, color: '#94a3b8' }) : '×'}
+                            ${Icons.x ? Icons.x({ size: 16 }) : '×'}
                         </button>
                     </div>
                 </div>
-
+                
                 <div class="sub-header-right">
                     <button class="create-btn create-btn-blue" id="context-create-btn">
                         ${Icons.plus ? Icons.plus({ size: 16, color: '#ffffff' }) : ''}
@@ -591,18 +788,17 @@ export class Header {
     }
 
     /**
-     * Render Tenderbureaus sub-header (Voorstel C: Underline stijl)
+     * Render Tenderbureaus sub-header (super-admin only)
      */
     renderTenderbureausSubHeader() {
         const count = this.contextData.count || 0;
-        const filters = this.contextData.filters || {};
-        
+
         return `
             <div class="sub-header sub-header-context">
                 <div class="sub-header-left">
                     <div class="nav-tab active" data-color="purple">
                         ${Icons.briefcase ? Icons.briefcase({ size: 16, color: '#8b5cf6' }) : ''}
-                        <span>Tenderbureaus Beheer</span>
+                        <span>Tenderbureaus beheer</span>
                         <span class="nav-badge">${count}</span>
                     </div>
                 </div>
@@ -614,36 +810,23 @@ export class Header {
                             <input type="text" 
                                    id="context-filter-search" 
                                    class="filter-input-compact"
-                                   placeholder="Zoek bureau..."
-                                   value="${filters.search || ''}">
+                                   placeholder="Zoek bureau...">
                         </div>
                         
                         <div class="filter-divider"></div>
                         
-                        <select id="context-filter-1" class="filter-select-compact">
-                            <option value="">Alle tiers</option>
-                            <option value="free" ${filters.tier === 'free' ? 'selected' : ''}>Free</option>
-                            <option value="basic" ${filters.tier === 'basic' ? 'selected' : ''}>Basic</option>
-                            <option value="professional" ${filters.tier === 'professional' ? 'selected' : ''}>Professional</option>
-                            <option value="enterprise" ${filters.tier === 'enterprise' ? 'selected' : ''}>Enterprise</option>
-                        </select>
-                        
                         <select id="context-filter-2" class="filter-select-compact">
-                            <option value="all" ${filters.active === 'all' ? 'selected' : ''}>Alle status</option>
-                            <option value="active" ${filters.active === 'active' ? 'selected' : ''}>Actief</option>
-                            <option value="inactive" ${filters.active === 'inactive' ? 'selected' : ''}>Inactief</option>
+                            <option value="all">Alle statussen</option>
+                            <option value="active">Actief</option>
+                            <option value="inactive">Inactief</option>
                         </select>
-                        
-                        <button class="btn-icon-compact btn-reset-filters" id="context-reset-filters" title="Reset filters">
-                            ${Icons.x ? Icons.x({ size: 14, color: '#94a3b8' }) : '×'}
-                        </button>
                     </div>
                 </div>
-
+                
                 <div class="sub-header-right">
                     <button class="create-btn create-btn-purple" id="context-create-btn">
                         ${Icons.plus ? Icons.plus({ size: 16, color: '#ffffff' }) : ''}
-                        <span>Tenderbureau</span>
+                        <span>Bureau</span>
                     </button>
                 </div>
             </div>
@@ -654,59 +837,55 @@ export class Header {
      * Render Settings sub-header
      */
     renderSettingsSubHeader() {
-        const activeTab = this.contextData.activeTab || 'profile';
-        
+        const activeTab = this.contextData.activeTab || 'general';
+
         return `
             <div class="sub-header sub-header-settings">
                 <div class="sub-header-left">
                     <div class="context-title">
-                        <span class="context-icon context-icon-settings">
-                            ${Icons.settings ? Icons.settings({ size: 22, color: '#6366f1' }) : ''}
-                        </span>
+                        <div class="context-icon context-icon-settings">
+                            ${Icons.settings ? Icons.settings({ size: 24, color: '#6366f1' }) : ''}
+                        </div>
                         <h1>Instellingen</h1>
                     </div>
                     
                     <div class="settings-tabs">
+                        <button class="settings-tab ${activeTab === 'general' ? 'active' : ''}" data-settings-tab="general">
+                            ${Icons.settings ? Icons.settings({ size: 16 }) : ''}
+                            <span>Algemeen</span>
+                        </button>
                         <button class="settings-tab ${activeTab === 'profile' ? 'active' : ''}" data-settings-tab="profile">
                             ${Icons.user ? Icons.user({ size: 16 }) : ''}
                             <span>Profiel</span>
-                        </button>
-                        <button class="settings-tab ${activeTab === 'security' ? 'active' : ''}" data-settings-tab="security">
-                            ${Icons.shieldCheck ? Icons.shieldCheck({ size: 16 }) : ''}
-                            <span>Beveiliging</span>
                         </button>
                         <button class="settings-tab ${activeTab === 'notifications' ? 'active' : ''}" data-settings-tab="notifications">
                             ${Icons.bell ? Icons.bell({ size: 16 }) : ''}
                             <span>Notificaties</span>
                         </button>
-                        <button class="settings-tab ${activeTab === 'preferences' ? 'active' : ''}" data-settings-tab="preferences">
-                            ${Icons.sliders ? Icons.sliders({ size: 16 }) : ''}
-                            <span>Voorkeuren</span>
+                        <button class="settings-tab ${activeTab === 'security' ? 'active' : ''}" data-settings-tab="security">
+                            ${Icons.shieldCheck ? Icons.shieldCheck({ size: 16 }) : ''}
+                            <span>Beveiliging</span>
                         </button>
                     </div>
-                </div>
-
-                <div class="sub-header-right">
-                    <!-- Empty for settings -->
                 </div>
             </div>
         `;
     }
 
     /**
-     * Render Team sub-header (Voorstel C: Underline stijl)
+     * Render Team sub-header
      */
     renderTeamSubHeader() {
         const count = this.contextData.count || 0;
         const filters = this.contextData.filters || {};
         const filterOptions = this.contextData.filterOptions || {};
-        
+
         return `
             <div class="sub-header sub-header-context">
                 <div class="sub-header-left">
                     <div class="nav-tab active" data-color="green">
                         ${Icons.users ? Icons.users({ size: 16, color: '#10b981' }) : ''}
-                        <span>Teamleden Beheer</span>
+                        <span>Teambeheer</span>
                         <span class="nav-badge">${count}</span>
                     </div>
                 </div>
@@ -726,17 +905,23 @@ export class Header {
                         
                         <select id="context-filter-1" class="filter-select-compact">
                             <option value="">Alle rollen</option>
-                            ${(filterOptions.roles || []).map(r => `
-                                <option value="${r.key}" ${filters.role === r.key ? 'selected' : ''}>${r.label}</option>
+                            ${(filterOptions.roles || ['manager', 'coordinator', 'schrijver', 'designer', 'calculator', 'reviewer', 'sales', 'klant_contact']).map(r => `
+                                <option value="${r}" ${filters.rol === r ? 'selected' : ''}>${r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ')}</option>
                             `).join('')}
                         </select>
                         
+                        <select id="context-filter-2" class="filter-select-compact">
+                            <option value="all">Alle statussen</option>
+                            <option value="active" ${filters.status === 'active' ? 'selected' : ''}>Actief</option>
+                            <option value="inactive" ${filters.status === 'inactive' ? 'selected' : ''}>Inactief</option>
+                        </select>
+                        
                         <button class="btn-icon-compact btn-reset-filters" id="context-reset-filters" title="Reset filters">
-                            ${Icons.x ? Icons.x({ size: 14, color: '#94a3b8' }) : '×'}
+                            ${Icons.x ? Icons.x({ size: 16 }) : '×'}
                         </button>
                     </div>
                 </div>
-
+                
                 <div class="sub-header-right">
                     <button class="create-btn create-btn-green" id="context-create-btn">
                         ${Icons.plus ? Icons.plus({ size: 16, color: '#ffffff' }) : ''}
@@ -749,13 +934,12 @@ export class Header {
 
     /**
      * Attach event listeners for sub-header
-     * FIX v2.2: Context create button now uses explicit self reference
+     * ⭐ v2.9: Verwijderd: create-tender-btn listener (niet meer nodig)
      */
     attachSubHeaderListeners() {
         const subHeader = document.getElementById('sub-header-container');
         if (!subHeader) return;
 
-        // Store reference to this for callbacks
         const self = this;
 
         // Tender tabs
@@ -780,41 +964,59 @@ export class Header {
             });
         });
 
-        // Create tender button
-        const createTenderBtn = subHeader.querySelector('#create-tender-btn');
-        if (createTenderBtn) {
-            createTenderBtn.addEventListener('click', () => {
-                if (self.onCreateTender) self.onCreateTender();
+        // ⭐ v2.9: Smart Import button (nu de primaire create knop)
+        const smartImportBtn = subHeader.querySelector('#smart-import-btn');
+        if (smartImportBtn) {
+            smartImportBtn.addEventListener('click', () => {
+                if (self.onSmartImport) self.onSmartImport();
             });
         }
 
-        // ============================================================
-        // FIX v2.2: Context create button (bedrijven, tenderbureaus, team)
-        // Using explicit self reference and regular function for reliable this binding
-        // ============================================================
-        const contextCreateBtn = subHeader.querySelector('#context-create-btn');
-        if (contextCreateBtn) {
-            contextCreateBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🔥 Context create button clicked');
-                console.log('📋 contextData:', self.contextData);
-                
-                if (self.contextData && typeof self.contextData.onAdd === 'function') {
-                    console.log('✅ Calling contextData.onAdd()');
-                    self.contextData.onAdd();
-                } else if (self.onContextAction) {
-                    console.log('✅ Calling onContextAction()');
-                    self.onContextAction('create', self.currentContext);
-                } else {
-                    console.warn('⚠️ No handler found for context create button');
+        // Tender search input
+        const tenderSearchInput = subHeader.querySelector('#tender-search-input');
+        if (tenderSearchInput) {
+            // ⭐ v2.8: GEEN live filtering meer - alleen zoeken bij Enter
+            // Dit voorkomt dat de view wisselt tijdens het typen
+
+            // Enter key creates chip and triggers search
+            tenderSearchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+
+                    const query = e.target.value.trim();
+                    if (query) {
+                        self.createSearchChip(query);
+                    }
+                }
+
+                // Escape key to clear
+                if (e.key === 'Escape') {
+                    self.clearSearch();
+                    tenderSearchInput.blur();
                 }
             });
         }
 
-        // ========== CONTEXT FILTER LISTENERS ==========
-        
-        // Search input with debounce
+        // Attach chip listeners if chip exists
+        this.attachChipListeners();
+
+        // Context create button (bedrijven, tenderbureaus, team)
+        const contextCreateBtn = subHeader.querySelector('#context-create-btn');
+        if (contextCreateBtn) {
+            contextCreateBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔥 Context create button clicked');
+
+                if (self.contextData && typeof self.contextData.onAdd === 'function') {
+                    self.contextData.onAdd();
+                } else if (self.onContextAction) {
+                    self.onContextAction('create', self.currentContext);
+                }
+            });
+        }
+
+        // Context filter listeners
         const searchInput = subHeader.querySelector('#context-filter-search');
         if (searchInput) {
             let debounceTimer;
@@ -827,8 +1029,7 @@ export class Header {
                 }, 300);
             });
         }
-        
-        // Filter dropdown 1 (branche / tier)
+
         const filter1 = subHeader.querySelector('#context-filter-1');
         if (filter1) {
             filter1.addEventListener('change', (e) => {
@@ -837,8 +1038,7 @@ export class Header {
                 }
             });
         }
-        
-        // Filter dropdown 2 (plaats / status)
+
         const filter2 = subHeader.querySelector('#context-filter-2');
         if (filter2) {
             filter2.addEventListener('change', (e) => {
@@ -847,21 +1047,18 @@ export class Header {
                 }
             });
         }
-        
-        // Reset filters button
+
         const resetBtn = subHeader.querySelector('#context-reset-filters');
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
-                // Reset input values visually
                 const searchInput = subHeader.querySelector('#context-filter-search');
                 const filter1 = subHeader.querySelector('#context-filter-1');
                 const filter2 = subHeader.querySelector('#context-filter-2');
-                
+
                 if (searchInput) searchInput.value = '';
                 if (filter1) filter1.value = '';
                 if (filter2) filter2.value = filter2.options[0]?.value || '';
-                
-                // Notify view
+
                 if (self.contextData.onResetFilters) {
                     self.contextData.onResetFilters();
                 }
@@ -884,9 +1081,8 @@ export class Header {
      * Attach main event listeners
      */
     attachEventListeners(container) {
-        // Store reference to this
         const self = this;
-        
+
         // Menu toggle
         const menuBtn = container.querySelector('#menu-btn');
         const menuContent = container.querySelector('#menu-content');
@@ -914,13 +1110,13 @@ export class Header {
         // Profile dropdown toggle
         const profileBtn = container.querySelector('#profile-btn');
         const profileMenu = container.querySelector('#profile-menu');
-        
+
         profileBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             self.profileMenuOpen = !self.profileMenuOpen;
             profileMenu?.classList.toggle('show', self.profileMenuOpen);
             profileBtn?.classList.toggle('active', self.profileMenuOpen);
-            
+
             self.menuOpen = false;
             menuContent?.classList.remove('show');
             menuBtn?.classList.remove('active');
@@ -933,7 +1129,7 @@ export class Header {
                 self.profileMenuOpen = false;
                 profileMenu?.classList.remove('show');
                 profileBtn?.classList.remove('active');
-                
+
                 if (self.onMenuAction) self.onMenuAction(action);
             });
         });
@@ -945,20 +1141,9 @@ export class Header {
                 self.menuOpen = false;
                 menuContent?.classList.remove('show');
                 menuBtn?.classList.remove('active');
-                
+
                 if (self.onMenuAction) self.onMenuAction(action);
             });
-        });
-
-        // Search input
-        const searchInput = container.querySelector('#search-input');
-        let searchTimeout;
-        
-        searchInput?.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                if (self.onSearch) self.onSearch(e.target.value);
-            }, 300);
         });
 
         // Attach sub-header listeners
@@ -967,13 +1152,14 @@ export class Header {
 
     /**
      * Set active tab programmatically
+     * ⭐ v2.8: null betekent geen actieve tab (bijv. zoekresultaten view)
      */
     setActiveTab(tabName) {
         this.activeTab = tabName;
-        
+
         const tabs = document.querySelectorAll('.main-tab');
         tabs.forEach(tab => {
-            if (tab.dataset.tab === tabName) {
+            if (tabName && tab.dataset.tab === tabName) {
                 tab.classList.add('active');
             } else {
                 tab.classList.remove('active');
@@ -986,7 +1172,7 @@ export class Header {
      */
     setActiveView(viewName) {
         this.activeView = viewName;
-        
+
         const buttons = document.querySelectorAll('.view-toggle button');
         buttons.forEach(btn => {
             if (btn.dataset.view === viewName) {
@@ -998,7 +1184,7 @@ export class Header {
     }
 
     /**
-     * NIEUW: Cleanup
+     * Cleanup
      */
     destroy() {
         if (this.bureauSwitcher) {

@@ -1,0 +1,260 @@
+/**
+ * Inline Date Picker CSS
+ * TenderZen v2.6 - Timeline datum editing
+ */
+
+/* Editable timeline cells */
+.timeline-cell--editable {
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border-radius: 8px;
+}
+
+.timeline-cell--editable:hover {
+    background: rgba(99, 102, 241, 0.08);
+    transform: scale(1.02);
+}
+
+.timeline-cell--editable:hover .date-display {
+    border-color: #6366f1;
+}
+
+.timeline-cell--editable:hover .date-display.empty {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.05);
+}
+
+/* Add icon for empty cells */
+.date-add-icon {
+    font-size: 18px;
+    color: #94a3b8;
+    font-weight: 300;
+}
+
+.timeline-cell--editable:hover .date-add-icon {
+    color: #6366f1;
+}
+
+/* Time display in date cell - Subtiel maar duidelijk */
+.date-display.has-time {
+    padding: 10px 14px 10px 14px;
+    min-width: 70px;
+}
+
+.date-time {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #7c3aed;
+    background: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-top: 16px;
+    letter-spacing: 0.3px;
+}
+
+/* Voor voltooide datums: gedempt */
+.date-display.completed .date-time {
+    color: #94a3b8;
+}
+
+/* Voor urgente deadlines (<3 dagen): rood accent */
+.date-display.urgent .date-time {
+    color: #dc2626;
+    font-weight: 800;
+}
+
+/* Voor "soon" deadlines (3-7 dagen): oranje accent */
+.date-display.soon .date-time {
+    color: #d97706;
+}
+
+/* Saving state */
+.timeline-cell--editable.is-saving {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.timeline-cell--editable.is-saving .date-display::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: inherit;
+}
+
+/* Date picker popup */
+.inline-date-picker {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    min-width: 240px;
+    animation: datePickerSlideIn 0.15s ease;
+    overflow: hidden;
+}
+
+@keyframes datePickerSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Date picker header */
+.date-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.date-picker-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.date-picker-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+}
+
+.date-picker-close:hover {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* Date picker inputs container */
+.date-picker-inputs {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.date-picker-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.date-picker-field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+}
+
+.date-picker-field .optional-label {
+    font-weight: 400;
+    color: #94a3b8;
+}
+
+/* Date and time inputs */
+.date-picker-date,
+.date-picker-time {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+.date-picker-date:focus,
+.date-picker-time:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Legacy single input support */
+.date-picker-input {
+    width: calc(100% - 32px);
+    margin: 16px;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1e293b;
+    transition: all 0.15s ease;
+}
+
+.date-picker-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Date picker actions */
+.date-picker-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    justify-content: flex-end;
+}
+
+.date-picker-clear,
+.date-picker-save {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.date-picker-clear {
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+}
+
+.date-picker-clear:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.date-picker-save {
+    background: #6366f1;
+    border: none;
+    color: white;
+}
+
+.date-picker-save:hover {
+    background: #4f46e5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .inline-date-picker {
+        position: fixed !important;
+        left: 50% !important;
+        top: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        min-width: 280px;
+    }
+}

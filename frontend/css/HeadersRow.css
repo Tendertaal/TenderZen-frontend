@@ -1,11 +1,15 @@
 /**
  * HeadersRow Styles
- * TenderZen v2.0
+ * TenderZen v2.2
  * 
- * CSS voor de BESTAANDE HeadersRow.js structuur
- * Classes: .column-header, .aanbesteding, .team, .status, .timeline, .critical
+ * CHANGELOG v2.2:
+ * - ✅ Aanbesteding breedte: 450px (match met tender-cards.css)
+ * - ✅ header-timeline-wrapper met flex: 1 (match met section-timeline)
  * 
- * KRITIEK: Breedtes MOETEN matchen met tender-card.css secties!
+ * KRITIEK: Breedtes MOETEN matchen met tender-cards.css:
+ * - section-aanbesteding: 450px
+ * - section-timeline: flex: 1
+ * - timeline-cell: 110px
  */
 
 /* ============================================
@@ -73,33 +77,26 @@
 }
 
 /* ============================================
-   COLUMN WIDTHS - EXACT MATCH met tender cards!
+   COLUMN WIDTHS - EXACT MATCH met tender-cards.css!
    ============================================ */
 
-/* Aanbesteding - 380px (matched met section-aanbesteding) */
+/* Aanbesteding - 450px (EXACT match met section-aanbesteding) */
 .column-header.aanbesteding {
-    width: 380px;
-    min-width: 380px;
-    max-width: 380px;
+    width: 450px;
+    min-width: 450px;
+    max-width: 450px;
     justify-content: flex-start;
     padding-left: 20px;
+    border-right: 1px solid var(--border-light, #e2e8f0);
 }
 
-/* Team - 200px (matched met section-team) */
-.column-header.team {
-    width: 200px;
-    min-width: 200px;
-    max-width: 200px;
+/* Timeline wrapper - EXACT match met section-timeline */
+.header-timeline-wrapper {
+    display: flex;
+    flex: 1;
 }
 
-/* Status - 150px (matched met section-status) */
-.column-header.status {
-    width: 150px;
-    min-width: 150px;
-    max-width: 150px;
-}
-
-/* Timeline - 110px elk (matched met timeline-cell) */
+/* Timeline kolommen - 110px elk (EXACT match met timeline-cell) */
 .column-header.timeline {
     width: 110px;
     min-width: 110px;
@@ -132,55 +129,55 @@
 }
 
 /* Gesorteerd states */
-.column-header.sorted-asc {
-    background: var(--color-primary-50, #eef2ff);
-    color: var(--color-primary-700, #4338ca);
-}
-
-.column-header.sorted-asc::after {
-    content: ' ↑';
-    margin-left: 4px;
-}
-
+.column-header.sorted-asc,
 .column-header.sorted-desc {
     background: var(--color-primary-50, #eef2ff);
     color: var(--color-primary-700, #4338ca);
 }
 
-.column-header.sorted-desc::after {
-    content: ' ↓';
-    margin-left: 4px;
+/* Sort icon styling */
+.column-header .sort-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 4px;
+    color: var(--color-primary-600, #4f46e5);
+}
+
+.column-header .sort-icon svg {
+    width: 16px;
+    height: 16px;
 }
 
 /* ============================================
-   RESPONSIVE - Match met tender-card.css
+   RESPONSIVE - Match met tender-cards.css
    ============================================ */
 
 @media (max-width: 1400px) {
     .column-header.aanbesteding {
-        width: 320px;
-        min-width: 320px;
-        max-width: 320px;
+        width: 400px;
+        min-width: 400px;
+        max-width: 400px;
+    }
+    
+    .column-header.timeline {
+        width: 100px;
+        min-width: 100px;
+        max-width: 100px;
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .column-header.aanbesteding {
+        width: 360px;
+        min-width: 360px;
+        max-width: 360px;
     }
     
     .column-header.timeline {
         width: 90px;
         min-width: 90px;
         max-width: 90px;
-        font-size: 9px;
-    }
-}
-
-@media (max-width: 1200px) {
-    .column-header.team {
-        width: 160px;
-        min-width: 160px;
-        max-width: 160px;
-    }
-    
-    .column-header.status {
-        width: 120px;
-        min-width: 120px;
-        max-width: 120px;
     }
 }

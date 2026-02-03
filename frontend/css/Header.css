@@ -1,11 +1,13 @@
 /**
  * Header Component Styles
- * TenderZen v2.1 - Dynamic Context Support + Archief Tab
+ * TenderZen v2.2 - Tender Zoekbalk toegevoegd
+ * 
+ * CHANGELOG v2.2:
+ * - NIEUW: Tender zoekbalk styling (.tender-search-container)
+ * - NIEUW: Responsive zoekbalk gedrag
  * 
  * CHANGELOG v2.1:
- * - NIEUW: Archief tab styling (.phase-indicator.archief)
- * - NIEUW: Archief tab active state
- * - FIX: Duplicaat CSS verwijderd
+ * - Archief tab styling (.phase-indicator.archief)
  * 
  * Bevat:
  * - Main Header (altijd zichtbaar)
@@ -70,7 +72,7 @@
 }
 
 /* ========================================
-   SEARCH BOX
+   SEARCH BOX (Legacy)
    ======================================== */
 
 .search-box {
@@ -109,6 +111,84 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* ========================================
+   TENDER SEARCH BAR (v2.2)
+   ======================================== */
+
+.tender-search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0 12px;
+    height: 36px;
+    min-width: 200px;
+    max-width: 260px;
+    transition: all 0.2s ease;
+}
+
+.tender-search-container:hover {
+    border-color: #cbd5e1;
+    background: #fff;
+}
+
+.tender-search-container:focus-within {
+    border-color: #818cf8;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+}
+
+.tender-search-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 8px;
+    position: static;
+    transform: none;
+}
+
+.tender-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    color: #1e293b;
+    outline: none;
+    min-width: 0;
+    font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+.tender-search-input::placeholder {
+    color: #94a3b8;
+}
+
+.tender-search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: #e2e8f0;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 8px;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.tender-search-clear:hover {
+    background: #cbd5e1;
+}
+
+.tender-search-clear:hover svg {
+    stroke: #475569;
 }
 
 /* ========================================
@@ -528,6 +608,8 @@
     display: flex;
     align-items: center;
     color: var(--text-muted, #94a3b8);
+    position: static;
+    transform: none;
 }
 
 .filter-input-compact {
@@ -650,7 +732,7 @@
     border-bottom-color: #10b981;
 }
 
-/* ⭐ v2.1: Archief tab styling */
+/* Archief tab styling */
 .main-tab[data-tab="archief"].active {
     color: #475569;
     border-bottom-color: #64748b;
@@ -680,7 +762,7 @@
     background: #10b981;
 }
 
-/* ⭐ v2.1: Archief phase indicator */
+/* Archief phase indicator */
 .phase-indicator.archief {
     background: #64748b;
 }
@@ -716,7 +798,7 @@
     color: white;
 }
 
-/* ⭐ v2.1: Archief badge styling */
+/* Archief badge styling */
 .main-tab[data-tab="archief"].active .badge {
     background: #64748b;
     color: white;
@@ -1057,6 +1139,13 @@
    RESPONSIVE
    ======================================== */
 
+@media (max-width: 1400px) {
+    .tender-search-container {
+        min-width: 180px;
+        max-width: 220px;
+    }
+}
+
 @media (max-width: 1200px) {
     .search-box input {
         width: 200px;
@@ -1076,6 +1165,7 @@
     
     .create-btn {
         padding: 10px;
+        margin-left: var(--space-2, 8px);
     }
     
     /* Compact filters op medium schermen */
@@ -1086,6 +1176,59 @@
     .filter-select-compact {
         min-width: 100px;
         padding-right: 24px;
+    }
+    
+    /* Tender search compact */
+    .tender-search-container {
+        min-width: 150px;
+        max-width: 180px;
+    }
+    
+    .tender-search-input::placeholder {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 1024px) {
+    /* Tender search - smaller on tablets */
+    .tender-search-container {
+        min-width: 44px;
+        max-width: 44px;
+        padding: 0;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 8px;
+    }
+    
+    .tender-search-container .tender-search-input {
+        display: none;
+    }
+    
+    .tender-search-container .tender-search-icon {
+        margin-right: 0;
+    }
+    
+    .tender-search-container .tender-search-clear {
+        display: none;
+    }
+    
+    /* Expanded state voor mobiel/tablet */
+    .tender-search-container.expanded {
+        min-width: 200px;
+        max-width: 260px;
+        padding: 0 12px;
+    }
+    
+    .tender-search-container.expanded .tender-search-input {
+        display: block;
+    }
+    
+    .tender-search-container.expanded .tender-search-icon {
+        margin-right: 8px;
+    }
+    
+    .tender-search-container.expanded .tender-search-clear {
+        display: flex;
     }
 }
 
@@ -1155,6 +1298,13 @@
         display: none;
     }
     
+    /* Tender search hidden on mobile - use icon only */
+    .tender-search-container {
+        min-width: 36px;
+        max-width: 36px;
+        height: 36px;
+    }
+    
     /* Filters stack vertically */
     .sub-header-filters {
         flex-direction: column;
@@ -1170,4 +1320,466 @@
     .btn-icon-compact {
         align-self: flex-end;
     }
+}
+
+/* ============================================
+   FILTER CHIPS BAR
+   TenderZen v2.6 - Toe te voegen aan header.css
+   ============================================ */
+
+/* ============================================
+   FILTER CHIPS BAR CONTAINER
+   ============================================ */
+
+.filter-chips-bar {
+    display: none;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0;
+    min-height: 0;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.filter-chips-bar.has-chips {
+    display: block;
+    padding: 10px 24px;
+    min-height: 44px;
+}
+
+.filter-chips-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.filter-chips-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* ============================================
+   FILTER CHIP
+   ============================================ */
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    border: 1px solid #c7d2fe;
+    border-radius: 20px;
+    padding: 6px 8px 6px 12px;
+    font-size: 13px;
+    color: #4338ca;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(99, 102, 241, 0.08);
+    transition: all 0.15s ease;
+}
+
+.filter-chip:hover {
+    border-color: #a5b4fc;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15);
+}
+
+.filter-chip--search {
+    background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%);
+}
+
+/* Chip icon */
+.filter-chip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Chip text - clickable for editing */
+.filter-chip-text {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-chip-text:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+/* Chip remove button */
+.filter-chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: #e0e7ff;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.filter-chip-remove:hover {
+    background: #c7d2fe;
+    transform: scale(1.1);
+}
+
+.filter-chip-remove:hover svg {
+    stroke: #4338ca;
+}
+
+/* ============================================
+   MULTIPLE CHIPS SUPPORT (voor toekomstige uitbreiding)
+   ============================================ */
+
+.filter-chips-content .filter-chip + .filter-chip {
+    margin-left: 0; /* gap handled by flex */
+}
+
+/* Status filter chip variant */
+.filter-chip--status {
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+    border-color: #6ee7b7;
+    color: #047857;
+}
+
+.filter-chip--status .filter-chip-remove {
+    background: #a7f3d0;
+}
+
+.filter-chip--status .filter-chip-remove:hover {
+    background: #6ee7b7;
+}
+
+/* Fase filter chip variant */
+.filter-chip--fase {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border-color: #fcd34d;
+    color: #b45309;
+}
+
+.filter-chip--fase .filter-chip-remove {
+    background: #fde68a;
+}
+
+.filter-chip--fase .filter-chip-remove:hover {
+    background: #fcd34d;
+}
+
+/* ============================================
+   CLEAR ALL BUTTON (voor toekomstige uitbreiding)
+   ============================================ */
+
+.filter-chips-clear-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: transparent;
+    border: 1px dashed #cbd5e1;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.filter-chips-clear-all:hover {
+    background: #fef2f2;
+    border-color: #fca5a5;
+    color: #dc2626;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 900px) {
+    .filter-chips-bar.has-chips {
+        padding: 8px 16px;
+    }
+    
+    .filter-chips-label {
+        display: none;
+    }
+    
+    .filter-chip {
+        font-size: 12px;
+        padding: 5px 6px 5px 10px;
+    }
+    
+    .filter-chip-text {
+        max-width: 150px;
+    }
+}
+
+@media (max-width: 600px) {
+    .filter-chip-text {
+        max-width: 100px;
+    }
+    
+    .filter-chips-content {
+        gap: 8px;
+    }
+}
+
+/* ============================================
+   ANIMATION
+   ============================================ */
+
+@keyframes chipEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.filter-chip {
+    animation: chipEnter 0.2s ease-out;
+}
+
+/* ============================================
+   TOOLTIP HINT (optioneel)
+   ============================================ */
+
+.filter-chip-text::after {
+    content: '';
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: white;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.filter-chip-text:hover::after {
+    /* Uncomment to enable tooltip: */
+    /* content: 'Klik om te bewerken';
+    opacity: 1; */
+}
+
+/* ============================================
+   FILTER CHIPS BAR
+   TenderZen v2.7 - Met resultaten count
+   Toevoegen aan header.css
+   ============================================ */
+
+/* ============================================
+   FILTER CHIPS BAR CONTAINER
+   ============================================ */
+
+.filter-chips-bar {
+    display: none;
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0;
+    min-height: 0;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.filter-chips-bar.has-chips {
+    display: block;
+    padding: 10px 24px;
+    min-height: 44px;
+}
+
+.filter-chips-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   FILTER CHIP
+   ============================================ */
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: white;
+    border: 1px solid #c7d2fe;
+    border-radius: 20px;
+    padding: 6px 8px 6px 12px;
+    font-size: 13px;
+    color: #4338ca;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(99, 102, 241, 0.08);
+    transition: all 0.15s ease;
+}
+
+.filter-chip:hover {
+    border-color: #a5b4fc;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15);
+}
+
+.filter-chip--search {
+    background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%);
+}
+
+/* Chip icon */
+.filter-chip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Chip text - clickable for editing */
+.filter-chip-text {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.filter-chip-text:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+/* Chip remove button */
+.filter-chip-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: #e0e7ff;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.filter-chip-remove:hover {
+    background: #c7d2fe;
+    transform: scale(1.1);
+}
+
+.filter-chip-remove:hover svg {
+    stroke: #4338ca;
+}
+
+/* ============================================
+   ⭐ v2.7: RESULTATEN COUNT
+   ============================================ */
+
+.filter-results-count {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+    padding-left: 8px;
+    border-left: 1px solid #e2e8f0;
+    margin-left: 4px;
+}
+
+/* Alternatieve styling met achtergrond */
+.filter-results-count--badge {
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: none;
+    margin-left: 8px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 900px) {
+    .filter-chips-bar.has-chips {
+        padding: 8px 16px;
+    }
+    
+    .filter-chip {
+        font-size: 12px;
+        padding: 5px 6px 5px 10px;
+    }
+    
+    .filter-chip-text {
+        max-width: 150px;
+    }
+    
+    .filter-results-count {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 600px) {
+    .filter-chip-text {
+        max-width: 100px;
+    }
+    
+    .filter-chips-content {
+        gap: 8px;
+    }
+    
+    .filter-results-count {
+        display: none; /* Verberg op kleine schermen */
+    }
+}
+
+/* ============================================
+   ANIMATION
+   ============================================ */
+
+@keyframes chipEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.filter-chip {
+    animation: chipEnter 0.2s ease-out;
+}
+
+/* ============================================
+   VERBERG OUDE SEARCH RESULTS INFO
+   (in tender-cards.css of search-results.css)
+   ============================================ */
+
+/* 
+   De .search-results-info balk in TenderListView 
+   is nu verwijderd. Deze CSS kan eventueel nog
+   behouden worden voor backward compatibility,
+   maar wordt niet meer gebruikt.
+*/
+
+.search-results-info {
+    display: none !important; /* Forceer verbergen */
 }

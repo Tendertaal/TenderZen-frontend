@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Iconen Overzicht</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .source-info {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 2rem;
+    }
+
+    .source-info code {
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+
+    .icon-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+    }
+
+    .icon-card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px #0001;
+      padding: 18px 16px 10px 16px;
+      width: 140px;
+      text-align: center;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: box-shadow 0.2s;
+    }
+
+    .icon-card:hover {
+      box-shadow: 0 4px 16px #0002;
+    }
+
+    .icon-svg {
+      margin-bottom: 10px;
+    }
+
+    .icon-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      word-break: break-all;
+      margin-bottom: 4px;
+    }
+
+    .icon-function {
+      font-size: 11px;
+      color: #94a3b8;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .icon-count {
+      background: #e0e7ff;
+      color: #4f46e5;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      margin-left: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Alle Iconen (window.Icons) <span class="icon-count" id="iconCount">0 iconen</span></h1>
+  <p class="source-info">Bron: <code>js/icons.js</code></p>
+  <div class="icon-grid" id="iconGrid"></div>
+  <script src="js/icons.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', function () {
+      const Icons = window.Icons;
+      const grid = document.getElementById('iconGrid');
+      const countEl = document.getElementById('iconCount');
+      
+      if (!Icons) {
+        grid.innerHTML = '<p style="color:red">Icons niet gevonden. Controleer of icons.js geladen is.</p>';
+        return;
+      }
+      
+      let count = 0;
+      Object.keys(Icons).forEach(name => {
+        try {
+          const svg = Icons[name]({ size: 48 });
+          const functionName = 'icon' + name.charAt(0).toUpperCase() + name.slice(1);
+          const card = document.createElement('div');
+          card.className = 'icon-card';
+          card.innerHTML = `
+            <div class="icon-svg">${svg}</div>
+            <div class="icon-name">${name}</div>
+            <div class="icon-function">${functionName}()</div>
+          `;
+          grid.appendChild(card);
+          count++;
+        } catch (e) {
+          // skip icons die niet renderen
+        }
+      });
+      
+      countEl.textContent = count + ' iconen';
+    });
+  </script>
+</body>
+
+</html>

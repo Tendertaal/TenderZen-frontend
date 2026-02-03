@@ -1,18 +1,19 @@
 /**
  * TenderPlanner App Controller
- * TenderZen v2.2 - Multi-Bureau Support + Custom Logout Modal
+ * TenderZen v2.5 - Globale Zoekresultaten View
  * 
  * CHANGELOG:
+ * - v2.5: Zoekresultaten navigeert naar aparte view met alle matches
+ * - v2.4: Zoekresultaten count naar Header filter chips balk
+ * - v2.3: Zoekfunctie geïntegreerd (handleTenderSearch)
+ * - v2.2.1: Super admin toegang fix
  * - v2.2: Custom logout confirmation modal
  * - v2.1: Multi-bureau support toegevoegd
- *   - BureauAccessService integratie
- *   - Bureau context initialisatie
- *   - Bureau switcher in header
- *   - Data herladen bij bureau wissel
  * - v2.0: TenderbureausView, Header context support
  */
 
 import { Header } from './components/Header.js';
+import { SmartImportWizard } from './components/SmartImportWizard.js';
 import { TenderAanmaken } from './components/TenderAanmaken.js';
 import { BedrijfModal } from './components/BedrijfModal.js';
 import { TeamlidModal } from './components/TeamlidModal.js';
@@ -22,14 +23,10 @@ import { bedrijvenService } from './services/Bedrijvenservice.js';
 import { tenderbureausService } from './services/TenderbureausService.js';
 import { getSupabase } from './config.js';
 
-// ============================================================
-// NIEUW: Import LogoutConfirmModal
-// ============================================================
+// Import LogoutConfirmModal
 import { confirmLogout } from './components/LogoutConfirmModal.js';
 
-// ============================================================
 // Import BureauAccessService
-// ============================================================
 import { bureauAccessService } from './services/BureauAccessService.js';
 import { UserService } from './services/UserService.js';
 
@@ -41,6 +38,8 @@ import { IngediendView } from './views/IngediendView.js';
 import { BedrijvenView } from './views/BedrijvenView.js';
 import { TenderbureausView } from './views/TenderbureausView.js';
 import { TeamledenView } from './views/TeamledenView.js';
+import { ArchiefView } from './views/ArchiefView.js';
+import { ZoekresultatenView } from './views/ZoekresultatenView.js';
 import { teamService } from './services/TeamService.js';
 
 export class App {
@@ -50,6 +49,7 @@ export class App {
         this.tenderAanmaken = null;
         this.bedrijfModal = null;
         this.teamlidModal = null;
+        this.smartImportWizard = null;
 
         // Views
         this.views = {
@@ -57,6 +57,8 @@ export class App {
             acquisitie: null,
             inschrijvingen: null,
             ingediend: null,
+            archief: null,
+            zoekresultaten: null,  // ⭐ v2.5: Globale zoekresultaten view
             bedrijven: null,
             tenderbureaus: null,
             team: null
@@ -64,9 +66,13 @@ export class App {
 
         // State
         this.currentView = 'totaal';
+        this.previousView = 'totaal';  // ⭐ v2.5: Voor terug navigatie na zoeken
         this.currentViewType = 'lijst'; // lijst, planning, kanban
         this.tenders = []; // Master data - all tenders
         this.isSuperAdmin = false;
+
+        // Zoekquery state
+        this.searchQuery = '';
 
         // Bureau state
         this.currentBureau = null;
@@ -99,10 +105,15 @@ export class App {
             console.log('🏢 Initializing bureau context...');
             await this.initBureauContext();
 
-            // Check of user toegang heeft tot minimaal 1 bureau
-            if (!this.currentBureau) {
+            // v2.2.1 FIX: Check of user toegang heeft tot minimaal 1 bureau
+            if (!this.currentBureau && !this.isSuperAdmin) {
+                console.warn('⚠️ Geen bureau toegang en geen super admin');
                 this.showNoBureauAccess();
                 return;
+            }
+
+            if (this.isSuperAdmin && !this.currentBureau) {
+                console.log('✅ Super admin - toegang verleend zonder specifiek bureau');
             }
 
             // 4. Load fase configuration
@@ -115,6 +126,17 @@ export class App {
 
             // 5. Initialize components
             this.initHeader();
+            // Smart Import wizard component
+            this.smartImportWizard = new SmartImportWizard({
+                getTenderbureauId: () => this.currentBureau?.bureau_id || window.activeBureauId || window.currentUser?.tenderbureau_id,
+                onComplete: (tender) => {
+                    this.loadData();
+                    // Optioneel: openTenderDetail(tender.id);
+                },
+                onCancel: () => {
+                    console.log('Smart Import geannuleerd');
+                }
+            });
 
             // 5b. Initialize bureau switcher in header
             console.log('🔀 Initializing bureau switcher...');
@@ -133,7 +155,6 @@ export class App {
             window.addEventListener('globalViewToggled', async (ev) => {
                 const enabled = ev.detail && ev.detail.enabled;
                 console.log('🌐 Global view toggled:', enabled);
-                // Reload data when toggled
                 try {
                     await this.loadData();
                     await this.refreshCurrentView();
@@ -161,7 +182,11 @@ export class App {
             this.hideLoading();
 
             console.log('✅ TenderPlanner App succesvol geladen!');
-            console.log(`📍 Actief bureau: ${this.currentBureau.bureau_naam}`);
+            if (this.currentBureau) {
+                console.log(`📍 Actief bureau: ${this.currentBureau.bureau_naam}`);
+            } else {
+                console.log(`📍 Actief bureau: Alle bureau's (super_admin)`);
+            }
 
         } catch (error) {
             console.error('❌ App init error:', error);
@@ -171,14 +196,11 @@ export class App {
 
     /**
      * Initialize bureau context
-     * Moet VOOR data laden worden aangeroepen
      */
     async initBureauContext() {
         try {
-            // Initialize bureau access service
             this.currentBureau = await bureauAccessService.initializeBureauContext();
 
-            // Herstel selectie van 'Alle bureau's' uit localStorage (voor super_admin)
             const savedBureauId = localStorage.getItem('selectedBureauId');
             if (savedBureauId === 'ALL_BUREAUS' && this.isSuperAdmin) {
                 this.currentBureau = null;
@@ -207,7 +229,6 @@ export class App {
 
     /**
      * Handle bureau change - herlaad alle data
-     * @param {Object} newBureau - Het nieuwe bureau
      */
     async handleBureauChange(newBureau) {
         console.log('🔄 Bureau gewisseld naar:', newBureau?.bureau_naam || 'Alle bureau\'s');
@@ -219,24 +240,14 @@ export class App {
             localStorage.setItem('selectedBureauId', newBureau.bureau_id);
         }
 
-        // Toon loading state
         this.showBureauLoading();
 
         try {
-            // Herlaad bedrijven cache voor nieuw bureau
             await bedrijvenService.refresh();
-
-            // Herlaad alle tender data voor het nieuwe bureau
             await this.loadData();
-
-            // Re-render huidige view
             await this.refreshCurrentView();
-
-            // Update header counts
             this.updateHeaderCounts();
-
             console.log('✅ Data herladen voor nieuw bureau');
-
         } catch (error) {
             console.error('❌ Error loading data for new bureau:', error);
             this.showError('Er ging iets fout bij het laden van bureau data.');
@@ -253,21 +264,17 @@ export class App {
 
         if (!view) return;
 
-        // Tender views
-        if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend'].includes(this.currentView)) {
+        if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend', 'archief'].includes(this.currentView)) {
             view.setTenders(this.tenders);
         }
-        // Bedrijven view
         else if (this.currentView === 'bedrijven') {
             const bedrijven = await bedrijvenService.getAllBedrijven();
             await view.setBedrijven(bedrijven);
         }
-        // Team view
         else if (this.currentView === 'team') {
             const members = await teamService.getAllTeamMembers();
             await view.setTeamMembers(members);
         }
-        // Tenderbureaus view (alleen super admin)
         else if (this.currentView === 'tenderbureaus') {
             const bureaus = await tenderbureausService.getAllBureaus();
             await view.setBureaus(bureaus);
@@ -299,7 +306,6 @@ export class App {
             `;
         }
 
-        // Minimale header zonder bureau switcher
         const headerContainer = document.getElementById('app-header');
         if (headerContainer) {
             headerContainer.innerHTML = `
@@ -321,7 +327,6 @@ export class App {
      * Check voor openstaande uitnodigingen
      */
     async checkForInvites() {
-        // Check URL voor invite token
         const urlParams = new URLSearchParams(window.location.search);
         const inviteToken = urlParams.get('invite');
 
@@ -339,9 +344,7 @@ export class App {
     }
 
     showBureauLoading() {
-        // Verwijder bestaande overlay
         this.hideBureauLoading();
-
         const overlay = document.createElement('div');
         overlay.id = 'bureau-loading-overlay';
         overlay.innerHTML = `
@@ -383,7 +386,6 @@ export class App {
 
             console.log('✅ Authenticated:', session.user.email);
 
-            // Get user profile to check super-admin status
             const { data: profile } = await supabase
                 .from('users')
                 .select('naam, role, is_super_admin')
@@ -432,12 +434,18 @@ export class App {
         // Bind events
         this.header.onTabChange = (tab) => this.handleTabChange(tab);
         this.header.onViewChange = (view) => this.handleViewTypeChange(view);
-        this.header.onSearch = (query) => this.handleSearch(query);
         this.header.onTeamFilter = (team) => this.handleTeamFilter(team);
         this.header.onStatusFilter = (status) => this.handleStatusFilter(status);
         this.header.onCreateTender = () => this.handleCreateTender();
+        this.header.onSmartImport = () => {
+            if (this.smartImportWizard) this.smartImportWizard.open();
+        };
         this.header.onMenuAction = (action) => this.handleMenuAction(action);
         this.header.onContextAction = (action, data) => this.handleContextAction(action, data);
+
+        // ⭐ v2.5: Zoekfunctie callbacks
+        this.header.onSearch = (query) => this.handleTenderSearch(query);
+        this.header.onSearchClear = () => this.handleSearchClear();
     }
 
     /**
@@ -451,14 +459,7 @@ export class App {
 
         // Callback for creating new tenders
         this.tenderAanmaken.onSave = async (data) => {
-            try {
-                await apiService.createTender(data);
-                console.log('✅ Tender created');
-                await this.loadData();
-            } catch (error) {
-                console.error('❌ Create tender error:', error);
-                alert('Er ging iets fout bij het aanmaken van de tender.');
-            }
+            // ... bestaande code ...
         };
 
         // Callback for updating existing tenders
@@ -472,6 +473,18 @@ export class App {
                 alert('Er ging iets fout bij het updaten van de tender.');
             }
         };
+
+        // Callback for deleting tenders
+        this.tenderAanmaken.onDelete = async (tenderId) => {
+            try {
+                await apiService.deleteTender(tenderId);
+                console.log('✅ Tender deleted');
+                await this.loadData();
+            } catch (error) {
+                console.error('❌ Delete tender error:', error);
+                alert('Er ging iets fout bij het verwijderen van de tender.');
+            }
+        };
     }
 
     /**
@@ -482,16 +495,13 @@ export class App {
 
         this.bedrijfModal = new BedrijfModal();
 
-        // Callback when bedrijf is saved
         this.bedrijfModal.onSave = async (bedrijf) => {
             console.log('✅ Bedrijf saved:', bedrijf);
 
-            // Reload bedrijven view if active
             if (this.currentView === 'bedrijven') {
                 await this.views.bedrijven.reload();
             }
 
-            // Reload bedrijven service cache
             await bedrijvenService.refresh();
         };
     }
@@ -504,11 +514,9 @@ export class App {
 
         this.teamlidModal = new TeamlidModal();
 
-        // Callback when teamlid is saved
         this.teamlidModal.onSave = async (teamlid) => {
             console.log('✅ Teamlid saved:', teamlid);
 
-            // Reload team view if active
             if (this.currentView === 'team') {
                 await this.views.team.reload();
             }
@@ -517,6 +525,7 @@ export class App {
 
     /**
      * Initialize all views
+     * ⭐ v2.5: Added ZoekresultatenView
      */
     initViews() {
         console.log('👁️ Initializing views...');
@@ -526,16 +535,28 @@ export class App {
             acquisitie: new AcquisitieView(),
             inschrijvingen: new InschrijvingenView(),
             ingediend: new IngediendView(),
+            archief: new ArchiefView(),
+            zoekresultaten: new ZoekresultatenView(),  // ⭐ v2.5: Globale zoekresultaten
             bedrijven: new BedrijvenView(),
             tenderbureaus: new TenderbureausView(),
             team: new TeamledenView()
         };
 
-        // Set callbacks for tender views
+        // Set callbacks for tender views (inclusief zoekresultaten)
+        const self = this;
+        const tenderViewKeys = ['totaal', 'acquisitie', 'inschrijvingen', 'ingediend', 'archief', 'zoekresultaten'];
+
         Object.entries(this.views).forEach(([key, view]) => {
-            if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend'].includes(key)) {
-                view.onStatusChange = (tenderId, status) => this.handleStatusChange(tenderId, status);
+            if (tenderViewKeys.includes(key)) {
+                view.onStatusChange = (tenderId, status, fase) => this.handleStatusChange(tenderId, status, fase);
                 view.onTenderClick = (tenderId) => this.handleTenderClick(tenderId);
+
+                // Search results count callback voor Header integratie
+                view.onSearchResultsCount = (count) => {
+                    if (self.currentView === key && self.header && self.header.setSearchResultsCount) {
+                        self.header.setSearchResultsCount(count);
+                    }
+                };
             }
         });
 
@@ -561,7 +582,7 @@ export class App {
             }
         };
 
-        // Set callbacks for tenderbureaus view (alleen super-admin)
+        // Set callbacks for tenderbureaus view
         this.views.tenderbureaus.onCreateBureau = () => {
             alert('Nieuw tenderbureau aanmaken - komt binnenkort!');
         };
@@ -620,10 +641,9 @@ export class App {
         console.log('📥 Loading data...');
 
         try {
-            // Bepaal bureauId voor API call
             let bureauId = this.currentBureau?.bureau_id || null;
             if (this.isSuperAdmin && this.currentBureau === null) {
-                bureauId = null; // "Alle bureau's"
+                bureauId = null;
             }
 
             const tenders = await apiService.getTenders(bureauId);
@@ -631,10 +651,7 @@ export class App {
 
             console.log(`✅ Loaded ${this.tenders.length} tenders`);
 
-            // Update all views with new data
             this.updateViews();
-
-            // Update header counts
             this.updateHeaderCounts();
 
         } catch (error) {
@@ -648,7 +665,7 @@ export class App {
      */
     updateViews() {
         Object.entries(this.views).forEach(([key, view]) => {
-            if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend'].includes(key)) {
+            if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend', 'archief'].includes(key)) {
                 view.setTenders(this.tenders);
             }
         });
@@ -659,15 +676,18 @@ export class App {
      */
     updateHeaderCounts() {
         const counts = {
-            totaal: this.tenders.length,
+            totaal:
+                this.tenders.filter(t => t.fase === 'acquisitie').length +
+                this.tenders.filter(t => t.fase === 'inschrijvingen').length +
+                this.tenders.filter(t => t.fase === 'ingediend').length,
             acquisitie: this.tenders.filter(t => t.fase === 'acquisitie').length,
             inschrijvingen: this.tenders.filter(t => t.fase === 'inschrijvingen').length,
-            ingediend: this.tenders.filter(t => t.fase === 'ingediend').length
+            ingediend: this.tenders.filter(t => t.fase === 'ingediend').length,
+            archief: this.tenders.filter(t => t.fase === 'archief').length
         };
 
         this.header.updateCounts(counts);
 
-        // Update team members for filter
         const teamMembers = this.getUniqueTeamMembers();
         this.header.updateTeamOptions(teamMembers);
     }
@@ -690,27 +710,22 @@ export class App {
     closeAllModals() {
         console.log('🔒 Closing all modals...');
 
-        // Close TenderAanmaken modal
         if (this.tenderAanmaken && this.tenderAanmaken.isOpen) {
             this.tenderAanmaken.close();
         }
 
-        // Close BedrijfModal
         if (this.bedrijfModal && this.bedrijfModal.isOpen) {
             this.bedrijfModal.close();
         }
 
-        // Close TeamlidModal
         if (this.teamlidModal && this.teamlidModal.isOpen) {
             this.teamlidModal.close();
         }
 
-        // Close TenderbureauModal
         if (this.tenderbureauModal && this.tenderbureauModal.isOpen) {
             this.tenderbureauModal.close();
         }
 
-        // FALLBACK: Close any modal via DOM (in case they're not tracked)
         const modalSelectors = [
             '.teamlid-modal',
             '.bedrijf-modal',
@@ -729,35 +744,41 @@ export class App {
             });
         });
 
-        // Reset body overflow
         document.body.style.overflow = '';
     }
 
     /**
      * Show a specific view
+     * ⭐ v2.4: Update search results count na view wissel
      */
     async showView(viewName) {
-        // Close all open modals before switching view
         this.closeAllModals();
         console.log(`👁️ Showing view: ${viewName}`);
 
-        // Unmount current view
         if (this.views[this.currentView]) {
             this.views[this.currentView].unmount();
         }
 
-        // Update current view
         this.currentView = viewName;
 
-        // Mount new view
         const view = this.views[viewName];
         if (view) {
             view.mount(this.contentContainer);
 
-            // Handle view-specific data loading and header context
-            if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend'].includes(viewName)) {
+            // ⭐ v2.5: Zoekresultaten view behandeling
+            if (viewName === 'zoekresultaten') {
+                this.header.setContext('tenders');
+                // Geen tab actief maken bij zoekresultaten
+                this.header.setActiveTab(null);
+            }
+            else if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend', 'archief'].includes(viewName)) {
                 this.header.setContext('tenders');
                 this.header.setActiveTab(viewName);
+
+                // Clear zoekfilter als we naar een normale tab gaan
+                if (this.header.hasActiveSearchChip && this.header.hasActiveSearchChip()) {
+                    this.header.clearSearch();
+                }
             }
             else if (viewName === 'bedrijven') {
                 const bedrijven = await bedrijvenService.getAllBedrijven();
@@ -798,14 +819,78 @@ export class App {
     }
 
     /**
-     * Handle search
+     * ⭐ v2.5: Handle tender search - navigeer naar zoekresultaten view
+     * @param {string} query - Zoekterm van gebruiker
      */
-    handleSearch(query) {
-        console.log(`🔍 Search: ${query}`);
+    handleTenderSearch(query) {
+        console.log(`🔍 Zoeken: "${query}"`);
 
-        const view = this.views[this.currentView];
-        if (view && view.setSearch) {
-            view.setSearch(query);
+        // Sla query op
+        this.searchQuery = query;
+
+        if (query && query.trim()) {
+            // Sla huidige view op voor terug navigatie (maar niet als we al in zoekresultaten zijn)
+            if (this.currentView !== 'zoekresultaten') {
+                this.previousView = this.currentView;
+            }
+
+            // Navigeer naar zoekresultaten view
+            this.showSearchResults(query);
+        } else {
+            // Geen query - ga terug naar vorige view als we in zoekresultaten zijn
+            if (this.currentView === 'zoekresultaten') {
+                this.handleSearchClear();
+            }
+        }
+    }
+
+    /**
+     * ⭐ v2.5: Show search results view
+     * @param {string} query - Zoekterm
+     */
+    showSearchResults(query) {
+        console.log(`🔍 Navigeren naar zoekresultaten voor: "${query}"`);
+
+        const zoekView = this.views.zoekresultaten;
+
+        // Set tenders en zoekquery
+        zoekView.setTenders(this.tenders);
+        zoekView.setSearchQuery(query);
+        zoekView.setPreviousView(this.previousView);
+
+        // Navigeer naar view
+        this.showView('zoekresultaten');
+
+        // Update header met resultaten count
+        const count = zoekView.getSearchResultsCount();
+        if (this.header && this.header.setSearchResultsCount) {
+            this.header.setSearchResultsCount(count || 0);
+        }
+
+        console.log(`🔍 Zoekresultaten: ${count} tenders gevonden`);
+    }
+
+    /**
+     * ⭐ v2.5: Handle search clear - terug naar vorige view
+     */
+    handleSearchClear() {
+        console.log(`🔍 Zoekfilter verwijderd, terug naar: ${this.previousView}`);
+
+        // Reset zoekquery
+        this.searchQuery = '';
+
+        // Clear zoekresultaten view
+        if (this.views.zoekresultaten) {
+            this.views.zoekresultaten.clearSearchQuery();
+        }
+
+        // Navigeer terug naar vorige view
+        const targetView = this.previousView || 'totaal';
+        this.showView(targetView);
+
+        // Reset header count
+        if (this.header && this.header.setSearchResultsCount) {
+            this.header.setSearchResultsCount(null);
         }
     }
 
@@ -859,16 +944,29 @@ export class App {
     /**
      * Handle status change
      */
-    async handleStatusChange(tenderId, newStatus) {
-        console.log(`🔄 Status change: ${tenderId} → ${newStatus}`);
+    async handleStatusChange(tenderId, newStatus, newFase = null) {
+        console.log(`🔄 Status change: ${tenderId} → ${newStatus}`, newFase ? `(fase: ${newFase})` : '');
 
         try {
-            await apiService.updateTender(tenderId, { status: newStatus });
+            const updateData = { fase_status: newStatus };
+
+            if (newFase) {
+                updateData.fase = newFase;
+            }
+
+            await apiService.updateTender(tenderId, updateData);
 
             const tender = this.tenders.find(t => t.id === tenderId);
             if (tender) {
-                tender.status = newStatus;
+                tender.fase_status = newStatus;
+                if (newFase) {
+                    tender.fase = newFase;
+                }
             }
+
+            // Refresh alle views
+            this.updateViews();
+            this.updateHeaderCounts();
 
             console.log('✅ Status updated');
         } catch (error) {
@@ -957,20 +1055,14 @@ export class App {
     }
 
     /**
-     * Logout
-     * ============================================================
-     * v2.2: Custom logout confirmation modal
-     * ============================================================
+     * Logout with custom confirmation modal
      */
     async logout() {
-        // Gebruik custom modal in plaats van browser confirm()
         const confirmed = await confirmLogout();
 
         if (confirmed) {
             try {
-                // Reset bureau service voor schone state
                 bureauAccessService.reset();
-
                 const supabase = getSupabase();
                 await supabase.auth.signOut();
                 window.location.href = '/login.html';

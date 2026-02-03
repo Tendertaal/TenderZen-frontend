@@ -6,7 +6,7 @@ import { MOCK_MODE, MOCK_TOKEN, MOCK_USER, API_CONFIG, getSupabase } from '../co
 
 class ApiService {
     constructor() {
-        this.baseURL = API_CONFIG.baseURL;
+        this.baseURL = API_CONFIG.BASE_URL;
 
         if (MOCK_MODE) {
             console.log('🔧 ApiService: Running in MOCK MODE');
@@ -152,36 +152,43 @@ class ApiService {
             const response = await fetch(url, config);
 
             // Handle response
-            if (!response.ok) {
-                let errorData;
+            let responseBody = null;
+            let isJson = false;
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
                 try {
-                    errorData = await response.json();
+                    responseBody = await response.json();
+                    isJson = true;
                 } catch (e) {
-                    errorData = await response.text();
+                    responseBody = null;
                 }
+            } else {
+                try {
+                    responseBody = await response.text();
+                } catch (e) {
+                    responseBody = null;
+                }
+            }
 
+            if (!response.ok) {
                 console.error('❌ API Error:', {
                     status: response.status,
                     statusText: response.statusText,
-                    error: errorData
+                    error: responseBody
                 });
-
-                // Throw with detailed error
-                const errorMessage = typeof errorData === 'object'
-                    ? JSON.stringify(errorData, null, 2)
-                    : errorData;
-
+                const errorMessage = isJson && typeof responseBody === 'object'
+                    ? JSON.stringify(responseBody, null, 2)
+                    : responseBody;
                 throw new Error(`HTTP ${response.status}: ${errorMessage}`);
             }
 
-            // ⭐ v1.1 FIX: Handle empty responses (204 No Content)
-            // DELETE requests often return empty body
-            const text = await response.text();
-            const data = text ? JSON.parse(text) : { success: true };
+            // Handle empty responses (204 No Content)
+            if (response.status === 204 || responseBody === '' || responseBody === null) {
+                return { success: true };
+            }
 
-            console.log('✅ API Success:', data);
-
-            return data;
+            console.log('✅ API Success:', responseBody);
+            return responseBody;
 
         } catch (error) {
             console.error('❌ API request error:', error);
@@ -199,16 +206,25 @@ class ApiService {
      * @returns {Promise<array>} List of tenders
      */
     async getTenders(bureauId = null) {
-        let endpoint = API_CONFIG.endpoints.tenders + '/';
-        if (bureauId !== null) {
-            endpoint += `?tenderbureau_id=${encodeURIComponent(bureauId)}`;
-            console.log('📡 getTenders for bureau:', bureauId);
-        } else {
-            console.log('📡 getTenders for ALL bureaus (super_admin)');
+        try {
+            let endpoint = API_CONFIG.endpoints.tenders;
+            if (bureauId !== null) {
+                endpoint += `?tenderbureau_id=${encodeURIComponent(bureauId)}`;
+                console.log('📡 getTenders for bureau:', bureauId);
+            } else {
+                console.log('📡 getTenders for ALL bureaus (super_admin)');
+            }
+            const response = await this.request(endpoint, { method: 'GET' });
+            console.log('✅ Tenders response:', response);
+            // Ultra-robust: handle all possible shapes
+            if (Array.isArray(response)) return response;
+            if (response?.tenders) return response.tenders;
+            if (response?.data) return response.data;
+            return response || [];
+        } catch (error) {
+            console.error('❌ getTenders error:', error);
+            return [];
         }
-        return await this.request(endpoint, {
-            method: 'GET'
-        });
     }
 
     /**

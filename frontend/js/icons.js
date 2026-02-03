@@ -1,12 +1,8 @@
 /* ============================================
    TENDERZEN ICON LIBRARY - ICONS.JS
-   Versie 1.2
+   Versie 1.1 - Opgeschoond
    
-   37 SVG iconen in Lucide-stijl met consistente kleurlogica
-   
-   CHANGELOG:
-   v1.2 - ⭐ IconConfig toegevoegd (centrale icon mapping)
-   v1.1 - hardhat & landmark iconen toegevoegd
+   SVG iconen in Lucide-stijl met consistente kleurlogica
    ============================================ */
 
 // ============================================
@@ -75,7 +71,7 @@ function createIcon(paths, options = {}) {
 }
 
 // ============================================
-// 1. HEADER & NAVIGATIE ICONEN (7)
+// 1. HEADER & NAVIGATIE ICONEN
 // ============================================
 
 /**
@@ -194,7 +190,7 @@ function iconChevronLeft(options = {}) {
 }
 
 // ============================================
-// 2. APPS GRID - MODULE ICONEN (8)
+// 2. APPS GRID - MODULE ICONEN
 // ============================================
 
 /**
@@ -303,7 +299,7 @@ function iconSettings(options = {}) {
 }
 
 // ============================================
-// 3. PROFIEL MENU ICONEN (6)
+// 3. PROFIEL MENU ICONEN
 // ============================================
 
 /**
@@ -314,19 +310,6 @@ function iconUser(options = {}) {
         `<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
          <circle cx="12" cy="7" r="4"/>`,
         { color: IconColors.blue, ...options }
-    );
-}
-
-/**
- * Gebruiker Toevoegen icoon - Groen (teamlid toevoegen)
- */
-function iconUserPlus(options = {}) {
-    return createIcon(
-        `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-         <circle cx="9" cy="7" r="4"/>
-         <line x1="19" x2="19" y1="8" y2="14"/>
-         <line x1="22" x2="16" y1="11" y2="11"/>`,
-        { color: IconColors.green, ...options }
     );
 }
 
@@ -393,7 +376,7 @@ function iconCrown(options = {}) {
 }
 
 // ============================================
-// 4. TENDER STATUS ICONEN (4)
+// 4. TENDER STATUS ICONEN
 // ============================================
 
 /**
@@ -443,7 +426,7 @@ function iconStatusPending(options = {}) {
 }
 
 // ============================================
-// 5. ACTIE ICONEN (7)
+// 5. ACTIE ICONEN
 // ============================================
 
 /**
@@ -554,7 +537,7 @@ function iconXCircle(options = {}) {
 }
 
 // ============================================
-// 6. FEEDBACK ICONEN (4)
+// 6. FEEDBACK ICONEN
 // ============================================
 
 /**
@@ -626,7 +609,7 @@ function iconInfo(options = {}) {
 }
 
 // ============================================
-// 7. MFA & SECURITY ICONEN (6)
+// 7. MFA & SECURITY ICONEN
 // ============================================
 
 /**
@@ -926,12 +909,154 @@ function iconMoreVertical(options = {}) {
 }
 
 // ============================================
-// 9. TENDER SPECIFIEKE ICONEN (NIEUW)
+// 9. EXTRA PLANNING & UI ICONEN
 // ============================================
 
 /**
- * Hardhat/Helm icoon - Amber (Inschrijver/Aannemer)
- * Bouwhelm voor de partij die inschrijft
+ * Calendar icoon (simpel) - Blauw
+ */
+function iconCalendar(options = {}) {
+    return createIcon(
+        `<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+         <line x1="16" x2="16" y1="2" y2="6"/>
+         <line x1="8" x2="8" y1="2" y2="6"/>
+         <line x1="3" x2="21" y1="10" y2="10"/>`,
+        { color: IconColors.blue, ...options }
+    );
+}
+
+/**
+ * Circle icoon (lege cirkel) - Slate
+ */
+function iconCircle(options = {}) {
+    return createIcon(
+        `<circle cx="12" cy="12" r="10"/>`,
+        { color: IconColors.slate, ...options }
+    );
+}
+
+/**
+ * Help Circle icoon (vraagteken) - Amber
+ */
+function iconHelpCircle(options = {}) {
+    return createIcon(
+        `<circle cx="12" cy="12" r="10"/>
+         <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+         <path d="M12 17h.01"/>`,
+        { color: IconColors.amber, ...options }
+    );
+}
+
+/**
+ * Award/Trofee icoon - Groen (succes/gunning)
+ */
+function iconAward(options = {}) {
+    return createIcon(
+        `<circle cx="12" cy="8" r="6"/>
+         <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>`,
+        { color: IconColors.green, ...options }
+    );
+}
+
+/**
+ * Play icoon - Groen (start)
+ */
+function iconPlay(options = {}) {
+    return createIcon(
+        `<polygon points="5 3 19 12 5 21 5 3"/>`,
+        { color: IconColors.green, ...options }
+    );
+}
+
+/**
+ * Flag icoon - Indigo (mijlpaal/einde)
+ */
+function iconFlag(options = {}) {
+    return createIcon(
+        `<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+         <line x1="4" x2="4" y1="22" y2="15"/>`,
+        { color: IconColors.indigo, ...options }
+    );
+}
+
+/**
+ * Lightbulb icoon - Amber (tip/idee)
+ */
+function iconLightbulb(options = {}) {
+    return createIcon(
+        `<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+         <path d="M9 18h6"/>
+         <path d="M10 22h4"/>`,
+        { color: IconColors.amber, ...options }
+    );
+}
+
+/**
+ * Folder Open icoon - Blauw (documenten)
+ */
+function iconFolderOpen(options = {}) {
+    return createIcon(
+        `<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>`,
+        { color: IconColors.blue, ...options }
+    );
+}
+
+/**
+ * Sparkles icoon - Purple (AI/magic)
+ */
+function iconSparkles(options = {}) {
+    return createIcon(
+        `<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+         <path d="M5 3v4"/>
+         <path d="M19 17v4"/>
+         <path d="M3 5h4"/>
+         <path d="M17 19h4"/>`,
+        { color: IconColors.purple, ...options }
+    );
+}
+
+/**
+ * Robot icoon - Purple (AI/documenten generator)
+ */
+function iconRobot(options = {}) {
+    return createIcon(
+        `<rect x="3" y="11" width="18" height="10" rx="2"/>
+         <circle cx="12" cy="5" r="2"/>
+         <path d="M12 7v4"/>
+         <line x1="8" y1="16" x2="8" y2="16.01"/>
+         <line x1="16" y1="16" x2="16" y2="16.01"/>
+         <path d="M9 20v1"/>
+         <path d="M15 20v1"/>`,
+        { color: IconColors.purple, ...options }
+    );
+}
+
+/**
+ * CheckSquare icoon - Green (checklist/afvinken)
+ */
+function iconCheckSquare(options = {}) {
+    return createIcon(
+        `<polyline points="9 11 12 14 22 4"/>
+         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,
+        { color: IconColors.green, ...options }
+    );
+}
+
+/**
+ * FileCheck icoon - Green (document goedgekeurd)
+ */
+function iconFileCheck(options = {}) {
+    return createIcon(
+        `<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+         <polyline points="14 2 14 8 20 8"/>
+         <path d="m9 15 2 2 4-4"/>`,
+        { color: IconColors.green, ...options }
+    );
+}
+
+/**
+ * Hardhat / Bouwhelm icoon - Amber (bouw/constructie gerelateerd)
+ * Gebruik: Inschrijvend bedrijf, Bouw tenders, Aannemer
  */
 function iconHardhat(options = {}) {
     return createIcon(
@@ -944,18 +1069,14 @@ function iconHardhat(options = {}) {
 }
 
 /**
- * Landmark icoon - Blauw (Aanbestedende dienst/Overheid)
- * Overheidsgebouw met zuilen
+ * Archive icoon - Slate (archief)
  */
-function iconLandmark(options = {}) {
+function iconArchive(options = {}) {
     return createIcon(
-        `<line x1="3" x2="21" y1="22" y2="22"/>
-         <line x1="6" x2="6" y1="18" y2="11"/>
-         <line x1="10" x2="10" y1="18" y2="11"/>
-         <line x1="14" x2="14" y1="18" y2="11"/>
-         <line x1="18" x2="18" y1="18" y2="11"/>
-         <polygon points="12 2 20 7 4 7"/>`,
-        { color: IconColors.blue, ...options }
+        `<rect width="20" height="5" x="2" y="3" rx="1"/>
+         <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
+         <path d="M10 12h4"/>`,
+        { color: IconColors.slate, ...options }
     );
 }
 
@@ -968,7 +1089,7 @@ function iconLandmark(options = {}) {
  */
 function iconTenderZenLogo(options = {}) {
     const { size = 48, className = '' } = options;
-    const height = Math.round(size * 1.08); // Aspect ratio behouden
+    const height = Math.round(size * 1.08);
     
     return `<svg 
         width="${size}" 
@@ -1015,203 +1136,11 @@ function iconTenderZenLogoWhite(options = {}) {
 }
 
 // ============================================
-// 11. ICON CONFIGURATIE - CENTRALE MAPPING
-// ============================================
-
-/**
- * IconConfig - Centrale configuratie voor alle iconen in de applicatie
- * 
- * Wijzig hier het icoon en het verandert overal in de app!
- * 
- * Gebruik: IconConfig.tenderCard.inschrijver → 'hardhat'
- */
-const IconConfig = {
-    
-    // ==========================================
-    // TENDER KAART - Iconen op de tender card
-    // ==========================================
-    tenderCard: {
-        aanbestedendeDienst: 'landmark',     // Opdrachtgever/overheid
-        inschrijver: 'hardhat',               // Uitvoerend bedrijf (was: 'users')
-        tenderbureau: 'edit',                 // Bureau dat de tender begeleidt
-        documenten: 'fileText',               // Document knop
-        deadline: 'calendar',                 // Deadline indicator
-        workload: 'clock',                    // Geschatte uren
-        teamToevoegen: 'plus',                // Team avatar toevoegen
-        leegState: 'clipboardList'            // Lege tenderlijst
-    },
-    
-    // ==========================================
-    // TENDER FORMULIER - Sectie iconen
-    // ==========================================
-    tenderForm: {
-        basisgegevens: 'fileText',            // Sectie: Basisgegevens
-        partijen: 'hardhat',                  // Sectie: Partijen (was: 'users')
-        teamsamenstelling: 'users',           // Sectie: Team
-        planning: 'calendarView',             // Sectie: Planning & Deadlines
-        kwalificatie: 'filter',               // Sectie: Kwalificatie
-        financieel: 'barChart',               // Sectie: Financieel
-        documenten: 'fileText',               // Sectie: Documenten
-        gunningscriteria: 'checkCircle',      // Sectie: Gunningscriteria
-        risicos: 'alertCircle',               // Sectie: Risico's
-        opslaan: 'save',                      // Opslaan knop
-        sluiten: 'close',                     // Sluiten knop
-        bewerken: 'edit',                     // Bewerk modus
-        aanmaken: 'plus'                      // Aanmaak modus
-    },
-    
-    // ==========================================
-    // HEADER & NAVIGATIE
-    // ==========================================
-    header: {
-        zoeken: 'search',
-        menu: 'grid',
-        chevronDown: 'chevronDown',
-        chevronUp: 'chevronUp',
-        chevronRight: 'chevronRight',
-        chevronLeft: 'chevronLeft'
-    },
-    
-    // ==========================================
-    // VIEWS - Weergave toggles
-    // ==========================================
-    views: {
-        dashboard: 'dashboard',
-        lijst: 'listView',
-        kalender: 'calendarView',
-        grid: 'grid'
-    },
-    
-    // ==========================================
-    // MODULES - Apps menu
-    // ==========================================
-    modules: {
-        tenders: 'clipboardList',
-        bedrijven: 'building',
-        tenderbureaus: 'briefcase',
-        templates: 'copy',
-        teamleden: 'users',
-        rapporten: 'barChart',
-        instellingen: 'settings'
-    },
-    
-    // ==========================================
-    // PROFIEL MENU
-    // ==========================================
-    profiel: {
-        mijnProfiel: 'user',
-        beveiliging: 'shieldCheck',
-        notificaties: 'bell',
-        voorkeuren: 'sliders',
-        uitloggen: 'logOut',
-        superAdmin: 'crown'
-    },
-    
-    // ==========================================
-    // ACTIES - Knoppen
-    // ==========================================
-    acties: {
-        toevoegen: 'plus',
-        toevoegenCircle: 'plusCircle',
-        bewerken: 'edit',
-        verwijderen: 'trash',
-        opslaan: 'save',
-        kopieren: 'copy',
-        vernieuwen: 'refresh',
-        sluiten: 'close',
-        annuleren: 'xCircle'
-    },
-    
-    // ==========================================
-    // FEEDBACK - Status berichten
-    // ==========================================
-    feedback: {
-        success: 'check',
-        successCircle: 'checkCircle',
-        error: 'x',
-        errorCircle: 'xCircle',
-        warning: 'warning',
-        alert: 'alertCircle',
-        info: 'info'
-    },
-    
-    // ==========================================
-    // TENDER STATUS
-    // ==========================================
-    tenderStatus: {
-        go: 'statusGo',
-        noGo: 'statusNoGo',
-        maybe: 'statusMaybe',
-        pending: 'statusPending'
-    },
-    
-    // ==========================================
-    // BEDRIJVEN VIEW
-    // ==========================================
-    bedrijven: {
-        bedrijf: 'building',
-        klant: 'buildingOffice',
-        contactpersoon: 'user',
-        tenders: 'fileText',
-        bewerken: 'edit',
-        verwijderen: 'trash',
-        leegState: 'building'
-    },
-    
-    // ==========================================
-    // TEAMLEDEN VIEW
-    // ==========================================
-    teamleden: {
-        team: 'users',
-        persoon: 'user',
-        email: 'mail',
-        telefoon: 'phone',
-        rol: 'briefcase',
-        actief: 'clock',
-        toevoegen: 'userPlus',
-        bewerken: 'edit',
-        verwijderen: 'trash',
-        leegState: 'users'
-    },
-    
-    // ==========================================
-    // SECURITY & MFA
-    // ==========================================
-    security: {
-        lock: 'lock',
-        unlock: 'unlock',
-        shield: 'shield',
-        shieldCheck: 'shieldCheck',
-        key: 'key',
-        smartphone: 'smartphone',
-        zap: 'zap'
-    },
-    
-    // ==========================================
-    // OVERIG
-    // ==========================================
-    overig: {
-        externalLink: 'externalLink',
-        download: 'download',
-        upload: 'upload',
-        bekijken: 'eye',
-        verbergen: 'eyeOff',
-        filter: 'filter',
-        sorteren: 'sort',
-        meerOpties: 'moreHorizontal',
-        meerOptiesVertical: 'moreVertical'
-    }
-};
-
-// ============================================
 // EXPORT - Alle iconen beschikbaar maken
 // ============================================
 
 // Icon kleuren exporteren
 window.IconColors = IconColors;
-
-// ⭐ Icon configuratie exporteren
-window.IconConfig = IconConfig;
 
 // Alle iconen als object
 window.Icons = {
@@ -1239,7 +1168,6 @@ window.Icons = {
     
     // Profiel Menu
     user: iconUser,
-    userPlus: iconUserPlus,               // ⭐ Teamlid toevoegen
     shieldCheck: iconShieldCheck,
     bell: iconBell,
     sliders: iconSliders,
@@ -1294,15 +1222,27 @@ window.Icons = {
     mail: iconMail,
     phone: iconPhone,
     calendarPlus: iconCalendarPlus,
-    calendar: iconCalendarView,           // ⭐ Alias voor deadline indicator op tender cards
     filter: iconFilter,
     sort: iconSort,
     moreHorizontal: iconMoreHorizontal,
     moreVertical: iconMoreVertical,
     
-    // ⭐ Tender Specifiek
-    hardhat: iconHardhat,
-    landmark: iconLandmark,
+    // Planning & UI Iconen
+    calendar: iconCalendar,
+    circle: iconCircle,
+    helpCircle: iconHelpCircle,
+    award: iconAward,
+    play: iconPlay,
+    flag: iconFlag,
+    lightbulb: iconLightbulb,
+    folderOpen: iconFolderOpen,
+    sparkles: iconSparkles,
+    robot: iconRobot,
+    ai: iconRobot,  // Alias voor robot icoon
+    checkSquare: iconCheckSquare,
+    fileCheck: iconFileCheck,
+    hardhat: iconHardhat,  // Bouwhelm icoon
+    archive: iconArchive,  // Archief icoon
     
     // TenderZen Logo
     logo: iconTenderZenLogo,
@@ -1313,42 +1253,42 @@ window.Icons = {
 window.createIcon = createIcon;
 
 // ============================================
-// USAGE EXAMPLES
+// USAGE EXAMPLES (in comments)
 // ============================================
 
 /*
-ICONCONFIG GEBRUIK:
+GEBRUIK IN HTML:
 
-1. In TenderListView.js (of elk ander bestand):
-   
-   // Oud (hardcoded):
-   ${this.getIcon('users', 14)}
-   
-   // Nieuw (via config):
-   ${this.getIcon(IconConfig.tenderCard.inschrijver, 14)}
+1. Basic gebruik:
+   document.getElementById('icon').innerHTML = Icons.search();
 
-2. Icoon wijzigen voor hele app:
-   
-   // In icons.js, wijzig alleen:
-   tenderCard: {
-       inschrijver: 'hardhat',  // Verander naar bijv. 'briefcase'
-   }
-   
-   // Klaar! Overal waar IconConfig.tenderCard.inschrijver 
-   // wordt gebruikt, verandert het icoon automatisch.
+2. Met custom opties:
+   Icons.search({ size: 20, color: '#000000' })
 
-3. Beschikbare config categorieën:
-   - IconConfig.tenderCard      → Tender kaart iconen
-   - IconConfig.tenderForm      → Formulier sectie iconen  
-   - IconConfig.header          → Header navigatie
-   - IconConfig.views           → View toggles
-   - IconConfig.modules         → Apps menu
-   - IconConfig.profiel         → Profiel dropdown
-   - IconConfig.acties          → Actie knoppen
-   - IconConfig.feedback        → Status/feedback
-   - IconConfig.tenderStatus    → Go/No-Go etc.
-   - IconConfig.bedrijven       → Bedrijven view
-   - IconConfig.teamleden       → Teamleden view
-   - IconConfig.security        → MFA & beveiliging
-   - IconConfig.overig          → Overige iconen
+3. Met CSS class:
+   Icons.search({ className: 'my-icon-class' })
+
+4. Alleen kleur overschrijven:
+   Icons.trash({ color: IconColors.slate })
+
+5. Logo met aangepaste grootte:
+   Icons.logo({ size: 64 })
+
+6. In een template literal:
+   `<button>${Icons.plus()} Toevoegen</button>`
+
+7. Hardhat icoon:
+   Icons.hardhat({ size: 18, color: '#f59e0b' })
+
+8. Alle beschikbare kleuren:
+   IconColors.blue    - #2563eb (Info, Bedrijven)
+   IconColors.indigo  - #4f46e5 (Security, Systeem)
+   IconColors.green   - #16a34a (Positief, Team)
+   IconColors.red     - #dc2626 (Negatief, Verwijderen)
+   IconColors.amber   - #d97706 (Alerts, Admin)
+   IconColors.orange  - #ea580c (Waarschuwing)
+   IconColors.purple  - #9333ea (Analytics)
+   IconColors.pink    - #db2777 (Export)
+   IconColors.teal    - #0d9488 (Import)
+   IconColors.slate   - #334155 (UI elementen)
 */

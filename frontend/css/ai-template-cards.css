@@ -1,0 +1,451 @@
+/* Save note for superusers */
+.prompt-save-note {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 8px;
+  padding: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* ============================================
+   SUPERUSER FEATURES
+   ============================================ */
+
+.superuser-badge {
+  display: inline-block;
+  margin-left: 12px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.ai-template-prompt-textarea:not([readonly]) {
+  border-color: #8b5cf6;
+  background: #faf5ff;
+}
+
+.ai-template-prompt-textarea:not([readonly]):focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+/* ============================================
+   AI TEMPLATE CARDS
+   TenderZen v2.0 - Clean Professional Design
+   SPECIFIEKE CLASS NAMES OM CONFLICTS TE VOORKOMEN
+   ============================================ */
+
+.templates-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ============================================
+   TEMPLATE CARD - BASE
+   ============================================ */
+
+.template-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.template-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Color variants - left border */
+
+.template-card--purple {
+  border-left: 4px solid #8b5cf6;
+}
+
+/* Planning variant (Stap 0) */
+.template-card--planning {
+  border-left: 4px solid #0ea5e9;
+}
+
+.template-card--green {
+  border-left: 4px solid #10b981;
+}
+
+.template-card--orange {
+  border-left: 4px solid #f59e0b;
+}
+
+.template-card--blue {
+  border-left: 4px solid #3b82f6;
+}
+
+.template-card--success {
+  border-left: 4px solid #10b981;
+}
+
+/* ============================================
+   CARD HEADER
+   ============================================ */
+
+.ai-template-card-top {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.ai-template-flow-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+
+.ai-template-flow-number--purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.ai-template-flow-number--planning {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+}
+
+.ai-template-flow-number--green {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.ai-template-flow-number--orange {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.ai-template-flow-number--blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.ai-template-flow-number--success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.ai-template-card-header {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-template-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.ai-template-card-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ============================================
+   PROMPT SECTION
+   ============================================ */
+
+.ai-template-prompt-section {
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.ai-template-prompt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ai-template-prompt-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-template-prompt-title span:first-child {
+  font-size: 18px;
+}
+
+.ai-template-prompt-version {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.prompt-box-container {
+  margin-top: 0;
+}
+
+.ai-template-prompt-description {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.ai-template-prompt-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b82f6;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+}
+
+.ai-template-prompt-edit-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.ai-template-prompt-content {
+  margin: 12px 0;
+  display: none;
+  animation: slideDown 0.2s ease;
+}
+
+.ai-template-prompt-content.active {
+  display: block;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-template-prompt-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #1e293b;
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.ai-template-prompt-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.ai-template-prompt-textarea[readonly] {
+  background: #f8fafc;
+  cursor: default;
+}
+
+.ai-template-prompt-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ai-template-prompt-tip {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #fef3c7;
+  border: 1px solid #fde047;
+  border-radius: 6px;
+  margin-top: 12px;
+}
+
+.ai-template-tip-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.ai-template-tip-text {
+  font-size: 13px;
+  color: #713f12;
+  line-height: 1.5;
+}
+
+/* ============================================
+   INSTRUCTIONS SECTION
+   ============================================ */
+
+.ai-template-instructions {
+  padding: 20px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.ai-template-instructions-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #92400e;
+  margin-bottom: 12px;
+}
+
+.ai-template-instructions-title span:first-child {
+  font-size: 18px;
+}
+
+.ai-template-instructions-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #92400e;
+}
+
+.ai-template-instructions-list li {
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.ai-template-instructions-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   ACTIONS
+   ============================================ */
+
+.ai-template-card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ai-template-btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.ai-template-btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.ai-template-btn-primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.ai-template-btn-primary:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+}
+
+.ai-template-btn-primary:active {
+  transform: translateY(0);
+}
+
+.ai-template-btn-secondary {
+  background: white;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.ai-template-btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.ai-template-btn-secondary:active {
+  background: #f3f4f6;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .template-card {
+    padding: 20px;
+  }
+
+  .ai-template-card-top {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .ai-template-flow-number {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .ai-template-card-title {
+    font-size: 18px;
+  }
+
+  .ai-template-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-template-prompt-section,
+  .ai-template-instructions {
+    padding: 16px;
+  }
+}

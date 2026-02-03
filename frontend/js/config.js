@@ -1,21 +1,21 @@
+// SUPABASE CONFIGURATIE
+export const SUPABASE_URL = 'https://ayamyedredynntdaldlu.supabase.co';
+export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_BCXkUIXADb3fZLjic7X5OQ_hZA70iCF';
 // frontend/js/config.js
 // Configuration voor TenderPlanner v2.0
 
-// Supabase configuratie (centraal)
-export const SUPABASE_URL = 'https://ayamyedredynntdaldlu.supabase.co';
-export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_BCXkUIXADb3fZLjic7X5OQ_hZA70iCF';
 
-// ========================================
-// API CONFIGURATIE
-// ========================================
+// API Configuration (ULTRA SHORT FIX)
+const BACKEND_PORT = 3000;  // ← MATCHED TO BACKEND
 export const API_CONFIG = {
-    baseURL: 'http://localhost:3000', // ✅ FIXED: Backend FastAPI poort
-    timeout: 10000,
+    BASE_URL: `http://localhost:${BACKEND_PORT}`,
     endpoints: {
         tenders: '/api/v1/tenders',
-        health: '/health'
+        usersMe: '/api/v1/users/me',
+        // voeg hier meer endpoints toe indien nodig
     }
 };
+console.log('✅ API Config:', API_CONFIG.BASE_URL);
 
 // ========================================
 // APP CONFIGURATIE
@@ -44,7 +44,7 @@ export const MOCK_USER = {
 // HELPER FUNCTIES
 // ========================================
 export function getApiUrl(endpoint) {
-    return `${API_CONFIG.baseURL}${endpoint}`;
+    return `${API_CONFIG.BASE_URL}${endpoint}`;
 }
 
 export function isProduction() {
@@ -107,10 +107,26 @@ export function getSupabase() {
     return null;
 }
 
-// Initialiseer direct als library beschikbaar is
-if (isSupabaseLibrary(supabaseLibrary)) {
-    supabaseClient = getSupabase();
+
+// Initialiseer direct als library beschikbaar is, of wacht tot UMD geladen is
+function ensureSupabaseClientInit() {
+    if (supabaseClient) return;
+    if (isSupabaseLibrary(window.supabase)) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true
+            }
+        });
+        window.supabaseClient = supabaseClient;
+        console.log('✅ Supabase client initialized from window.supabase');
+    } else {
+        // Probeer opnieuw zodra de library geladen is
+        setTimeout(ensureSupabaseClientInit, 200);
+    }
 }
+ensureSupabaseClientInit();
 
 // Export de client
 export const supabase = supabaseClient;
@@ -134,7 +150,7 @@ window.getSupabase = getSupabase;
 // LOGGING
 // ========================================
 console.log('🔧 Config loaded:', {
-    api: API_CONFIG.baseURL,
+    api: API_CONFIG.BASE_URL,
     supabase: SUPABASE_URL,
     environment: APP_CONFIG.environment
 });

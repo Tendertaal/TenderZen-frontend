@@ -1,169 +1,177 @@
 """
-AI Document Models
-Pydantic models for AI document generation system
-TenderPlanner v3.0 - AI Features
+AI Documents API Router
+Handles AI document generation endpoints
 """
-from typing import Optional, List, Dict, Any
-from datetime import datetime
-from pydantic import BaseModel, Field, field_validator
-from enum import Enum
+from fastapi import APIRouter, HTTPException, Depends, Query
+from supabase import Client
+from app.core.database import get_supabase_async
+from typing import List, Optional
+
+router = APIRouter(prefix="/ai-documents", tags=["AI Documents"])
 
 
 # ============================================
-# ENUMS
+# HELPER FUNCTIONS
 # ============================================
 
-class DocumentStatus(str, Enum):
-    """Status van een AI document generatie"""
-    QUEUED = "queued"
-    GENERATING = "generating"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
+def map_document_row(row):
+    """Map database document row to API response."""
+    return {
+        "id": row.get("id"),
+        "tender_id": row.get("tender_id"),
+        "template_key": row.get("template_key"),
+        "status": row.get("status"),
+        "progress": row.get("progress", 0),
+        "generated_file_url": row.get("generated_file_url"),
+        "created_at": str(row.get("created_at", "")),
+        "completed_at": str(row.get("completed_at", "")),
+    }
 
 
-class TemplateKey(str, Enum):
-    """Beschikbare template types"""
-    RODE_DRAAD = "rode_draad"
-    OFFERTE = "offerte"
-    VERSIE1 = "versie1_inschrijving"
-
-
-# ============================================
-# FILE MODELS
-# ============================================
-
-class UploadedFile(BaseModel):
-    """Metadata van een geüpload bestand"""
-    filename: str
-    storage_path: str
-    size: int  # bytes
-    type: str  # MIME type
-    uploaded_at: datetime = Field(default_factory=datetime.now)
-
-
-class FileRequirement(BaseModel):
-    """Vereisten voor een bestandstype"""
-    type: str  # 'aanbestedingsleidraad', 'programma_van_eisen'
-    label: str
-    required: bool
-    accept: str  # '.pdf', '.docx'
-    maxSize: int = 10485760  # 10MB default
-
-
-# ============================================
-# TEMPLATE MODELS
-# ============================================
-
-class AIDocumentTemplate(BaseModel):
-    """AI Document Template definitie"""
-    id: Optional[str] = None
-    template_key: str
-    naam: str
-    beschrijving: Optional[str] = None
-    icon: Optional[str] = None
-    kleur: str = "#3b82f6"
-    required_files: List[FileRequirement] = []
-    optional_files: List[FileRequirement] = []
-    estimated_duration_minutes: int = 10
-    requires_bedrijf_data: bool = True
-    requires_team_data: bool = False
-    volgorde: int = 0
-    is_active: bool = True
-    is_beta: bool = False
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+def map_template_row(row):
+    """Map database template row to API response."""
+    # Color mapping voor frontend
+    color_map = {
+        'samenvatting': 'blue',
+        'offerte': 'green',
+        'rode_draad': 'purple',
+        'versie1_inschrijving': 'orange',
+        'win_check': 'success'
+    }
     
-    class Config:
-        from_attributes = True
+    return {
+        "id": row.get("id"),
+        "template_key": row.get("template_key"),
+        "template_name": row.get("naam"),
+        "template_icon": row.get("icon", "📄"),
+        "beschrijving": row.get("beschrijving", ""),
+        "prompt_template": row.get("prompt_template"),
+        "default_prompt": row.get("default_prompt"),
+        "priority": row.get("volgorde", 999),  # ✅ FIX: volgorde → priority
+        "color": color_map.get(row.get("template_key"), "blue"),
+        "estimated_time_minutes": row.get("estimated_duration_minutes", 10),
+        "recommended_documents": row.get("required_files", []),
+        "is_active": row.get("is_active", True),
+        "is_beta": row.get("is_beta", False),
+        "created_at": str(row.get("created_at", "")),
+        "updated_at": str(row.get("updated_at", "")),
+    }
 
 
 # ============================================
-# DOCUMENT MODELS
+# ENDPOINTS
 # ============================================
 
-class AIDocumentBase(BaseModel):
-    """Base model voor AI document"""
-    tender_id: str
-    template_key: str
-    tenderbureau_id: str
+@router.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "service": "ai-documents"}
 
 
-class AIDocumentCreate(AIDocumentBase):
-    """Create een nieuw AI document"""
-    input_data: Dict[str, Any]
-    uploaded_files: List[UploadedFile] = []
-    generation_config: Optional[Dict[str, Any]] = None
-    created_by: str
+@router.get("/templates")
+async def get_templates(
+    only_active: bool = Query(True),
+    db: Client = Depends(get_supabase_async)
+):
+    """Haal alle beschikbare AI document templates op."""
+    try:
+        query = db.table('ai_document_templates').select('*').order('volgorde')
+        
+        if only_active:
+            query = query.eq('is_active', True)
+        
+        result = query.execute()
+        
+        templates = [map_template_row(row) for row in result.data]
+        
+        return {
+            'success': True,
+            'templates': templates,
+            'total': len(templates)
+        }
+        
+    except Exception as e:
+        print(f"❌ Error fetching templates: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-class AIDocument(AIDocumentBase):
-    """Volledig AI document met alle data"""
-    id: str
-    
-    # Status
-    status: DocumentStatus
-    progress: int = 0
-    current_step: Optional[str] = None
-    current_step_number: int = 0
-    total_steps: int = 6
-    
-    # Files
-    uploaded_files: List[UploadedFile] = []
-    generated_file_path: Optional[str] = None
-    generated_file_name: Optional[str] = None
-    generated_file_size: Optional[int] = None
-    generated_file_url: Optional[str] = None
-    
-    # Data
-    input_data: Dict[str, Any] = {}
-    generation_config: Dict[str, Any] = {}
-    generation_log: List[Dict[str, Any]] = []
-    
-    # Error handling
-    error_message: Optional[str] = None
-    error_details: Optional[Dict[str, Any]] = None
-    
-    # Metrics
-    generation_time_seconds: Optional[int] = None
-    claude_tokens_used: Optional[int] = None
-    claude_model_used: str = "claude-sonnet-4-20250514"
-    
-    # Quality
-    quality_score: Optional[int] = None
-    validation_passed: Optional[bool] = None
-    
-    # User tracking
-    created_by: str
-    created_at: datetime
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    downloaded_at: Optional[datetime] = None
-    download_count: int = 0
-    
-    # Soft delete
-    is_deleted: bool = False
-    deleted_at: Optional[datetime] = None
-    deleted_by: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
+@router.get("/templates/{template_key}")
+async def get_template(
+    template_key: str,
+    db: Client = Depends(get_supabase_async)
+):
+    """Haal een specifieke template op."""
+    try:
+        result = db.table('ai_document_templates')\
+            .select('*')\
+            .eq('template_key', template_key)\
+            .single()\
+            .execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Template niet gevonden")
+        
+        return {
+            'success': True,
+            'template': map_template_row(result.data)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error fetching template: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-# ============================================
-# PROGRESS TRACKING MODELS
-# ============================================
+@router.get("/tenders/{tender_id}/ai-documents")
+async def get_tender_documents(
+    tender_id: str,
+    db: Client = Depends(get_supabase_async)
+):
+    """Haal alle AI documents op voor een specifieke tender."""
+    try:
+        result = db.table('ai_documents')\
+            .select('*')\
+            .eq('tender_id', tender_id)\
+            .order('created_at', desc=True)\
+            .execute()
+        
+        documents = [map_document_row(row) for row in result.data]
+        
+        return {
+            'success': True,
+            'documents': documents,
+            'total': len(documents)
+        }
+        
+    except Exception as e:
+        print(f"❌ Error fetching tender documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-class GenerationProgress(BaseModel):
-    """Real-time progress update"""
-    document_id: str
-    status: DocumentStatus
-    progress: int = Field(ge=0, le=100)
-    current_step: str
-    current_step_number: int
-    total_steps: int
-    estimated_time_remaining_seconds: Optional[int] = None
-    
-    # Timestamps
-    started_at: Optional[datetime] = None
-    updated_at: datetime = Field(default_factory=datetime.now)
+
+@router.get("/ai-documents/{document_id}")
+async def get_document(
+    document_id: str,
+    db: Client = Depends(get_supabase_async)
+):
+    """Haal een specifiek AI document op."""
+    try:
+        result = db.table('ai_documents')\
+            .select('*')\
+            .eq('id', document_id)\
+            .single()\
+            .execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Document niet gevonden")
+        
+        return {
+            'success': True,
+            'document': map_document_row(result.data)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error fetching document: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -3,8 +3,11 @@ Tender data models - Updated to match extended Supabase schema
 Met dynamische fase validatie uit database
 
 v2.1: bedrijf_id toegevoegd voor bedrijf koppeling
+v2.2: Status pattern verwijderd - nu dynamisch via fase_statussen tabel
+v2.3: Smart Import koppeling
+v2.4: date → datetime voor timestamp velden (tijd ondersteuning)
 """
-from datetime import datetime, date
+from datetime import datetime
 from typing import Optional, List, Set
 from pydantic import BaseModel, Field, field_validator
 from decimal import Decimal
@@ -46,7 +49,7 @@ class FaseValidator:
                     cls._cache_time = current_time
                     return cls._cache
             except Exception as e:
-                print(f"âš ï¸ Kon fases niet laden uit database: {e}")
+                print(f"⚠️ Kon fases niet laden uit database: {e}")
         
         # Fallback naar defaults (inclusief archief!)
         if not cls._cache:
@@ -89,7 +92,7 @@ class TenderBase(BaseModel):
     fase: str = Field(default="acquisitie")
     fase_status: Optional[str] = None
     
-    # â­ NIEUW: Tenderbureau koppeling
+    # ⭐ NIEUW: Tenderbureau koppeling
     tenderbureau_id: Optional[str] = None
     
     # ⭐ v2.1: Bedrijf koppeling via ID
@@ -125,8 +128,8 @@ class TenderBase(BaseModel):
     opdracht_duur: Optional[int] = None
     opdracht_duur_eenheid: Optional[str] = "maanden"
     
-    # Status & Go/No-Go
-    status: str = Field(default="pending", pattern="^(go|no-go|maybe|pending|actief|concept)$")
+    # ⭐ v2.2: Status - GEEN pattern meer, dynamisch via fase_statussen tabel
+    status: Optional[str] = None
     go_nogo_opmerkingen: Optional[str] = None
     
     # Basis velden
@@ -138,19 +141,19 @@ class TenderBase(BaseModel):
     # Team assignments (voor team builder)
     team_assignments: Optional[List[dict]] = None
     
-    # Timeline velden - hoofddates
-    publicatie_datum: Optional[date] = None
-    deadline_indiening: Optional[date] = None
-    interne_deadline: Optional[date] = None
+    # ⭐ v2.4: Timeline velden - nu datetime voor tijd ondersteuning
+    publicatie_datum: Optional[datetime] = None
+    deadline_indiening: Optional[datetime] = None
+    interne_deadline: Optional[datetime] = None
     
     # Timeline velden - extra
-    schouw_datum: Optional[date] = None
-    nvi1_datum: Optional[date] = None
-    nvi2_datum: Optional[date] = None
-    presentatie_datum: Optional[date] = None
-    voorlopige_gunning: Optional[date] = None
-    definitieve_gunning: Optional[date] = None
-    start_uitvoering: Optional[date] = None
+    schouw_datum: Optional[datetime] = None
+    nvi1_datum: Optional[datetime] = None
+    nvi2_datum: Optional[datetime] = None
+    presentatie_datum: Optional[datetime] = None
+    voorlopige_gunning: Optional[datetime] = None
+    definitieve_gunning: Optional[datetime] = None
+    start_uitvoering: Optional[datetime] = None
     
     # Documenten & Links
     tenderned_url: Optional[str] = None
@@ -174,7 +177,7 @@ class TenderBase(BaseModel):
     # Metadata
     is_concept: Optional[bool] = False
     
-    # â­ Dynamische fase validatie
+    # ⭐ Dynamische fase validatie
     @field_validator('fase')
     @classmethod
     def validate_fase(cls, v: str) -> str:
@@ -198,7 +201,7 @@ class TenderUpdate(BaseModel):
     fase: Optional[str] = None
     fase_status: Optional[str] = None
     
-    # â­ NIEUW: Tenderbureau koppeling
+    # ⭐ NIEUW: Tenderbureau koppeling
     tenderbureau_id: Optional[str] = None
     
     # ⭐ v2.1: Bedrijf koppeling via ID (vervangt losse bedrijfsvelden)
@@ -234,8 +237,8 @@ class TenderUpdate(BaseModel):
     opdracht_duur: Optional[int] = None
     opdracht_duur_eenheid: Optional[str] = None
     
-    # Status & Go/No-Go
-    status: Optional[str] = Field(None, pattern="^(go|no-go|maybe|pending|actief|concept)$")
+    # ⭐ v2.2: Status - GEEN pattern meer, dynamisch via fase_statussen tabel
+    status: Optional[str] = None
     go_nogo_opmerkingen: Optional[str] = None
     
     # Basis velden
@@ -247,19 +250,19 @@ class TenderUpdate(BaseModel):
     # Team assignments (voor team builder)
     team_assignments: Optional[List[dict]] = None
     
-    # Timeline velden - hoofddates
-    publicatie_datum: Optional[date] = None
-    deadline_indiening: Optional[date] = None
-    interne_deadline: Optional[date] = None
+    # ⭐ v2.4: Timeline velden - nu datetime voor tijd ondersteuning
+    publicatie_datum: Optional[datetime] = None
+    deadline_indiening: Optional[datetime] = None
+    interne_deadline: Optional[datetime] = None
     
     # Timeline velden - extra
-    schouw_datum: Optional[date] = None
-    nvi1_datum: Optional[date] = None
-    nvi2_datum: Optional[date] = None
-    presentatie_datum: Optional[date] = None
-    voorlopige_gunning: Optional[date] = None
-    definitieve_gunning: Optional[date] = None
-    start_uitvoering: Optional[date] = None
+    schouw_datum: Optional[datetime] = None
+    nvi1_datum: Optional[datetime] = None
+    nvi2_datum: Optional[datetime] = None
+    presentatie_datum: Optional[datetime] = None
+    voorlopige_gunning: Optional[datetime] = None
+    definitieve_gunning: Optional[datetime] = None
+    start_uitvoering: Optional[datetime] = None
     
     # Documenten & Links
     tenderned_url: Optional[str] = None
@@ -283,7 +286,7 @@ class TenderUpdate(BaseModel):
     # Metadata
     is_concept: Optional[bool] = None
     
-    # â­ Dynamische fase validatie
+    # ⭐ Dynamische fase validatie
     @field_validator('fase')
     @classmethod
     def validate_fase(cls, v: Optional[str]) -> Optional[str]:
@@ -299,11 +302,14 @@ class TenderUpdate(BaseModel):
 class TenderResponse(TenderBase):
     """Model for tender response - includes database generated fields"""
     id: str
-    tenderbureau_id: Optional[str] = None  # â­ NIEUW: Expliciet in response
+    tenderbureau_id: Optional[str] = None  # ⭐ NIEUW: Expliciet in response
     company_id: Optional[str] = None
     created_by: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    # ⭐ v2.3: Smart Import koppeling
+    smart_import_id: Optional[str] = None
+    ai_model_used: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -322,7 +328,7 @@ def init_fase_validator(supabase_client):
     Roep dit aan bij het opstarten van de applicatie.
     """
     fase_validator.refresh_cache(supabase_client)
-    print(f"âœ… Fase validator geÃ¯nitialiseerd met fases: {fase_validator._cache}")
+    print(f"✅ Fase validator geïnitialiseerd met fases: {fase_validator._cache}")
 
 
 def get_valid_fases() -> Set[str]:

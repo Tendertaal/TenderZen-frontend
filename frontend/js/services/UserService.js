@@ -7,7 +7,7 @@ const UserService = {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
-      const url = `${API_CONFIG.baseURL}/api/v1/users/me`;
+        const url = `${API_CONFIG.BASE_URL}${API_CONFIG.endpoints.usersMe}`;
       const res = await fetch(url, {
         headers: {
           'Authorization': token ? `Bearer ${token}` : ''

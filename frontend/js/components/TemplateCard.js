@@ -1,5 +1,4 @@
 // frontend/js/components/TemplateCard.js
-// VERSIE: 20250129_0930 - Actieknoppen ZONDER iconen
 
 import { PromptBox } from './PromptBox.js';
 import { SaveResultModal } from './SaveResultModal.js';
@@ -16,6 +15,9 @@ export class TemplateCard {
     this.element = null;
   }
 
+  /**
+   * Get icon HTML from window.Icons
+   */
   getIcon(name, size = 18, color = null) {
     const Icons = window.Icons;
     if (Icons && typeof Icons[name] === 'function') {
@@ -23,6 +25,7 @@ export class TemplateCard {
       if (color) options.color = color;
       return Icons[name](options);
     }
+    console.warn(`Icon '${name}' not found`);
     return '';
   }
 
@@ -30,6 +33,7 @@ export class TemplateCard {
     const card = document.createElement('div');
     card.className = `template-card template-card--${this.template.color}`;
     card.innerHTML = `
+      <!-- Card Header -->
       <div class="ai-template-card-top">
         <div class="ai-template-flow-number ai-template-flow-number--${this.template.color}">
           ${this.template.priority}
@@ -40,6 +44,7 @@ export class TemplateCard {
         </div>
       </div>
 
+      <!-- Prompt Section -->
       <div class="ai-template-prompt-section">
         <div class="ai-template-prompt-header">
           <div class="ai-template-prompt-title">
@@ -48,9 +53,12 @@ export class TemplateCard {
           </div>
           <span class="ai-template-prompt-version">v${this.template.version || '1'}</span>
         </div>
+        
+        <!-- PromptBox will be rendered here -->
         <div class="prompt-box-container"></div>
       </div>
 
+      <!-- Instructions Section -->
       <div class="ai-template-instructions">
         <div class="ai-template-instructions-title">
           <span class="instructions-icon">${this.getIcon('lightbulb', 18)}</span>
@@ -66,11 +74,17 @@ export class TemplateCard {
         </ol>
       </div>
 
-      <!-- ⚠️ ACTIEKNOPPEN - ALLEEN TEKST, GEEN ICONEN -->
+      <!-- Actions -->
       <div class="ai-template-card-actions">
-        <button class="ai-template-btn ai-template-btn-secondary" data-action="copy-prompt">Copy Prompt</button>
-        <button class="ai-template-btn ai-template-btn-secondary" data-action="open-claude">Open Claude.ai</button>
-        <button class="ai-template-btn ai-template-btn-primary" data-action="save-result">Resultaat Opslaan</button>
+        <button class="ai-template-btn ai-template-btn-secondary" data-action="copy-prompt">
+          Copy Prompt
+        </button>
+        <button class="ai-template-btn ai-template-btn-secondary" data-action="open-claude">
+          Open Claude.ai
+        </button>
+        <button class="ai-template-btn ai-template-btn-primary" data-action="save-result">
+          Resultaat Opslaan
+        </button>
       </div>
     `;
 
@@ -84,14 +98,22 @@ export class TemplateCard {
 
   async renderPromptBox() {
     try {
-      if (!this.element) return;
+      if (!this.element) {
+        console.warn('⚠️ Card element not found');
+        return;
+      }
 
       const promptContainer = this.element.querySelector('.prompt-box-container');
-      if (!promptContainer) return;
+      if (!promptContainer) {
+        console.warn(`⚠️ Prompt container not found for template: ${this.template.template_key}`);
+        return;
+      }
 
+      console.log('📋 Rendering prompt box for:', this.template.template_key);
+
+      // Get filled prompt from backend
       let prompt = 'Loading...';
       let promptInfo = null;
-      
       try {
         const filled = await this.service.fillPromptVariables(
           this.template.template_key,
@@ -104,11 +126,32 @@ export class TemplateCard {
         prompt = this.template.prompt_template || 'Placeholder prompt...';
       }
 
-      this.promptBox = new PromptBox(promptContainer, this.template, prompt, promptInfo);
+      // Create and render PromptBox
+      this.promptBox = new PromptBox(
+        promptContainer,
+        this.template,
+        prompt,
+        promptInfo
+      );
       await this.promptBox.render();
+      console.log('✅ Prompt box rendered successfully');
 
     } catch (error) {
-      console.error('Error in renderPromptBox:', error);
+      console.error('❌ Error in renderPromptBox:', error);
+      if (this.element) {
+        const promptContainer = this.element.querySelector('.prompt-box-container');
+        if (promptContainer) {
+          promptContainer.innerHTML = `
+            <div class="prompt-error-message">
+              <span class="error-icon">${this.getIcon('alertCircle', 18)}</span>
+              <div>
+                <strong>Kon prompt niet laden</strong><br>
+                <span style="opacity: 0.8;">${error.message}</span>
+              </div>
+            </div>
+          `;
+        }
+      }
     }
   }
 
@@ -122,16 +165,19 @@ export class TemplateCard {
   attachEventListeners() {
     if (!this.element) return;
 
+    // Copy Prompt button
     const copyBtn = this.element.querySelector('[data-action="copy-prompt"]');
     if (copyBtn) {
       copyBtn.addEventListener('click', () => this.copyPrompt());
     }
 
+    // Open Claude.ai button
     const openButton = this.element.querySelector('[data-action="open-claude"]');
     if (openButton) {
       openButton.addEventListener('click', () => this.openClaudeAI());
     }
 
+    // Save Result button
     const saveButton = this.element.querySelector('[data-action="save-result"]');
     if (saveButton) {
       saveButton.addEventListener('click', () => this.openSaveModal());
@@ -148,6 +194,7 @@ export class TemplateCard {
       await navigator.clipboard.writeText(prompt);
       showToast('Prompt gekopieerd naar clipboard', 'success');
     } catch (error) {
+      console.error('Copy failed:', error);
       showToast('Kopiëren mislukt', 'error');
     }
   }
