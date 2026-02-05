@@ -1,16 +1,34 @@
 /**
  * HeadersRow Styles
- * TenderZen v2.2
+ * TenderZen v2.3
  * 
- * CHANGELOG v2.2:
- * - ✅ Aanbesteding breedte: 450px (match met tender-cards.css)
- * - ✅ header-timeline-wrapper met flex: 1 (match met section-timeline)
- * 
- * KRITIEK: Breedtes MOETEN matchen met tender-cards.css:
- * - section-aanbesteding: 450px
- * - section-timeline: flex: 1
- * - timeline-cell: 110px
+ * CHANGELOG v2.3:
+ * - ✅ Aanbesteding 450px (match met tender-cards.css section-aanbesteding)
+ * - ✅ header-timeline-wrapper flex: 1 (match met section-timeline)
+ * - ✅ Timeline kolommen 110px (match met timeline-cell)
+ * - ✅ Sticky header: position sticky + top: 0
+ * - ✅ Chevron iconen i.p.v. tekst pijlen
+ * - ✅ Responsive breakpoints matchen met tender-cards.css
  */
+
+/* ============================================
+   STICKY HEADER BACKDROP
+   Dekt content af wanneer header meescrollt
+   ============================================ */
+
+.sticky-header-backdrop {
+    /* Pagina-achtergrondkleur zodat content niet doorschijnt */
+    background: #f5f7fa;
+    /* 20px = padding-top van #app-content, zodat alles afgedekt is */
+    padding: 20px 0 12px 0;
+    margin: -20px 0 -12px 0;
+}
+
+.sticky-header-backdrop.is-sticky {
+    /* Sterkere shadow wanneer zwevend */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+    border-radius: 0 0 12px 12px;
+}
 
 /* ============================================
    HEADERS ROW CONTAINER
@@ -25,10 +43,10 @@
     min-width: max-content;
     border: 1px solid var(--border-light, #e2e8f0);
     
-    /* Sticky - blijft bovenaan #app-content */
+    /* Sticky header */
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: 50;
     
     /* Schaduw voor depth */
     box-shadow: 
@@ -78,6 +96,10 @@
 
 /* ============================================
    COLUMN WIDTHS - EXACT MATCH met tender-cards.css!
+   
+   section-aanbesteding: 450px
+   section-timeline: flex: 1
+   timeline-cell: 110px
    ============================================ */
 
 /* Aanbesteding - 450px (EXACT match met section-aanbesteding) */
@@ -96,6 +118,11 @@
     flex: 1;
 }
 
+/* Verwijder dubbele border van eerste timeline kolom */
+.header-timeline-wrapper .column-header:first-child {
+    border-left: none;
+}
+
 /* Timeline kolommen - 110px elk (EXACT match met timeline-cell) */
 .column-header.timeline {
     width: 110px;
@@ -105,6 +132,13 @@
     gap: 2px;
     padding: 10px 4px;
     font-size: 10px;
+}
+
+/* ⭐ v2.7: Deadline kolom highlight in header (7e timeline kolom) */
+.header-timeline-wrapper .column-header:nth-child(7) {
+    background: rgba(124, 58, 237, 0.05);
+    border-left: 2px solid rgba(124, 58, 237, 0.12);
+    border-right: 2px solid rgba(124, 58, 237, 0.12);
 }
 
 /* ============================================
@@ -135,7 +169,7 @@
     color: var(--color-primary-700, #4338ca);
 }
 
-/* Sort icon styling */
+/* Sort icon styling (chevronUp / chevronDown) */
 .column-header .sort-icon {
     display: flex;
     align-items: center;

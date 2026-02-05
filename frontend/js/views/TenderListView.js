@@ -1,24 +1,32 @@
 /**
  * TenderListView - Lijst weergave met tender cards
- * TenderZen v2.6 - Inline Datum Editing
+ * TenderZen v2.8 - TenderCard Component Integratie
+ * 
+ * CHANGELOG v2.8:
+ * - REFACTOR: TenderCard als standalone component (import)
+ * - VERWIJDERD: Gedupliceerde render methods (renderAIBadge, renderStatusSelect, 
+ *   renderTimelineCell, renderTeamAvatars, highlightSearchTerm) → nu in TenderCard.js
+ * - BEHOUDEN: Event handlers, date picker, sticky header, smart import logica
+ * 
+ * CHANGELOG v2.7:
+ * - Planning & Checklist shortcut knoppen op tender cards
+ * - JS-based sticky header (CSS sticky fix)
  * 
  * CHANGELOG v2.6:
- * - NIEUW: Inline datum editing op timeline cellen
- * - NIEUW: Klik op datum om date picker te openen
- * - NIEUW: Lege cellen tonen "+" om datum toe te voegen
- * - NIEUW: Wis knop om datum te verwijderen
+ * - Inline datum editing op timeline cellen
+ * - Klik op datum om date picker te openen
+ * - Lege cellen tonen "+" om datum toe te voegen
+ * - Wis knop om datum te verwijderen
  * 
  * CHANGELOG v2.5:
  * - Smart Import Wizard hergebruik voor bestaande analyses
  * - ensureWizardExists() helper methode
  * 
  * CHANGELOG v2.4:
- * - GEWIJZIGD: AI badge nu ALTIJD zichtbaar op elke tender
- * - NIEUW: Conditioneel gedrag bij klik:
- *   - Geen analyse → Open SmartImportWizard
- *   - Wel analyse → Open SmartImportPanel
- * - NIEUW: renderAIBadge() vervangt renderSmartImportBadge()
- * - NIEUW: handleAIBadgeClick() met conditionele logica
+ * - AI badge nu ALTIJD zichtbaar op elke tender
+ * - Conditioneel gedrag bij klik (geen/wel analyse)
+ * - renderAIBadge() vervangt renderSmartImportBadge()
+ * - handleAIBadgeClick() met conditionele logica
  * 
  * CHANGELOG v2.3:
  * - Smart Import Badge op tender cards
@@ -36,6 +44,9 @@ import { AIDocumentenModal } from '../components/AIDocumentenModal.js';
 // ⭐ v2.3: Smart Import imports
 import { SmartImportPanel } from '../components/SmartImportPanel.js';
 import { SmartImportWizard } from '../components/SmartImportWizard.js';
+// ⭐ v2.8: TenderCard als standalone component
+import { TenderCard } from '../components/TenderCard.js';
+import { planningService } from '../services/PlanningService.js';
 
 export class TenderListView extends BaseView {
     constructor(options = {}) {
@@ -192,8 +203,26 @@ export class TenderListView extends BaseView {
         if (this.container) {
             this.render();
         }
-    }
 
+        // Planning & checklist tellingen ophalen (async, herrendert na laden)
+        try {
+            const counts = await planningService.getAllCounts();
+            if (counts && Object.keys(counts).length > 0) {
+                for (const tender of this.tenders) {
+                    const c = counts[tender.id];
+                    if (c) {
+                        tender._planningCounts = { done: c.planning_done, total: c.planning_total };
+                        tender._checklistCounts = { done: c.checklist_done, total: c.checklist_total };
+                    }
+                }
+                this.filteredTenders = this.filterTenders(this.tenders);
+                if (this.container) this.render();
+            }
+        } catch (e) {
+            console.warn('⚠️ Planning counts niet geladen:', e.message);
+        }
+    }
+    
     /**
      * Set search query and re-filter tenders
      */
@@ -300,6 +329,7 @@ export class TenderListView extends BaseView {
         if (!this.container) return;
 
         if (!this.filteredTenders || this.filteredTenders.length === 0) {
+            this.cleanupStickyHeader();
             this.container.innerHTML = this.searchQuery 
                 ? this.renderNoSearchResults() 
                 : this.renderEmptyState();
@@ -324,6 +354,68 @@ export class TenderListView extends BaseView {
         this.container.appendChild(wrapper);
 
         this.attachEventListeners();
+        
+        // ⭐ v2.7: JS-based sticky header (CSS sticky werkt niet met geneste containers)
+        this.setupStickyHeader();
+    }
+
+    /**
+     * ⭐ v2.7: Setup sticky header via JavaScript
+     * CSS position:sticky werkt niet betrouwbaar met geneste scroll containers.
+     * Deze oplossing luistert naar het scroll event op #app-content en houdt
+     * de header bovenaan via transform: translateY().
+     */
+    setupStickyHeader() {
+        const scrollContainer = document.getElementById('app-content');
+        const headerRow = this.container.querySelector('.headers-row');
+        if (!scrollContainer || !headerRow) return;
+
+        // Cleanup vorige listener
+        this.cleanupStickyHeader();
+
+        // ⭐ Wrap header in een container met solide achtergrond
+        // zodat content niet doorschijnt bij scrollen
+        let stickyWrap = headerRow.parentElement.querySelector('.sticky-header-backdrop');
+        if (!stickyWrap) {
+            stickyWrap = document.createElement('div');
+            stickyWrap.className = 'sticky-header-backdrop';
+            headerRow.parentNode.insertBefore(stickyWrap, headerRow);
+            stickyWrap.appendChild(headerRow);
+        }
+
+        // Sla referenties op voor cleanup
+        this._stickyScrollContainer = scrollContainer;
+        this._stickyHeaderWrap = stickyWrap;
+
+        this._stickyScrollHandler = () => {
+            const scrollTop = scrollContainer.scrollTop;
+            
+            if (scrollTop > 0) {
+                stickyWrap.style.transform = `translateY(${scrollTop}px)`;
+                stickyWrap.style.zIndex = '50';
+                stickyWrap.style.position = 'relative';
+                stickyWrap.classList.add('is-sticky');
+            } else {
+                stickyWrap.style.transform = '';
+                stickyWrap.style.zIndex = '';
+                stickyWrap.style.position = '';
+                stickyWrap.classList.remove('is-sticky');
+            }
+        };
+
+        scrollContainer.addEventListener('scroll', this._stickyScrollHandler, { passive: true });
+    }
+
+    /**
+     * ⭐ v2.7: Cleanup sticky header listener
+     */
+    cleanupStickyHeader() {
+        if (this._stickyScrollHandler && this._stickyScrollContainer) {
+            this._stickyScrollContainer.removeEventListener('scroll', this._stickyScrollHandler);
+        }
+        this._stickyScrollHandler = null;
+        this._stickyScrollContainer = null;
+        this._stickyHeaderWrap = null;
     }
 
     escapeHtml(text) {
@@ -374,114 +466,27 @@ export class TenderListView extends BaseView {
         }
     }
 
-    /**
-     * Render custom status dropdown
-     */
-    renderStatusSelect(tender) {
-        const currentStatus = tender.fase_status || tender.status;
-        const currentFase = tender.fase;
-
-        let currentStatusFase = currentFase;
-        let currentStatusDisplay = currentStatus;
-
-        for (const [fase, statussen] of Object.entries(this.allFaseStatussen)) {
-            const found = statussen.find(s => s.status_key === currentStatus);
-            if (found) {
-                currentStatusFase = fase;
-                currentStatusDisplay = found.status_display;
-                break;
-            }
-        }
-
-        let optionsHtml = '';
-        const faseVolgorde = ['acquisitie', 'inschrijvingen', 'ingediend', 'archief'];
-        const faseLabels = {
-            'acquisitie': 'ACQUISITIE',
-            'inschrijvingen': 'LOPEND',
-            'ingediend': 'INGEDIEND',
-            'archief': 'ARCHIEF'
-        };
-
-        for (const fase of faseVolgorde) {
-            const statussen = this.allFaseStatussen[fase] || [];
-            if (statussen.length > 0) {
-                optionsHtml += `<div class="status-dropdown-group" data-fase="${fase}">
-                    <div class="status-dropdown-label">${faseLabels[fase]}</div>`;
-                for (const status of statussen) {
-                    const isSelected = status.status_key === currentStatus;
-                    const isSpecial = ['gewonnen', 'verloren'].includes(status.status_key);
-                    optionsHtml += `
-                        <div class="status-dropdown-option ${isSelected ? 'is-selected' : ''} ${isSpecial ? 'status--' + status.status_key : ''}" 
-                             data-value="${status.status_key}" 
-                             data-fase="${fase}">
-                            ${status.status_display}
-                        </div>`;
-                }
-                optionsHtml += `</div>`;
-            }
-        }
-
-        return `
-            <div class="status-dropdown" data-tender-id="${tender.id}" data-current-fase="${currentStatusFase}">
-                <button class="status-dropdown-trigger" type="button">
-                    <span class="status-dropdown-value">${currentStatusDisplay}</span>
-                    <svg class="status-dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
-                <div class="status-dropdown-menu">
-                    ${optionsHtml}
-                </div>
-            </div>
-        `;
-    }
+    // =========================================================================
+    // ⭐ v2.8: TENDER CARD RENDERING via TenderCard component
+    // =========================================================================
 
     /**
-     * ⭐ v2.4: Render AI Badge - ALTIJD ZICHTBAAR
-     * 
-     * States:
-     * - new: Geen analyse gedaan (grijs, dashed border)
-     * - haiku: Standaard analyse gedaan (blauw)
-     * - pro: Pro analyse gedaan (goud)
+     * Render a single tender card
+     * ⭐ v2.8: Delegeert naar TenderCard component
      */
-    renderAIBadge(tender) {
-        const hasAnalysis = !!tender.smart_import_id;
-        const modelUsed = tender.ai_model_used || 'haiku';
-        const isPro = modelUsed === 'sonnet' || (modelUsed && modelUsed.includes('sonnet'));
-        
-        let badgeClass, icon, label, tooltip;
-        
-        if (!hasAnalysis) {
-            // Geen analyse - toon "nieuwe analyse" optie
-            badgeClass = 'ai-badge ai-badge--new';
-            icon = '✨';
-            label = 'AI';
-            tooltip = 'Start AI analyse - Upload documenten om automatisch gegevens te extraheren';
-        } else if (isPro) {
-            // Pro analyse gedaan
-            badgeClass = 'ai-badge ai-badge--pro';
-            icon = '⚡';
-            label = 'AI Pro';
-            tooltip = 'Geanalyseerd met AI Pro - Klik voor details';
-        } else {
-            // Standaard analyse gedaan
-            badgeClass = 'ai-badge ai-badge--haiku';
-            icon = '✨';
-            label = 'AI';
-            tooltip = 'Geanalyseerd met AI - Klik voor details of upgrade naar Pro';
-        }
-        
-        return `
-            <button class="${badgeClass}" 
-                    data-tender-id="${tender.id}"
-                    data-smart-import-id="${tender.smart_import_id || ''}"
-                    data-has-analysis="${hasAnalysis}"
-                    title="${tooltip}">
-                <span class="badge-icon">${icon}</span>
-                <span class="badge-label">${label}</span>
-            </button>
-        `;
+    renderTenderCard(tender) {
+        const card = new TenderCard(tender, {
+            searchQuery: this.searchQuery,
+            allFaseStatussen: this.allFaseStatussen,
+            planningCounts: tender._planningCounts || null,
+            checklistCounts: tender._checklistCounts || null
+        });
+        return card.render();
     }
+
+    // =========================================================================
+    // SMART IMPORT HANDLERS
+    // =========================================================================
 
     /**
      * ⭐ v2.4: Handle AI Badge click - conditioneel gedrag
@@ -581,299 +586,41 @@ export class TenderListView extends BaseView {
         await this.smartImportWizard.openForExistingAnalysis(smartImportId, tenderId, tenderNaam);
     }
 
-    /**
-     * Render a single tender card
-     * ⭐ v2.4: Met AI badge die ALTIJD zichtbaar is
-     */
-    renderTenderCard(tender) {
-        const daysUntil = this.getDaysUntil(tender.deadline_indiening);
-        const isCritical = daysUntil !== null && daysUntil <= 3;
-
-        const faseBadgeLabels = {
-            acquisitie: 'ACQUISITIE',
-            inschrijvingen: 'LOPEND',
-            ingediend: 'INGEDIEND',
-            archief: 'ARCHIEF'
-        };
-        const faseLabel = faseBadgeLabels[tender.fase] || tender.fase.toUpperCase();
-
-        return `
-            <div class="tender-row phase-${tender.fase}" data-tender-id="${tender.id}">
-                <!-- Sectie 1: Aanbesteding -->
-                <div class="section-aanbesteding">
-                    
-                    <!-- Header: Fase badge + Status dropdown + Action buttons -->
-                    <div class="card-header-row">
-                        <div class="card-header-left">
-                            <div class="fase-status-group">
-                                <span class="fase-badge fase-badge--${tender.fase}">${faseLabel}</span>
-                                ${this.renderStatusSelect(tender)}
-                            </div>
-                        </div>
-                        <div class="card-header-right">
-                            <button class="action-btn doc-button" title="AI Documenten" data-tender-id="${tender.id}">
-                                ${this.getIcon('ai', 18)}
-                            </button>
-                            <button class="action-btn edit-button" title="Tender instellingen" data-tender-id="${tender.id}">
-                                ${this.getIcon('settings', 18)}
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Content: Tender naam + AI Badge + info -->
-                    <div class="card-content">
-                        <!-- ⭐ v2.4: Tender naam met AI Badge (ALTIJD ZICHTBAAR) -->
-                        <div class="tender-name-row">
-                            <h3 class="tender-name">${this.highlightSearchTerm(tender.naam || 'Geen naam')}</h3>
-                            ${this.renderAIBadge(tender)}
-                        </div>
-                        
-                        <div class="info-lines">
-                            ${tender.opdrachtgever ? `
-                                <div class="info-line info-line--opdrachtgever">
-                                    ${this.getIcon('building', 14)}
-                                    <span>${this.highlightSearchTerm(tender.opdrachtgever)}</span>
-                                </div>
-                            ` : ''}
-                            
-                            ${tender.bedrijfsnaam ? `
-                                <div class="info-line info-line--inschrijver">
-                                    ${this.getIcon('users', 14)}
-                                    <span>Inschrijver: <strong style="color: #7c3aed;">${this.highlightSearchTerm(tender.bedrijfsnaam)}</strong></span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    
-                    <!-- Footer: Team + Meta -->
-                    <div class="card-footer-row">
-                        <div class="team-avatars">
-                            ${this.renderTeamAvatars(tender.team_assignments)}
-                            <button class="avatar avatar--add" title="Team bewerken" data-tender-id="${tender.id}">
-                                ${this.getIcon('plus', 12)}
-                            </button>
-                        </div>
-                        
-                        <div class="meta-row">
-                            ${tender.deadline_indiening ? `
-                                <div class="meta-item ${isCritical ? 'meta-item--urgent' : ''}">
-                                    ${this.getIcon('calendar', 14)}
-                                    <span>${this.getDaysUntilText(daysUntil)}</span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Sectie: Timeline -->
-                <div class="section-timeline">
-                    ${this.renderTimelineCell(tender.id, 'publicatie_datum', tender.publicatie_datum)}
-                    ${this.renderTimelineCell(tender.id, 'schouw_datum', tender.schouw_datum)}
-                    ${this.renderTimelineCell(tender.id, 'nvi1_datum', tender.nvi1_datum)}
-                    ${this.renderTimelineCell(tender.id, 'nvi2_datum', tender.nvi2_datum)}
-                    ${this.renderTimelineCell(tender.id, 'presentatie_datum', tender.presentatie_datum)}
-                    ${this.renderTimelineCell(tender.id, 'interne_deadline', tender.interne_deadline)}
-                    ${this.renderTimelineCell(tender.id, 'deadline_indiening', tender.deadline_indiening, true)}
-                    ${this.renderTimelineCell(tender.id, 'voorlopige_gunning', tender.voorlopige_gunning)}
-                    ${this.renderTimelineCell(tender.id, 'definitieve_gunning', tender.definitieve_gunning)}
-                    ${this.renderTimelineCell(tender.id, 'start_uitvoering', tender.start_uitvoering)}
-                </div>
-            </div>
-        `;
-    }
-
-    highlightSearchTerm(text) {
-        if (!text || !this.searchQuery) return text;
-        
-        const escapedQuery = this.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${escapedQuery})`, 'gi');
-        
-        return text.replace(regex, '<mark class="search-highlight">$1</mark>');
-    }
-
-    /**
-     * ⭐ v2.6: Render timeline cell met inline datum editing + tijd weergave
-     * @param {string} tenderId - ID van de tender
-     * @param {string} fieldName - Naam van het datum veld
-     * @param {string} date - Datum waarde
-     * @param {boolean} isDeadline - Is dit een deadline veld?
-     */
-    renderTimelineCell(tenderId, fieldName, date, isDeadline = false) {
-        // Data attributen voor klik-handling
-        const dataAttrs = `data-tender-id="${tenderId}" data-field="${fieldName}" data-date="${date || ''}"`;
-        
-        if (!date) {
-            return `
-                <div class="timeline-cell timeline-cell--editable" ${dataAttrs} title="Klik om datum in te vullen">
-                    <div class="date-display empty">
-                        <span class="date-add-icon">+</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        const dateObj = new Date(date);
-        const day = dateObj.getDate();
-        const month = dateObj.toLocaleDateString('nl-NL', { month: 'short' });
-        const isPast = dateObj < new Date();
-        const daysUntil = this.getDaysUntil(date);
-        
-        // Check of er een ECHTE tijd is ingevuld (niet 00:00:00 in de originele string)
-        // Dit voorkomt timezone conversie problemen
-        const hasRealTime = this.hasExplicitTime(date);
-        let timeString = null;
-        if (hasRealTime) {
-            const hours = dateObj.getHours();
-            const minutes = dateObj.getMinutes();
-            timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-        }
-
-        let cellClasses = ['filled'];
-        let badgeClass = 'ok';
-
-        if (isPast) {
-            cellClasses = ['completed'];
-        } else if (isDeadline) {
-            if (daysUntil <= 3) {
-                cellClasses = ['urgent'];
-                badgeClass = 'urgent';
-            } else if (daysUntil <= 7) {
-                cellClasses = ['soon'];
-                badgeClass = 'soon';
-            } else {
-                cellClasses = ['deadline'];
-                badgeClass = 'ok';
-            }
-        }
-
-        const showBadge = isDeadline && !isPast && daysUntil !== null;
-
-        return `
-            <div class="timeline-cell timeline-cell--editable" ${dataAttrs} title="Klik om datum te wijzigen">
-                <div class="date-display ${cellClasses.join(' ')} ${hasRealTime ? 'has-time' : ''}">
-                    <span class="date-day">${day}</span>
-                    <span class="date-month">${month}</span>
-                    ${hasRealTime ? `<span class="date-time">${timeString}</span>` : ''}
-                </div>
-                ${showBadge ? `
-                    <div class="days-to-deadline ${badgeClass}">
-                        ${daysUntil === 0 ? 'Vandaag!' : daysUntil === 1 ? 'Morgen' : `${daysUntil} dagen`}
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }
-    
-    /**
-     * ⭐ v2.6: Check of datum string een echte tijd bevat (niet 00:00:00)
-     * Dit voorkomt false positives door timezone conversie
-     */
-    hasExplicitTime(dateString) {
-        if (!dateString) return false;
-        
-        // Check of de string een T bevat met een tijd die niet 00:00:00 is
-        const timeMatch = dateString.match(/T(\d{2}):(\d{2})/);
-        if (!timeMatch) return false;
-        
-        const hours = parseInt(timeMatch[1], 10);
-        const minutes = parseInt(timeMatch[2], 10);
-        
-        // Alleen true als tijd niet 00:00 is
-        return hours !== 0 || minutes !== 0;
-    }
-
-    getDaysUntilText(days) {
-        if (days === null) return 'Geen deadline';
-        if (days < 0) return `${Math.abs(days)} dagen geleden`;
-        if (days === 0) return 'Vandaag!';
-        if (days === 1) return 'Morgen';
-        return `${days} dagen`;
-    }
-
-    capitalizeFirst(str) {
-        if (!str) return '';
-        return str.charAt(0).toUpperCase() + str.slice(1);
-    }
+    // =========================================================================
+    // DATUM HELPERS (nog nodig voor updateCellDisplay na inline editing)
+    // =========================================================================
 
     getDaysUntil(dateString) {
         if (!dateString) return null;
-
         const targetDate = new Date(dateString);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         targetDate.setHours(0, 0, 0, 0);
-
         const diffTime = targetDate - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        return diffDays;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
 
-    getInitials(name) {
-        if (!name) return '?';
-        const parts = name.trim().split(' ');
-        if (parts.length === 1) {
-            return parts[0].substring(0, 2).toUpperCase();
-        }
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    /**
+     * ⭐ v2.6: Check of datum string een echte tijd bevat (niet 00:00:00)
+     */
+    hasExplicitTime(dateString) {
+        if (!dateString) return false;
+        const timeMatch = dateString.match(/T(\d{2}):(\d{2})/);
+        if (!timeMatch) return false;
+        const hours = parseInt(timeMatch[1], 10);
+        const minutes = parseInt(timeMatch[2], 10);
+        return hours !== 0 || minutes !== 0;
     }
 
-    renderTeamAvatars(teamAssignments) {
-        if (!teamAssignments || teamAssignments.length === 0) {
-            return '';
-        }
-
-        const rolVolgorde = ['manager', 'coordinator', 'schrijver', 'designer', 'calculator', 'reviewer', 'sales', 'klant_contact'];
-
-        const sorted = [...teamAssignments].sort((a, b) => {
-            const indexA = rolVolgorde.indexOf(a.rol) !== -1 ? rolVolgorde.indexOf(a.rol) : 99;
-            const indexB = rolVolgorde.indexOf(b.rol) !== -1 ? rolVolgorde.indexOf(b.rol) : 99;
-            return indexA - indexB;
-        });
-
-        const rolLabels = {
-            'manager': 'Manager',
-            'coordinator': 'Coördinator',
-            'schrijver': 'Schrijver',
-            'designer': 'Designer',
-            'calculator': 'Calculator',
-            'reviewer': 'Reviewer',
-            'sales': 'Sales',
-            'klant_contact': 'Klant contact'
-        };
-
-        const maxVisible = 5;
-        const visible = sorted.slice(0, maxVisible);
-        const overflow = sorted.length - maxVisible;
-
-        let html = visible.map(member => {
-            const rolLabel = rolLabels[member.rol] || member.rol || 'Teamlid';
-            const initialen = member.initialen || this.getInitials(member.naam);
-            const urenText = member.uren ? ` - ${member.uren}u` : '';
-
-            return `
-                <div class="avatar avatar--${member.rol || 'teamlid'}" 
-                     title="${member.naam} (${rolLabel}${urenText})"
-                     data-member-id="${member.team_member_id}">
-                    ${initialen}
-                </div>
-            `;
-        }).join('');
-
-        if (overflow > 0) {
-            html += `
-                <div class="avatar avatar--overflow" title="${overflow} meer teamleden">
-                    +${overflow}
-                </div>
-            `;
-        }
-
-        return html;
-    }
+    // =========================================================================
+    // EVENT LISTENERS
+    // =========================================================================
 
     /**
      * Attach event listeners
      * ⭐ v2.4: AI Badge met conditioneel gedrag
+     * ⭐ v2.6: Timeline cell inline editing
+     * ⭐ v2.7: Planning/Checklist shortcut knoppen
      */
     attachEventListeners() {
         // Custom dropdown - toggle menu
@@ -1007,7 +754,26 @@ export class TenderListView extends BaseView {
                 this.openDatePicker(cell, tenderId, fieldName, currentDate);
             });
         });
+
+        // ⭐ v2.7: Planning/Checklist shortcut knoppen
+        this.container.querySelectorAll('.planning-shortcut').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const tenderId = btn.dataset.tenderId;
+                const openType = btn.dataset.open; // 'planning' of 'checklist'
+                
+                if (this.onOpenPlanningModal) {
+                    this.onOpenPlanningModal(tenderId, openType);
+                } else {
+                    console.log(`${openType} shortcut clicked for tender:`, tenderId);
+                }
+            });
+        });
     }
+
+    // =========================================================================
+    // INLINE DATE PICKER (v2.6)
+    // =========================================================================
     
     /**
      * ⭐ v2.6: Open inline date picker with time support
@@ -1022,7 +788,6 @@ export class TenderListView extends BaseView {
             // Zorg dat we een proper datetime-local format hebben (YYYY-MM-DDTHH:MM)
             const dateObj = new Date(currentDate);
             if (!isNaN(dateObj.getTime())) {
-                // Format: YYYY-MM-DDTHH:MM (voor datetime-local input)
                 const year = dateObj.getFullYear();
                 const month = String(dateObj.getMonth() + 1).padStart(2, '0');
                 const day = String(dateObj.getDate()).padStart(2, '0');
@@ -1126,10 +891,8 @@ export class TenderListView extends BaseView {
         if (!dateValue) return null;
         
         if (timeValue) {
-            // Combineer datum en tijd
             return `${dateValue}T${timeValue}:00`;
         } else {
-            // Alleen datum (standaard naar 00:00)
             return `${dateValue}T00:00:00`;
         }
     }
@@ -1284,6 +1047,10 @@ export class TenderListView extends BaseView {
         };
         return labels[fieldName] || fieldName;
     }
+
+    // =========================================================================
+    // EMPTY STATES
+    // =========================================================================
 
     renderEmptyState() {
         return `

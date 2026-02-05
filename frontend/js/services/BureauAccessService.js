@@ -1,6 +1,6 @@
 /**
  * BureauAccessService - Multi-Bureau Toegang Service
- * TenderZen v2.1
+ * TenderZen v2.2
  * 
  * Beheert multi-bureau toegang voor users:
  * - Ophalen bureaus waar user toegang tot heeft
@@ -12,6 +12,7 @@
  * - v1.0: Initial version met multi-bureau support
  * - v2.0: Improved bureau switching
  * - v2.1: ⭐ window.bureauAccessService toegevoegd voor cross-service toegang
+ * - v2.2: ⭐ setAllBureausMode() voor super-admin "Alle bureau's" modus
  */
 
 import { supabase } from '/js/config.js';
@@ -49,7 +50,7 @@ class BureauAccessService {
             this._userBureaus = data || [];
             return this._userBureaus;
         } catch (error) {
-            console.error('âŒ Error fetching user bureaus:', error);
+            console.error('❌ Error fetching user bureaus:', error);
             throw error;
         }
     }
@@ -105,10 +106,26 @@ class BureauAccessService {
 
     /**
      * Haal het huidige actieve bureau op
-     * @returns {Object|null} Huidige bureau of null
+     * @returns {Object|null} Huidige bureau of null (null = "Alle bureau's" voor super-admin)
      */
     getCurrentBureau() {
         return this._currentBureau;
+    }
+
+    /**
+     * ⭐ v2.2: Zet "Alle bureau's" mode (super-admin)
+     * Stelt _currentBureau in op null zodat alle services weten
+     * dat er geen bureau-filter moet worden toegepast.
+     * 
+     * TeamService, BedrijvenService etc. checken getCurrentBureau():
+     *   - null → geen filter → toon alles
+     *   - object → filter op bureau_id
+     */
+    setAllBureausMode() {
+        this._currentBureau = null;
+        this._userRole = 'super_admin';
+        console.log('⭐ BureauAccessService: Alle bureau\'s mode geactiveerd');
+        this._notifyListeners('bureauChanged', null);
     }
 
     /**
@@ -166,11 +183,11 @@ class BureauAccessService {
             // Notify listeners
             this._notifyListeners('bureauChanged', bureau);
 
-            console.log('âœ… Gewisseld naar bureau:', bureau.bureau_naam);
+            console.log('✅ Gewisseld naar bureau:', bureau.bureau_naam);
             return bureau;
 
         } catch (error) {
-            console.error('âŒ Error switching bureau:', error);
+            console.error('❌ Error switching bureau:', error);
             throw error;
         }
     }
@@ -185,7 +202,7 @@ class BureauAccessService {
             const bureaus = await this.getUserBureaus();
             
             if (bureaus.length === 0) {
-                console.warn('âš ï¸ User heeft geen bureau toegang');
+                console.warn('⚠️ User heeft geen bureau toegang');
                 this._currentBureau = null;
                 this._userRole = null;
                 return null;
@@ -215,11 +232,11 @@ class BureauAccessService {
             this._userRole = selectedBureau.user_role;
             localStorage.setItem('tenderzen_current_bureau', selectedBureau.bureau_id);
 
-            console.log('âœ… Bureau context initialized:', selectedBureau.bureau_naam);
+            console.log('✅ Bureau context initialized:', selectedBureau.bureau_naam);
             return selectedBureau;
 
         } catch (error) {
-            console.error('âŒ Error initializing bureau context:', error);
+            console.error('❌ Error initializing bureau context:', error);
             throw error;
         }
     }
@@ -340,7 +357,7 @@ class BureauAccessService {
 
             if (error) throw error;
 
-            console.log('âœ… Uitnodiging verstuurd naar:', inviteData.email);
+            console.log('✅ Uitnodiging verstuurd naar:', inviteData.email);
             
             // TODO: Verstuur email via edge function
             // await this._sendInviteEmail(data);
@@ -348,7 +365,7 @@ class BureauAccessService {
             return data;
 
         } catch (error) {
-            console.error('âŒ Error sending invite:', error);
+            console.error('❌ Error sending invite:', error);
             throw error;
         }
     }
@@ -379,7 +396,7 @@ class BureauAccessService {
             return data || [];
 
         } catch (error) {
-            console.error('âŒ Error fetching invites:', error);
+            console.error('❌ Error fetching invites:', error);
             throw error;
         }
     }
@@ -404,10 +421,10 @@ class BureauAccessService {
                 .eq('status', 'pending');
 
             if (error) throw error;
-            console.log('âœ… Uitnodiging geannuleerd');
+            console.log('✅ Uitnodiging geannuleerd');
 
         } catch (error) {
-            console.error('âŒ Error cancelling invite:', error);
+            console.error('❌ Error cancelling invite:', error);
             throw error;
         }
     }
@@ -435,11 +452,11 @@ class BureauAccessService {
             if (error) throw error;
 
             // TODO: Verstuur email opnieuw
-            console.log('âœ… Uitnodiging opnieuw verstuurd');
+            console.log('✅ Uitnodiging opnieuw verstuurd');
             return data;
 
         } catch (error) {
-            console.error('âŒ Error resending invite:', error);
+            console.error('❌ Error resending invite:', error);
             throw error;
         }
     }
@@ -518,11 +535,11 @@ class BureauAccessService {
             this._userBureaus = null;
             await this.getUserBureaus();
 
-            console.log('âœ… Uitnodiging geaccepteerd voor:', invite.tenderbureau.naam);
+            console.log('✅ Uitnodiging geaccepteerd voor:', invite.tenderbureau.naam);
             return access;
 
         } catch (error) {
-            console.error('âŒ Error accepting invite:', error);
+            console.error('❌ Error accepting invite:', error);
             throw error;
         }
     }
@@ -581,7 +598,7 @@ class BureauAccessService {
             }));
 
         } catch (error) {
-            console.error('âŒ Error fetching team members:', error);
+            console.error('❌ Error fetching team members:', error);
             throw error;
         }
     }
@@ -618,11 +635,11 @@ class BureauAccessService {
 
             if (error) throw error;
 
-            console.log('âœ… Teamlid bijgewerkt');
+            console.log('✅ Teamlid bijgewerkt');
             return data;
 
         } catch (error) {
-            console.error('âŒ Error updating team member:', error);
+            console.error('❌ Error updating team member:', error);
             throw error;
         }
     }
@@ -656,10 +673,10 @@ class BureauAccessService {
 
             if (error) throw error;
 
-            console.log('âœ… Teamlid verwijderd uit bureau');
+            console.log('✅ Teamlid verwijderd uit bureau');
 
         } catch (error) {
-            console.error('âŒ Error removing team member:', error);
+            console.error('❌ Error removing team member:', error);
             throw error;
         }
     }

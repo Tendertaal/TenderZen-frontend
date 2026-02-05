@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TenderZen — Planning Popup Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple-50: #f5f3ff; --purple-100: #ede9fe; --purple-200: #ddd6fe;
+    --purple-300: #c4b5fd; --purple-400: #a78bfa; --purple-500: #8b5cf6;
+    --purple-600: #7c3aed; --purple-700: #6d28d9;
+    --gray-50: #f8fafc; --gray-100: #f1f5f9; --gray-200: #e2e8f0; --gray-300: #cbd5e1;
+    --gray-400: #94a3b8; --gray-500: #64748b; --gray-600: #475569; --gray-700: #334155;
+    --gray-800: #1e293b; --gray-900: #0f172a;
+    --green-50: #f0fdf4; --green-100: #dcfce7; --green-400: #4ade80;
+    --green-500: #22c55e; --green-600: #16a34a; --green-700: #15803d;
+    --orange-50: #fff7ed; --orange-100: #ffedd5; --orange-400: #fb923c;
+    --orange-500: #f97316; --orange-600: #ea580c;
+    --red-50: #fef2f2; --red-100: #fee2e2; --red-500: #ef4444;
+    --blue-50: #eff6ff; --blue-100: #dbeafe; --blue-500: #3b82f6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', -apple-system, sans-serif;
+    background: #e8ecf1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  /* ===== FAUX BACKGROUND ===== */
+  .bg-hint {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: 
+      linear-gradient(180deg, #f5f7fa 0%, #e8ecf1 100%);
+    z-index: 0;
+  }
+  .bg-hint::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 56px;
+    background: linear-gradient(135deg, var(--purple-700), var(--purple-500));
+  }
+
+  /* ===== MODAL OVERLAY ===== */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ===== MODAL CONTAINER ===== */
+  .modal {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 960px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    animation: slideUp 0.25s ease;
+    position: relative;
+    z-index: 1001;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ===== MODAL HEADER ===== */
+  .modal-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: white;
+  }
+  .modal-header-left {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .modal-icon {
+    width: 42px; height: 42px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--purple-100); color: var(--purple-600);
+  }
+  .modal-icon svg { width: 22px; height: 22px; }
+  .modal-title { font-size: 18px; font-weight: 700; color: var(--gray-900); }
+  .modal-subtitle { font-size: 13px; color: var(--gray-500); margin-top: 1px; }
+  .modal-header-right { display: flex; align-items: center; gap: 10px; }
+  .modal-close {
+    width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--gray-200);
+    background: white; display: flex; align-items: center; justify-content: center;
+    color: var(--gray-400); cursor: pointer; transition: all 0.15s; font-size: 18px;
+  }
+  .modal-close:hover { background: var(--gray-50); color: var(--gray-600); border-color: var(--gray-300); }
+
+  /* ===== TABS ===== */
+  .modal-tabs {
+    display: flex; border-bottom: 2px solid var(--gray-200); padding: 0 28px;
+    background: var(--gray-50); flex-shrink: 0;
+  }
+  .modal-tab {
+    padding: 12px 18px; font-size: 13px; font-weight: 600; color: var(--gray-400);
+    cursor: pointer; position: relative; display: flex; align-items: center; gap: 8px;
+    border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: inherit;
+  }
+  .modal-tab:hover { color: var(--gray-600); }
+  .modal-tab.active { color: var(--purple-600); border-bottom-color: var(--purple-600); }
+  .modal-tab svg { width: 15px; height: 15px; }
+  .tab-badge {
+    font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px;
+  }
+  .tab-badge--purple { background: var(--purple-100); color: var(--purple-700); }
+  .tab-badge--green { background: var(--green-100); color: var(--green-700); }
+
+  /* ===== TAB PANELS ===== */
+  .tab-panel { display: none; flex: 1; overflow-y: auto; }
+  .tab-panel.active { display: block; }
+
+  /* ===== PLANNING TOOLBAR ===== */
+  .planning-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px; border-bottom: 1px solid var(--gray-100);
+    background: white; position: sticky; top: 0; z-index: 10;
+  }
+  .toolbar-left { display: flex; align-items: center; gap: 10px; }
+  .btn-add-task {
+    display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+    border-radius: 8px; border: none; background: var(--purple-600); color: white;
+    font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit;
+    transition: background 0.15s;
+  }
+  .btn-add-task:hover { background: var(--purple-700); }
+  .btn-add-task svg { width: 14px; height: 14px; }
+
+  .btn-template {
+    display: flex; align-items: center; gap: 6px; padding: 7px 14px;
+    border-radius: 8px; border: 1px solid var(--gray-200); background: white;
+    font-size: 12px; font-weight: 500; cursor: pointer; color: var(--gray-600);
+    font-family: inherit; transition: all 0.15s;
+  }
+  .btn-template:hover { background: var(--gray-50); border-color: var(--gray-300); }
+  .btn-template svg { width: 14px; height: 14px; }
+
+  .toolbar-right { display: flex; align-items: center; gap: 14px; }
+  .progress-inline {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .progress-track {
+    width: 100px; height: 6px; background: var(--gray-200); border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--purple-500), var(--purple-400));
+    transition: width 0.3s ease;
+  }
+  .progress-label { font-size: 12px; font-weight: 600; color: var(--gray-600); white-space: nowrap; }
+
+  /* ===== TASK TABLE ===== */
+  .task-list { padding: 0 28px 20px; }
+
+  /* Category header */
+  .task-category {
+    padding: 14px 0 6px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--gray-200);
+    margin-top: 8px;
+  }
+  .task-category:first-child { margin-top: 0; }
+  .cat-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .cat-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--gray-500);
+  }
+  .cat-count { font-size: 11px; color: var(--gray-400); margin-left: auto; }
+  .cat-chevron {
+    color: var(--gray-400); cursor: pointer; transition: transform 0.2s;
+  }
+  .cat-chevron svg { width: 14px; height: 14px; }
+
+  /* Task row */
+  .task-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 160px 110px 80px 36px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    border-bottom: 1px solid var(--gray-100);
+    transition: background 0.1s;
+    border-radius: 6px;
+    margin: 0 -4px;
+  }
+  .task-row:hover { background: var(--gray-50); }
+  .task-row:last-child { border-bottom: none; }
+
+  /* Checkbox */
+  .task-check {
+    width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--gray-300);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s; background: white;
+    margin-left: 6px;
+  }
+  .task-check:hover { border-color: var(--purple-400); }
+  .task-check.done {
+    background: var(--green-500); border-color: var(--green-500); color: white;
+  }
+  .task-check.active {
+    border-color: var(--purple-500); background: var(--purple-50);
+  }
+  .task-check svg { width: 12px; height: 12px; }
+
+  /* Task name */
+  .task-name {
+    font-size: 13px; color: var(--gray-700); font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .task-name.done { color: var(--gray-400); text-decoration: line-through; }
+  .task-name.active { color: var(--gray-900); font-weight: 600; }
+
+  /* Assignees */
+  .task-assignees { display: flex; align-items: center; gap: 4px; }
+  .assignee-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px 2px 2px; border-radius: 12px;
+    background: var(--gray-100); font-size: 11px; color: var(--gray-600);
+  }
+  .assignee-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 700; color: white;
+  }
+  .assignee-more {
+    font-size: 10px; color: var(--gray-400); font-weight: 600;
+  }
+
+  /* Date */
+  .task-date { font-size: 12px; color: var(--gray-500); }
+  .task-date.highlight {
+    background: var(--orange-50); color: var(--orange-600);
+    padding: 3px 8px; border-radius: 5px; font-weight: 600;
+    display: inline-block;
+  }
+  .task-date.done { color: var(--gray-400); }
+  .task-date.overdue { color: var(--red-500); font-weight: 600; }
+
+  /* Status pill */
+  .task-status {
+    display: inline-block; padding: 3px 8px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; text-align: center;
+  }
+  .status--done { background: var(--green-100); color: var(--green-700); }
+  .status--active { background: var(--orange-100); color: var(--orange-600); }
+  .status--todo { background: var(--gray-100); color: var(--gray-500); }
+
+  /* Task menu */
+  .task-menu {
+    width: 28px; height: 28px; border-radius: 6px; border: none;
+    background: transparent; color: var(--gray-400); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; font-family: inherit;
+  }
+  .task-menu:hover { background: var(--gray-100); color: var(--gray-600); }
+  .task-menu svg { width: 16px; height: 16px; }
+
+  /* Add task row */
+  .add-task-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 8px; margin-top: 4px;
+    border: 2px dashed var(--gray-200); border-radius: 8px;
+    cursor: pointer; transition: all 0.15s; color: var(--gray-400);
+    font-size: 13px; font-weight: 500;
+  }
+  .add-task-row:hover {
+    border-color: var(--purple-300); color: var(--purple-600);
+    background: var(--purple-50);
+  }
+  .add-task-row svg { width: 16px; height: 16px; }
+
+  /* ===== CHECKLIST CONTENT ===== */
+  .checklist-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px; border-bottom: 1px solid var(--gray-100);
+    background: white; position: sticky; top: 0; z-index: 10;
+  }
+  .cl-progress-group { display: flex; align-items: center; gap: 12px; }
+  .cl-ring {
+    width: 44px; height: 44px; position: relative;
+  }
+  .cl-ring svg { transform: rotate(-90deg); }
+  .cl-ring-bg { stroke: var(--gray-200); }
+  .cl-ring-fill { stroke: var(--green-500); stroke-linecap: round; transition: stroke-dashoffset 0.4s ease; }
+  .cl-ring-text { font-size: 14px; font-weight: 700; color: var(--gray-700); }
+  .cl-ring-sub { font-size: 11px; color: var(--gray-400); }
+
+  .cl-tools { display: flex; gap: 8px; }
+
+  /* Checklist items */
+  .checklist-section { padding: 0 28px 20px; }
+
+  .cl-category {
+    margin-top: 16px;
+  }
+  .cl-cat-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 0 6px;
+  }
+  .cl-cat-icon {
+    width: 26px; height: 26px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .cl-cat-icon svg { width: 14px; height: 14px; }
+  .cl-cat-name { font-size: 12px; font-weight: 700; color: var(--gray-700); text-transform: uppercase; letter-spacing: 0.5px; }
+  .cl-cat-progress { font-size: 11px; color: var(--gray-400); margin-left: auto; }
+
+  .cl-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 8px;
+    transition: background 0.1s; cursor: pointer;
+  }
+  .cl-item:hover { background: var(--gray-50); }
+  .cl-box {
+    width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--gray-300);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .cl-box.checked { background: var(--green-500); border-color: var(--green-500); color: white; }
+  .cl-box svg { width: 12px; height: 12px; }
+  .cl-text { flex: 1; font-size: 13px; color: var(--gray-700); }
+  .cl-text.checked { color: var(--gray-400); text-decoration: line-through; }
+  .cl-tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600;
+  }
+  .cl-tag--required { background: var(--red-50); color: var(--red-500); }
+  .cl-tag--optional { background: var(--gray-100); color: var(--gray-500); }
+  .cl-note { font-size: 11px; color: var(--gray-400); font-style: italic; }
+
+  .cl-add-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; margin-top: 8px;
+    border: 2px dashed var(--gray-200); border-radius: 8px;
+    cursor: pointer; transition: all 0.15s; color: var(--gray-400);
+    font-size: 12px; font-weight: 500; background: none; border-style: dashed;
+    width: 100%; font-family: inherit;
+  }
+  .cl-add-item:hover {
+    border-color: var(--green-400); color: var(--green-600); background: var(--green-50);
+  }
+  .cl-add-item svg { width: 14px; height: 14px; }
+
+  /* ===== FOOTER ===== */
+  .modal-footer {
+    padding: 14px 28px;
+    border-top: 1px solid var(--gray-200);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--gray-50); flex-shrink: 0;
+  }
+  .footer-left { font-size: 12px; color: var(--gray-400); display: flex; align-items: center; gap: 6px; }
+  .footer-left svg { width: 14px; height: 14px; }
+  .footer-right { display: flex; gap: 8px; }
+  .btn-secondary {
+    padding: 8px 18px; border-radius: 8px; border: 1px solid var(--gray-200);
+    background: white; font-size: 13px; font-weight: 600; color: var(--gray-600);
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: var(--gray-50); border-color: var(--gray-300); }
+  .btn-primary {
+    padding: 8px 20px; border-radius: 8px; border: none;
+    background: var(--purple-600); font-size: 13px; font-weight: 600; color: white;
+    cursor: pointer; font-family: inherit; transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--purple-700); }
+
+  /* ===== DEMO LABEL ===== */
+  .demo-badge {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,255,255,0.95); padding: 6px 18px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; color: var(--gray-500);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 2000;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    backdrop-filter: blur(8px);
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-hint"></div>
+<div class="demo-badge">📋 TenderZen — Planning Popup Mockup</div>
+
+<!-- MODAL OVERLAY -->
+<div class="modal-overlay">
+  <div class="modal">
+
+    <!-- HEADER -->
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+        <div>
+          <div class="modal-title">Verkoop 't Poortershuys</div>
+          <div class="modal-subtitle">Gemeente Noordoostpolder · Bureau: RLH Tenderdienstverlening</div>
+        </div>
+      </div>
+      <div class="modal-header-right">
+        <div class="modal-close" onclick="alert('Sluiten')">✕</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="switchTab(this, 'panel-planning')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Projectplanning
+        <span class="tab-badge tab-badge--purple">12</span>
+      </button>
+      <button class="modal-tab" onclick="switchTab(this, 'panel-checklist')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Indieningschecklist
+        <span class="tab-badge tab-badge--green">5/7</span>
+      </button>
+    </div>
+
+    <!-- ===== PLANNING TAB ===== -->
+    <div class="tab-panel active" id="panel-planning">
+
+      <!-- Toolbar -->
+      <div class="planning-toolbar">
+        <div class="toolbar-left">
+          <button class="btn-add-task">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Taak toevoegen
+          </button>
+          <button class="btn-template">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Template laden
+          </button>
+        </div>
+        <div class="toolbar-right">
+          <div class="progress-inline">
+            <div class="progress-track"><div class="progress-fill" style="width: 58%"></div></div>
+            <span class="progress-label">7 van 12 afgerond</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task List -->
+      <div class="task-list">
+
+        <!-- CATEGORY: Voorbereiding -->
+        <div class="task-category">
+          <div class="cat-dot" style="background: var(--green-500)"></div>
+          <span class="cat-label">Voorbereiding</span>
+          <span class="cat-count">4/4 taken</span>
+          <span class="cat-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="task-name done">Kick-off meeting</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#7c3aed">JV</span>Jort</span>
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#2563eb">MK</span>Maxime</span>
+          </div>
+          <span class="task-date done">17 dec 2025</span>
+          <span class="task-status status--done">Klaar</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="task-name done">Delen versie 1 (alleen bestaande input)</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#2563eb">MK</span>Maxime</span>
+          </div>
+          <span class="task-date done">18 dec</span>
+          <span class="task-status status--done">Klaar</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="task-name done">Interview onderdeel A — Jort, Senna, Arjen, Sjoerd</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#7c3aed">JV</span>Jort</span>
+            <span class="assignee-more">+3</span>
+          </div>
+          <span class="task-date done">19 dec 13:00</span>
+          <span class="task-status status--done">Klaar</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="task-name done">Interview onderdeel B — Gertjan, Robbert, Arjen</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#f97316">GV</span>Gertjan</span>
+            <span class="assignee-more">+2</span>
+          </div>
+          <span class="task-date done">19 dec 14:00</span>
+          <span class="task-status status--done">Klaar</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <!-- CATEGORY: Schrijven & Review -->
+        <div class="task-category">
+          <div class="cat-dot" style="background: var(--orange-500)"></div>
+          <span class="cat-label">Schrijven & Review</span>
+          <span class="cat-count">3/5 taken</span>
+          <span class="cat-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="task-name done">Delen concept versie 2</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#2563eb">MK</span>Maxime</span>
+          </div>
+          <span class="task-date done">26 dec</span>
+          <span class="task-status status--done">Klaar</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="task-name done">Feedback aanleveren v2</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#ec4899">TM</span>Tender mgr</span>
+          </div>
+          <span class="task-date done">29 dec</span>
+          <span class="task-status status--done">Klaar</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <span class="task-name done">Feedback sessie versie 2</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#ec4899">TM</span>Tender mgr</span>
+            <span class="assignee-more">+2</span>
+          </div>
+          <span class="task-date done">30 dec 14:00</span>
+          <span class="task-status status--done">Klaar</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row" style="background: rgba(249, 115, 22, 0.04);">
+          <div class="task-check active"></div>
+          <span class="task-name active">Feedback sessie versie 3 (puntjes op de i-sessie)</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#7c3aed">JV</span>Jort</span>
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#f97316">RB</span>Robbert</span>
+          </div>
+          <span class="task-date highlight">8 jan 15:00</span>
+          <span class="task-status status--active">Actief</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check"></div>
+          <span class="task-name">Definitieve versie delen</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#2563eb">MK</span>Maxime</span>
+          </div>
+          <span class="task-date">9 jan</span>
+          <span class="task-status status--todo">Te doen</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <!-- CATEGORY: Afronding & Indiening -->
+        <div class="task-category">
+          <div class="cat-dot" style="background: var(--gray-400)"></div>
+          <span class="cat-label">Afronding & Indiening</span>
+          <span class="cat-count">0/3 taken</span>
+          <span class="cat-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check"></div>
+          <span class="task-name">Naar vormgever</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#10b981">DV</span>Designer</span>
+          </div>
+          <span class="task-date">13 jan</span>
+          <span class="task-status status--todo">Te doen</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row">
+          <div class="task-check"></div>
+          <span class="task-name">Delen opgemaakte versie</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#ec4899">TM</span>Tender mgr</span>
+          </div>
+          <span class="task-date">16 jan</span>
+          <span class="task-status status--todo">Te doen</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <div class="task-row" style="background: rgba(239, 68, 68, 0.03);">
+          <div class="task-check"></div>
+          <span class="task-name" style="font-weight: 700; color: var(--red-500);">🚩 INTERNE DEADLINE — Indienen stukken</span>
+          <div class="task-assignees">
+            <span class="assignee-pill"><span class="assignee-dot" style="background:#ec4899">TM</span>Tender mgr</span>
+          </div>
+          <span class="task-date overdue">20 jan 2026</span>
+          <span class="task-status" style="background: var(--red-100); color: var(--red-500);">Deadline</span>
+          <button class="task-menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
+        </div>
+
+        <!-- Add task -->
+        <div class="add-task-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Taak toevoegen…
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== CHECKLIST TAB ===== -->
+    <div class="tab-panel" id="panel-checklist">
+      
+      <div class="checklist-toolbar">
+        <div class="cl-progress-group">
+          <div class="cl-ring">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="cl-ring-bg" cx="22" cy="22" r="18" fill="none" stroke-width="4"/>
+              <circle class="cl-ring-fill" cx="22" cy="22" r="18" fill="none" stroke-width="4"
+                stroke-dasharray="113.1" stroke-dashoffset="32.3"/>
+            </svg>
+          </div>
+          <div>
+            <div class="cl-ring-text">5 van 7 compleet</div>
+            <div class="cl-ring-sub">71% afgerond</div>
+          </div>
+        </div>
+        <div class="cl-tools">
+          <button class="btn-template">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Template laden
+          </button>
+          <button class="btn-add-task" style="background: var(--green-600);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Item toevoegen
+          </button>
+        </div>
+      </div>
+
+      <div class="checklist-section">
+
+        <div class="cl-category">
+          <div class="cl-cat-header">
+            <div class="cl-cat-icon" style="background: var(--blue-100); color: var(--blue-500);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <span class="cl-cat-name">Documenten</span>
+            <span class="cl-cat-progress">3 van 4</span>
+          </div>
+          <div class="cl-item">
+            <div class="cl-box checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <span class="cl-text checked">KvK-uittreksel (max 6 maanden oud)</span>
+            <span class="cl-tag cl-tag--required">Verplicht</span>
+          </div>
+          <div class="cl-item">
+            <div class="cl-box checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <span class="cl-text checked">Referentieverklaring project A</span>
+            <span class="cl-tag cl-tag--required">Verplicht</span>
+          </div>
+          <div class="cl-item">
+            <div class="cl-box checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <span class="cl-text checked">Referentieverklaring project B</span>
+            <span class="cl-tag cl-tag--required">Verplicht</span>
+          </div>
+          <div class="cl-item">
+            <div class="cl-box"></div>
+            <span class="cl-text">VOG-verklaring medewerkers</span>
+            <span class="cl-tag cl-tag--required">Verplicht</span>
+            <span class="cl-note">Aanvragen bij Justis</span>
+          </div>
+        </div>
+
+        <div class="cl-category">
+          <div class="cl-cat-header">
+            <div class="cl-cat-icon" style="background: var(--purple-100); color: var(--purple-600);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+            </div>
+            <span class="cl-cat-name">Inschrijving</span>
+            <span class="cl-cat-progress">2 van 3</span>
+          </div>
+          <div class="cl-item">
+            <div class="cl-box checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <span class="cl-text checked">Eigen verklaring ingevuld</span>
+            <span class="cl-tag cl-tag--required">Verplicht</span>
+          </div>
+          <div class="cl-item">
+            <div class="cl-box checked"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <span class="cl-text checked">Plan van aanpak (max 10 pagina's)</span>
+            <span class="cl-tag cl-tag--required">Verplicht</span>
+          </div>
+          <div class="cl-item">
+            <div class="cl-box"></div>
+            <span class="cl-text">Prijzenblad Excel ingevuld</span>
+            <span class="cl-tag cl-tag--optional">Optioneel</span>
+          </div>
+          <button class="cl-add-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Item toevoegen aan deze categorie…
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="modal-footer">
+      <div class="footer-left">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Laatst bijgewerkt: vandaag om 14:32
+      </div>
+      <div class="footer-right">
+        <button class="btn-secondary">Sluiten</button>
+        <button class="btn-primary">Opslaan</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function switchTab(tabEl, panelId) {
+  // Deactivate all tabs
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  // Activate clicked
+  tabEl.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// Toggle checkboxes
+document.querySelectorAll('.task-check, .cl-box').forEach(box => {
+  box.addEventListener('click', () => {
+    if (box.classList.contains('done') || box.classList.contains('checked')) {
+      box.classList.remove('done', 'checked');
+      box.innerHTML = '';
+      const nameEl = box.parentElement.querySelector('.task-name, .cl-text');
+      if (nameEl) { nameEl.classList.remove('done', 'checked'); }
+    } else {
+      box.classList.add(box.classList.contains('cl-box') ? 'checked' : 'done');
+      box.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+      const nameEl = box.parentElement.querySelector('.task-name, .cl-text');
+      if (nameEl) { nameEl.classList.add(box.classList.contains('cl-box') ? 'checked' : 'done'); }
+    }
+  });
+});
+</script>
+</body>
+</html>

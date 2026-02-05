@@ -1,0 +1,1752 @@
+/* ============================================
+   TENDERZEN — AgendaView Styling
+   v1.4 — Maand grid + viewmode toggle
+   Bestand: Frontend/css/AgendaView.css
+   Datum: 4 februari 2026
+   ============================================ */
+
+/* ── Container ── */
+.agenda-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Toolbar ── */
+.agenda-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #faf8ff;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.agenda-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.agenda-toolbar-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.agenda-toolbar-period {
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    padding: 2px 10px;
+    background: #f1f5f9;
+    border-radius: 6px;
+}
+
+.agenda-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.agenda-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.agenda-btn-icon {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+}
+
+.agenda-btn-icon:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.agenda-btn-today {
+    padding: 5px 14px;
+    border: 1px solid #d8b4fe;
+    border-radius: 6px;
+    background: #faf5ff;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: #7c3aed;
+    transition: all 0.12s;
+}
+
+.agenda-btn-today:hover {
+    background: #f3e8ff;
+    border-color: #c084fc;
+}
+
+
+/* ── Filter Bar ── */
+.agenda-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fcfcfd;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.agenda-filter-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.agenda-filter-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.agenda-filter-summary {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Toggle buttons */
+.agenda-toggle-wrap {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.agenda-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 14px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.12s;
+    white-space: nowrap;
+}
+
+.agenda-toggle-btn:hover {
+    color: #475569;
+}
+
+.agenda-toggle-btn.active {
+    background: #fff;
+    color: #7c3aed;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* User selector */
+.agenda-user-selector {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.agenda-user-selector-label {
+    font-size: 11px;
+    color: #64748b;
+    margin-right: 4px;
+    font-weight: 500;
+}
+
+.agenda-user-chips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.agenda-user-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px 3px 4px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    transition: all 0.12s;
+    white-space: nowrap;
+}
+
+.agenda-user-chip:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+}
+
+.agenda-user-chip.selected {
+    background: color-mix(in srgb, var(--chip-color, #7c3aed) 8%, transparent);
+    border-color: var(--chip-color, #7c3aed);
+    color: var(--chip-color, #7c3aed);
+}
+
+.agenda-user-chip-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    font-size: 7px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Stats row */
+.agenda-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.agenda-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.agenda-stat-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+
+/* ── Welcome Banner ── */
+.agenda-welcome-banner {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    background: #f5f3ff;
+    border-bottom: 1px solid #e2e8f0;
+    border-left: 4px solid #7c3aed;
+    flex-shrink: 0;
+}
+
+.agenda-welcome-inner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.agenda-welcome-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 16px;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.agenda-welcome-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.agenda-welcome-sub {
+    font-size: 12px;
+    color: #64748b;
+}
+
+
+/* ── Main Content Area ── */
+.agenda-main {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* ── Loading ── */
+.agenda-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 12px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+}
+
+.agenda-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #7c3aed;
+    border-radius: 50%;
+    animation: agenda-spin 0.7s linear infinite;
+}
+
+@keyframes agenda-spin {
+    to { transform: rotate(360deg); }
+}
+
+
+/* ── Empty State ── */
+.agenda-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    flex: 1;
+}
+
+.agenda-empty-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #94a3b8;
+    margin-top: 12px;
+}
+
+.agenda-empty-sub {
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-top: 4px;
+}
+
+
+/* ── Week Grid ── */
+.agenda-week-grid {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Header row */
+.agenda-week-header {
+    display: flex;
+    flex-shrink: 0;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.agenda-week-header-label {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-right: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.agenda-week-header-label span {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.8px;
+}
+
+.agenda-day-header {
+    text-align: center;
+    padding: 8px 4px 6px;
+    border-right: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.agenda-day-header:last-child {
+    border-right: none;
+}
+
+.agenda-day-header.today {
+    background: #ede9fe;
+}
+
+.agenda-day-header-main {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.agenda-day-header.today .agenda-day-header-main {
+    color: #7c3aed;
+}
+
+.agenda-day-header.weekend .agenda-day-header-main {
+    color: #b0b8c4;
+}
+
+/* Body (scrollable) */
+.agenda-week-body {
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Tender row */
+.agenda-tender-row {
+    display: flex;
+}
+
+/* Day cells */
+.agenda-day-cell {
+    border-right: 1px solid #f1f5f9;
+    border-bottom: 1px solid #e8ecf0;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #fff;
+    min-height: 100%;
+}
+
+.agenda-day-cell:last-child {
+    border-right: none;
+}
+
+.agenda-day-cell.today {
+    background: #faf5ff;
+}
+
+.agenda-day-cell.weekend {
+    background: #fafbfc;
+}
+
+
+/* ── Mini Tender Card ── */
+.agenda-mini-card {
+    padding: 10px 14px;
+    border-right: 2px solid #e2e8f0;
+    border-bottom: 1px solid #e8ecf0;
+    background: #fff;
+    cursor: pointer;
+    transition: background 0.1s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left: 4px solid #94a3b8;
+    flex-shrink: 0;
+}
+
+.agenda-mini-card:hover {
+    background: #fafbfc;
+}
+
+.agenda-mini-card.selected {
+    background: #f5f3ff;
+}
+
+.agenda-mini-card-inner {
+    display: flex;
+    flex-direction: column;
+}
+
+.agenda-mini-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+
+.agenda-mini-fase-badge {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid;
+    white-space: nowrap;
+}
+
+.agenda-mini-task-count {
+    font-size: 9px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.agenda-mini-naam {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 17px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.agenda-mini-opdrachtgever {
+    font-size: 10.5px;
+    color: #64748b;
+    line-height: 14px;
+    margin-bottom: 6px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.agenda-mini-opdrachtgever-icon {
+    margin-right: 4px;
+}
+
+.agenda-mini-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: auto;
+}
+
+.agenda-mini-avatars {
+    display: flex;
+    align-items: center;
+}
+
+.agenda-mini-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    color: white;
+    font-size: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    flex-shrink: 0;
+}
+
+.agenda-mini-avatar-extra {
+    width: 22px;
+    height: 22px;
+    border-radius: 11px;
+    background: #e2e8f0;
+    color: #64748b;
+    font-size: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    margin-left: -6px;
+}
+
+.agenda-mini-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.agenda-mini-progress-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.agenda-mini-progress-bar {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: #e2e8f0;
+    overflow: hidden;
+}
+
+.agenda-mini-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+
+/* ── Task Card ── */
+.agenda-task-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #94a3b8;
+    border-radius: 6px;
+    padding: 5px 7px;
+    cursor: pointer;
+    transition: box-shadow 0.1s;
+}
+
+.agenda-task-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.agenda-task-card.done {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.agenda-task-card.deadline {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.agenda-task-card.checklist {
+    border-left-style: dashed;
+}
+
+.agenda-task-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+/* Checkbox */
+.agenda-task-checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    border: 1.5px solid #cbd5e1;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.12s;
+}
+
+.agenda-task-checkbox:hover {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+}
+
+.agenda-task-checkbox.checked {
+    border: none;
+    background: #22c55e;
+}
+
+.agenda-task-checkbox.checked:hover {
+    background: #16a34a;
+}
+
+/* Task name */
+.agenda-task-name {
+    font-size: 11.5px;
+    font-weight: 500;
+    line-height: 15px;
+    color: #1e293b;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    flex: 1;
+    min-width: 0;
+}
+
+.agenda-task-name.done {
+    font-weight: 400;
+    color: #6b7280;
+    text-decoration: line-through;
+}
+
+.agenda-task-flag {
+    margin-right: 3px;
+}
+
+/* Task avatars */
+.agenda-task-avatars {
+    display: flex;
+    gap: 2px;
+    margin-top: 4px;
+    margin-left: 21px;
+}
+
+.agenda-task-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    color: white;
+    font-size: 7.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+
+/* ── Niet-toegewezen indicator (in week grid) ── */
+.agenda-task-card.niet-toegewezen {
+    background: #fffbeb;
+    border-style: dashed;
+}
+
+.agenda-niet-toegewezen-badge-small {
+    font-size: 10px;
+    margin-left: 21px;
+    margin-top: 2px;
+    color: #d97706;
+    opacity: 0.8;
+}
+
+/* ── Niet-toegewezen hint bar ── */
+.agenda-niet-toegewezen-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 6px;
+    margin: 12px 0 0 0;
+    font-size: 12px;
+    color: #92400e;
+}
+
+.agenda-nta-icon {
+    font-size: 14px;
+}
+
+/* ── Stat warning style ── */
+.agenda-stat-warning {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* ── Ongepland sectie ── */
+.agenda-ongepland-section {
+    margin-top: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fafbfc;
+    overflow: hidden;
+}
+
+.agenda-ongepland-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.agenda-ongepland-icon {
+    font-size: 16px;
+}
+
+.agenda-ongepland-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.agenda-ongepland-subtitle {
+    font-size: 11.5px;
+    color: #94a3b8;
+    margin-left: auto;
+}
+
+.agenda-ongepland-tender {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.agenda-ongepland-tender:last-child {
+    border-bottom: none;
+}
+
+.agenda-ongepland-tender-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-left: 3px solid #94a3b8;
+    background: white;
+}
+
+.agenda-ongepland-tender-naam {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.agenda-ongepland-count {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: auto;
+}
+
+.agenda-ongepland-taken {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 6px;
+    padding: 8px 16px 10px;
+}
+
+.agenda-ongepland-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid #94a3b8;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.agenda-ongepland-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+.agenda-ongepland-card.done {
+    opacity: 0.55;
+    background: #f8fafc;
+}
+
+.agenda-ongepland-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 21px;
+    margin-top: 2px;
+}
+
+.agenda-niet-toegewezen-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 4px;
+    font-size: 10px;
+    color: #d97706;
+    font-weight: 500;
+}
+
+.agenda-bron-badge {
+    display: inline-flex;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.agenda-bron-planning {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.agenda-bron-checklist {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+
+/* ── Viewmode Toggle (Week/Maand) ── */
+.agenda-viewmode-toggle {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 2px;
+    margin-left: 8px;
+    gap: 1px;
+}
+
+.agenda-viewmode-btn {
+    padding: 4px 12px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.agenda-viewmode-btn:hover {
+    color: #334155;
+    background: #e2e8f0;
+}
+
+.agenda-viewmode-btn.active {
+    background: #fff;
+    color: #7c3aed;
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+
+/* ============================================
+   MAAND VIEW — Breed horizontaal grid
+   (alle dagen naast elkaar, tenders links)
+   ============================================ */
+
+.agenda-mw-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.agenda-mw-scroll {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.agenda-mw-grid {
+    min-width: fit-content;
+}
+
+/* ── Header ── */
+.agenda-mw-header {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff;
+}
+
+.agenda-mw-header-corner {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 12px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    left: 0;
+    z-index: 6;
+}
+
+.agenda-mw-header-days {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Week labels row ── */
+.agenda-mw-week-labels {
+    display: grid;
+    grid-template-columns: repeat(var(--mw-cols), 1fr);
+    background: #f8f6ff;
+    border-bottom: 1px solid #ede9fe;
+}
+
+.agenda-mw-week-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 0;
+    border-right: 2px solid #ddd6fe;
+}
+
+.agenda-mw-week-label:last-child {
+    border-right: none;
+}
+
+.agenda-mw-week-num {
+    font-size: 10px;
+    font-weight: 700;
+    color: #7c3aed;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Day header kolommen ── */
+.agenda-mw-day-headers {
+    display: grid;
+    grid-template-columns: repeat(var(--mw-cols), 1fr);
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.agenda-mw-day-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 2px;
+    min-width: 44px;
+    border-right: 1px solid #f1f5f9;
+}
+
+.agenda-mw-day-header.week-start {
+    border-left: 2px solid #ddd6fe;
+}
+
+.agenda-mw-day-header.today {
+    background: #f5f0ff;
+}
+
+.agenda-mw-day-header.weekend {
+    background: #fbfbfc;
+}
+
+.agenda-mw-day-header.other-month {
+    opacity: 0.4;
+}
+
+.agenda-mw-day-name {
+    font-size: 9px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.agenda-mw-day-num {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.2;
+}
+
+.agenda-mw-day-num.today {
+    background: #7c3aed;
+    color: #fff;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.agenda-mw-day-month {
+    font-size: 8px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* ── Body ── */
+.agenda-mw-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Tender rij ── */
+.agenda-mw-tender-row {
+    display: flex;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.agenda-mw-tender-row:hover {
+    background: #faf8ff;
+}
+
+.agenda-mw-days-row {
+    display: grid;
+    grid-template-columns: repeat(var(--mw-cols), 1fr);
+    flex: 1;
+}
+
+/* ── Dag cel ── */
+.agenda-mw-day-cell {
+    padding: 4px 3px;
+    min-width: 44px;
+    border-right: 1px solid #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.agenda-mw-day-cell.week-start {
+    border-left: 2px solid #ede9fe;
+}
+
+.agenda-mw-day-cell.today {
+    background: #f5f0ff;
+}
+
+.agenda-mw-day-cell.weekend {
+    background: #fcfcfd;
+}
+
+.agenda-mw-day-cell.other-month {
+    background: #fafbfc;
+    opacity: 0.45;
+}
+
+/* ── Compacte taakkaart ── */
+.agenda-mw-task {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 4px;
+    border-radius: 4px;
+    background: #fff;
+    border: 1px solid #f1f5f9;
+    border-left: 3px solid #6366f1;
+    cursor: pointer;
+    transition: all 0.12s;
+    min-height: 24px;
+}
+
+.agenda-mw-task:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    z-index: 2;
+}
+
+.agenda-mw-task.done {
+    opacity: 0.5;
+}
+
+.agenda-mw-task.deadline {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.agenda-mw-task.niet-toegewezen {
+    border-left-style: dashed;
+}
+
+.agenda-mw-task-check {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: all 0.12s;
+}
+
+.agenda-mw-task-check.checked {
+    background: #10b981;
+    border-color: #10b981;
+}
+
+.agenda-mw-task-name {
+    font-size: 10px;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+    flex: 1;
+    min-width: 0;
+}
+
+.agenda-mw-task-name.done {
+    text-decoration: line-through;
+    color: #94a3b8;
+}
+
+.agenda-mw-badge {
+    font-size: 9px;
+    flex-shrink: 0;
+}
+
+/* ── Sticky tender card in maandview ── */
+.agenda-mw-tender-row .agenda-mini-card {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: #fff;
+    border-right: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+/* ── Lege state ── */
+.agenda-mw-empty {
+    padding: 24px 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    font-style: italic;
+}
+
+
+/* ============================================
+   GRID LAYOUT — Sidebar + Kalender
+   (voor maand en kwartaal views)
+   ============================================ */
+
+.agenda-grid-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ── Tender Sidebar ── */
+.agenda-tender-sidebar {
+    width: 260px;
+    min-width: 260px;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    background: #fafbfc;
+}
+
+.agenda-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.agenda-sidebar-count {
+    font-size: 10px;
+    background: #e2e8f0;
+    color: #64748b;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.agenda-sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.agenda-sidebar-empty {
+    padding: 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.agenda-sidebar-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #6366f1;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.agenda-sidebar-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.agenda-sidebar-card.selected {
+    background: #f5f0ff;
+    border-color: #c4b5fd;
+    box-shadow: 0 0 0 1px #c4b5fd;
+}
+
+.agenda-sidebar-card-top {
+    margin-bottom: 4px;
+}
+
+.agenda-sidebar-card-naam {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.agenda-sidebar-card-client {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.agenda-sidebar-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.agenda-sidebar-card-stats {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.agenda-sidebar-progress-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* ── Calendar Area ── */
+.agenda-calendar-area {
+    flex: 1;
+    overflow: auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* ============================================
+   GANTT CHART — Kwartaalweergave
+   ============================================ */
+
+.gantt-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background: #fff;
+}
+
+/* ── Header ── */
+.gantt-header {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.gantt-header-label {
+    width: 260px;
+    min-width: 260px;
+    flex-shrink: 0;
+    padding: 0 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-right: 1px solid #e2e8f0;
+    background: #f8fafc;
+    display: flex;
+    align-items: flex-end;
+    padding-bottom: 6px;
+}
+
+.gantt-header-timeline {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+/* ── Maand rij ── */
+.gantt-months-row {
+    display: flex;
+    background: #f8fafc;
+}
+
+.gantt-month-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0;
+    border-right: 2px solid #e2e8f0;
+}
+
+.gantt-month-col:last-child {
+    border-right: none;
+}
+
+.gantt-month-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+/* ── Week nummers rij ── */
+.gantt-weeks-row {
+    position: relative;
+    height: 20px;
+    background: #f1f5f9;
+    border-top: 1px solid #e2e8f0;
+}
+
+.gantt-week-num {
+    position: absolute;
+    font-size: 9px;
+    font-weight: 600;
+    color: #94a3b8;
+    transform: translateX(2px);
+    line-height: 20px;
+}
+
+/* ── Body ── */
+.gantt-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* ── Gantt Row ── */
+.gantt-row {
+    display: flex;
+    border-bottom: 1px solid #f1f5f9;
+    min-height: 72px;
+    transition: background 0.1s;
+}
+
+.gantt-row:hover {
+    background: #faf8ff;
+}
+
+.gantt-row.selected {
+    background: #f5f0ff;
+}
+
+/* ── Row label (tender card) ── */
+.gantt-row-label {
+    width: 260px;
+    min-width: 260px;
+    flex-shrink: 0;
+    padding: 8px 12px;
+    border-right: 1px solid #e2e8f0;
+    border-left: 4px solid #6366f1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gantt-row-naam {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gantt-row-client {
+    font-size: 11px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gantt-row-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.gantt-mini-bar {
+    width: 48px;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.gantt-mini-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+/* ── Row timeline ── */
+.gantt-row-timeline {
+    flex: 1;
+    position: relative;
+    min-height: 60px;
+    overflow: hidden;
+}
+
+/* ── Verticale lijnen ── */
+.gantt-vline {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.gantt-vline-week {
+    width: 1px;
+    background: #f1f5f9;
+    z-index: 0;
+}
+
+.gantt-vline-month {
+    width: 2px;
+    background: #e2e8f0;
+    z-index: 1;
+}
+
+.gantt-vline-today {
+    width: 2px;
+    background: #ef4444;
+    z-index: 5;
+}
+
+.gantt-today-flag {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    font-weight: 700;
+    color: #fff;
+    background: #ef4444;
+    padding: 1px 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+/* ── Gantt bar (tender duur) ── */
+.gantt-bar {
+    position: absolute;
+    top: 16px;
+    height: calc(100% - 32px);
+    border-radius: 5px;
+    border: 1.5px solid;
+    z-index: 1;
+    min-height: 28px;
+}
+
+/* ── Taak dots ── */
+.gantt-dot {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    z-index: 3;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.gantt-dot:hover {
+    transform: translate(-50%, -50%) scale(1.6);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.gantt-dot.done {
+    opacity: 0.5;
+}
+
+/* ── Deadline & Publicatie markers ── */
+.gantt-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    z-index: 4;
+    cursor: default;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15));
+    line-height: 1;
+}
+
+.gantt-marker-deadline {
+    color: #ef4444;
+}
+
+.gantt-marker-pub {
+    color: #7c3aed;
+    font-size: 16px;
+}
+
+/* ── Lege state ── */
+.gantt-empty {
+    padding: 48px 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* ── Legenda ── */
+.gantt-legend {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 8px 20px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-shrink: 0;
+}
+
+.gantt-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+.gantt-legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #94a3b8;
+}
+
+.gantt-legend-swatch.task {
+    background: #6366f1;
+    box-shadow: 0 0 0 1px #6366f1;
+}
+
+.gantt-legend-swatch.done {
+    background: #10b981;
+    box-shadow: 0 0 0 1px #10b981;
+    opacity: 0.5;
+}
+
+.gantt-legend-swatch.today-line {
+    width: 14px;
+    height: 3px;
+    border-radius: 2px;
+    background: #ef4444;
+    border: none;
+    box-shadow: none;
+}
+
+.gantt-legend-sym {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.gantt-legend-sym.deadline {
+    color: #ef4444;
+}
+
+.gantt-legend-sym.pub {
+    color: #7c3aed;
+}
+
+
+/* ── Responsive ── */
+@media (max-width: 1200px) {
+    .agenda-day-header-main {
+        font-size: 11px;
+    }
+
+    .agenda-task-name {
+        font-size: 10.5px;
+    }
+
+    .agenda-mini-naam {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 900px) {
+    .agenda-toolbar {
+        padding: 10px 14px;
+    }
+
+    .agenda-filter-bar {
+        padding: 8px 14px;
+    }
+
+    .agenda-user-selector {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .agenda-viewmode-toggle {
+        margin-left: 0;
+    }
+
+    .agenda-tender-sidebar {
+        width: 200px;
+        min-width: 200px;
+    }
+
+    .agenda-sidebar-card-naam {
+        font-size: 12px;
+    }
+
+    .gantt-row-label,
+    .gantt-header-label {
+        width: 180px;
+        min-width: 180px;
+    }
+
+    .gantt-row-naam {
+        font-size: 12px;
+    }
+
+    .agenda-mw-day-cell {
+        min-width: 36px;
+    }
+
+    .agenda-mw-day-header {
+        min-width: 36px;
+    }
+}

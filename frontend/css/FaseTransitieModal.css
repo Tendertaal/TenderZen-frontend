@@ -1,0 +1,238 @@
+/**
+ * FaseTransitieModal Styling
+ * TenderZen v1.0
+ *
+ * Professionele bevestigings/waarschuwingsmodal voor Kanban fase transities.
+ * Twee modes: .is-confirm (paars accent) en .is-warning (amber accent).
+ */
+
+/* ============================================
+   OVERLAY
+   ============================================ */
+
+.fase-transitie-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(15, 23, 42, 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    padding: 20px;
+}
+
+.fase-transitie-overlay.visible {
+    background: rgba(15, 23, 42, 0.5);
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+
+.fase-transitie-modal {
+    background: #ffffff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.fase-transitie-overlay.visible .fase-transitie-modal {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.fase-transitie-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 24px 24px 0;
+}
+
+.fase-transitie-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.fase-transitie-icon.confirm {
+    background: #eef2ff;
+}
+
+.fase-transitie-icon.warning {
+    background: #fffbeb;
+}
+
+.fase-transitie-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* ============================================
+   TRANSITIE BAR (Van â†’ Naar)
+   ============================================ */
+
+.fase-transitie-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    margin: 0;
+}
+
+.fase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    background: color-mix(in srgb, var(--fase-kleur) 12%, transparent);
+    color: var(--fase-kleur);
+    border: 1px solid color-mix(in srgb, var(--fase-kleur) 25%, transparent);
+}
+
+.fase-arrow {
+    font-size: 18px;
+    color: #94a3b8;
+    font-weight: 300;
+}
+
+/* ============================================
+   BERICHT
+   ============================================ */
+
+.fase-transitie-bericht {
+    padding: 0 24px;
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+/* ============================================
+   WAARSCHUWINGEN
+   ============================================ */
+
+.fase-transitie-warnings {
+    margin: 12px 24px 0;
+    padding: 14px 16px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+}
+
+.fase-warning-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: #92400e;
+    line-height: 1.5;
+}
+
+.fase-warning-item + .fase-warning-item {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #fde68a;
+}
+
+.fase-warning-item svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.fase-transitie-buttons {
+    display: flex;
+    gap: 10px;
+    padding: 20px 24px 24px;
+    margin-top: 8px;
+}
+
+.fase-transitie-btn {
+    flex: 1;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+    outline: none;
+}
+
+.fase-transitie-btn:focus-visible {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+}
+
+/* Annuleren */
+.fase-transitie-btn.cancel {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.fase-transitie-btn.cancel:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+/* Bevestigen â€” .is-confirm modus (paars) */
+.is-confirm .fase-transitie-btn.confirm {
+    background: #6366f1;
+    color: #ffffff;
+}
+
+.is-confirm .fase-transitie-btn.confirm:hover {
+    background: #4f46e5;
+}
+
+/* Bevestigen â€” .is-warning modus (amber) */
+.is-warning .fase-transitie-btn.confirm {
+    background: #d97706;
+    color: #ffffff;
+}
+
+.is-warning .fase-transitie-btn.confirm:hover {
+    background: #b45309;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 480px) {
+    .fase-transitie-modal {
+        max-width: 100%;
+        border-radius: 12px;
+    }
+
+    .fase-transitie-buttons {
+        flex-direction: column-reverse;
+    }
+
+    .fase-transitie-btn {
+        padding: 12px;
+    }
+}

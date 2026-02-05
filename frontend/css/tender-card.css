@@ -22,9 +22,14 @@
 }
 
 /**
- * Tender Cards Styles - TenderZen v3.0
+ * Tender Cards Styles - TenderZen v3.2
  * 
- * OPGESCHOOND: 20250130
+ * CHANGELOG v3.2:
+ * - ✅ STICKY HEADER FIX: overflow verwijderd van tenders-wrapper
+ * - ✅ Alleen #app-content mag scrollen
+ * - ✅ section-aanbesteding: 450px
+ * 
+ * CHANGELOG v3.0:
  * - Geen gradients meer
  * - Geen dubbele code
  * - Cleane structuur
@@ -107,11 +112,13 @@
 
 /* ============================================
    WRAPPER & CONTAINERS
+   ⚠️ STICKY FIX: Geen overflow op tenders-wrapper!
+   Alleen #app-content mag scrollen.
    ============================================ */
 
 .tenders-wrapper {
     width: 100%;
-    overflow-x: auto;
+    /* ⚠️ GEEN overflow-x hier! Dit brak position:sticky */
     padding: var(--space-1);
 }
 
@@ -126,6 +133,7 @@
     gap: var(--space-4);
 }
 
+/* #app-content is de ENIGE scroll container */
 #app-content {
     overflow-y: auto;
     overflow-x: auto;
@@ -210,11 +218,9 @@
     background: #ffffff;
     border-radius: var(--radius-xl);
     border: 1px solid #e2e8f0;
-    /* ⭐ Subtiele border rond hele kaart */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
     transition: all var(--transition-normal);
     overflow: visible;
-    /* Nodig voor dropdown */
     min-width: max-content;
     position: relative;
     z-index: 1;
@@ -229,7 +235,7 @@
     transform: translateY(-3px);
 }
 
-/* Phase-specific styling - GEEN border-left meer, fase badge is voldoende */
+/* Phase-specific styling */
 .tender-row.phase-acquisitie,
 .tender-row.phase-inschrijvingen,
 .tender-row.phase-schrijven,
@@ -238,7 +244,6 @@
     border-left: none;
 }
 
-/* Verloren tenders krijgen lichtere opacity */
 .tender-row.phase-archief[data-status="verloren"] {
     opacity: 0.85;
 }
@@ -249,7 +254,6 @@
 
 .section-aanbesteding {
     width: 450px;
-    /* ⭐ Iets breder voor meer ruimte */
     min-width: 450px;
     padding: 20px 24px;
     border-right: 1px solid var(--border-light);
@@ -258,9 +262,7 @@
     gap: 16px;
     position: relative;
     overflow: visible;
-    /* Nodig voor dropdown */
     background: #ffffff;
-    /* Match border-radius van tender-row */
     border-top-left-radius: var(--radius-xl);
     border-bottom-left-radius: var(--radius-xl);
 }
@@ -281,17 +283,14 @@
     align-items: center;
     flex: 1;
     min-width: 0;
-    /* ⭐ Staat krimpen toe */
 }
 
 .card-header-right {
     display: flex;
     gap: 8px;
     flex-shrink: 0;
-    /* ⭐ Buttons behouden hun grootte */
 }
 
-/* Fase + Status groepering */
 .fase-status-group {
     display: flex;
     align-items: center;
@@ -315,9 +314,7 @@
     text-transform: uppercase;
     border: 1px solid;
     flex-shrink: 0;
-    /* ⭐ Badge krimpt niet */
     white-space: nowrap;
-    /* ⭐ Geen wrap */
 }
 
 .fase-badge--acquisitie {
@@ -352,7 +349,6 @@
     width: 32px;
     height: 32px;
     min-width: 32px;
-    /* ⭐ Minimale breedte */
     border: 1px solid #e2e8f0;
     border-radius: 6px;
     background: white;
@@ -363,7 +359,6 @@
     transition: all 0.2s ease;
     color: #64748b;
     flex-shrink: 0;
-    /* ⭐ Krimpt niet */
 }
 
 .action-btn:hover {
@@ -398,11 +393,8 @@
 .status-dropdown {
     position: relative;
     flex-shrink: 1;
-    /* ⭐ Mag krimpen */
     min-width: 100px;
-    /* ⭐ Minimale breedte */
     max-width: 180px;
-    /* ⭐ Maximale breedte */
     z-index: 1;
 }
 
@@ -415,7 +407,6 @@
     align-items: center;
     gap: 6px;
     width: 100%;
-    /* ⭐ Vul beschikbare ruimte */
     padding: 6px 10px;
     font-size: 13px;
     font-weight: 500;
@@ -442,18 +433,14 @@
     flex: 1;
     text-align: left;
     overflow: hidden;
-    /* ⭐ Verberg overflow */
     text-overflow: ellipsis;
-    /* ⭐ Toon ... bij te lange tekst */
     white-space: nowrap;
-    /* ⭐ Geen wrap */
 }
 
 .status-dropdown-chevron {
     color: #64748b;
     transition: transform 0.2s ease;
     flex-shrink: 0;
-    /* ⭐ Chevron krimpt niet */
 }
 
 .status-dropdown.is-open .status-dropdown-chevron {
@@ -628,8 +615,74 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-top: 16px;
-    border-top: 1px solid #f1f5f9;
+    padding: 10px 24px;
+    margin: 0 -24px -20px -24px;
+    border-top: 1px solid rgba(139, 92, 246, 0.08);
+    background: rgba(139, 92, 246, 0.035);
+    border-radius: 0 0 0 12px;
+}
+
+/* ============================================
+   PLANNING & CHECKLIST SHORTCUT KNOPPEN v2.7
+   ============================================ */
+.planning-shortcut {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1.5px solid transparent;
+    font-family: inherit;
+}
+
+.planning-shortcut__count {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 5px;
+    color: white;
+    letter-spacing: 0.3px;
+}
+
+/* Planning knop - paars */
+.planning-shortcut--planning {
+    background: rgba(139, 92, 246, 0.06);
+    border-color: rgba(139, 92, 246, 0.15);
+    color: #7c3aed;
+}
+
+.planning-shortcut--planning:hover {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.planning-shortcut--planning .planning-shortcut__count {
+    background: #7c3aed;
+}
+
+/* Checklist knop - groen */
+.planning-shortcut--checklist {
+    background: rgba(34, 197, 94, 0.06);
+    border-color: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+.planning-shortcut--checklist:hover {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.planning-shortcut--checklist .planning-shortcut__count {
+    background: #16a34a;
+}
+
+.planning-shortcut svg {
+    width: 13px;
+    height: 13px;
 }
 
 /* Team Avatars */
@@ -755,7 +808,7 @@
 }
 
 /* ============================================
-   SECTIE TIMELINE - Optie 2: Subtiele achtergrond
+   SECTIE TIMELINE
    ============================================ */
 
 .section-timeline {
@@ -763,7 +816,6 @@
     flex: 1;
 }
 
-/* Laatste cell krijgt afgeronde rechter hoeken */
 .section-timeline .timeline-cell:last-child {
     border-top-right-radius: var(--radius-xl);
     border-bottom-right-radius: var(--radius-xl);
@@ -785,10 +837,9 @@
     border-right: none;
 }
 
-/* Basis date display - groter rechthoekig blok zoals mockup */
+/* Basis date display */
 .date-display {
     padding: 20px 16px;
-    /* ⭐ Grotere padding */
     border-radius: 10px;
     text-align: center;
     display: flex;
@@ -797,14 +848,11 @@
     justify-content: center;
     transition: all var(--transition-fast);
     min-height: 80px;
-    /* ⭐ Grotere hoogte */
     min-width: 80px;
-    /* ⭐ Grotere breedte */
 }
 
 .date-display .date-day {
     font-size: 28px;
-    /* ⭐ Groter */
     font-weight: 700;
     color: #334155;
     line-height: 1;
@@ -812,29 +860,54 @@
 
 .date-display .date-month {
     font-size: 12px;
-    /* ⭐ Groter */
     text-transform: uppercase;
     color: #64748b;
     margin-top: 4px;
     letter-spacing: 0.5px;
 }
 
-/* Gevulde datum - subtiele achtergrond */
+/* Gevulde datum */
 .date-display.filled {
     background: #f1f5f9;
-    /* ⭐ Iets donkerder grijs zoals mockup */
 }
 
-/* Lege datum - volledig onzichtbaar */
+/* Lege datum - placeholder blok */
 .date-display.empty {
-    background: transparent;
-    visibility: hidden;
+    background: #f8fafc;
+    border: 2px dashed #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.date-display.empty .date-add-icon {
+    font-size: 20px;
+    font-weight: 300;
+    color: #cbd5e1;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.date-display.empty:hover {
+    background: #f1f5f9;
+    border-color: #a5b4fc;
+}
+
+.date-display.empty:hover .date-add-icon {
+    color: #6366f1;
 }
 
 /* Deadline - paarse accent */
 .date-display.deadline {
     background: #f3f0ff;
-    /* ⭐ Licht paars */
+}
+
+/* ⭐ v2.7: Subtiele deadline kolom highlight
+   Geeft de hele deadline kolom een zachte tint zodat
+   het visueel duidelijk is welke kolom de deadline is */
+.section-timeline .timeline-cell:nth-child(7) {
+    background: rgba(124, 58, 237, 0.035);
+    border-left: 2px solid rgba(124, 58, 237, 0.12);
+    border-right: 2px solid rgba(124, 58, 237, 0.12);
 }
 
 .date-display.deadline .date-day {
@@ -884,7 +957,7 @@
     color: #cbd5e1;
 }
 
-/* Days to Deadline Badge - zoals mockup */
+/* Days to Deadline Badge */
 .days-to-deadline {
     font-size: 11px;
     font-weight: 600;
@@ -895,7 +968,6 @@
 
 .days-to-deadline.ok {
     background: #10b981;
-    /* ⭐ Groene achtergrond zoals mockup */
     color: white;
 }
 
@@ -1026,8 +1098,14 @@
         margin-left: -6px;
     }
 
-    .meta-item {
-        font-size: 12px;
+    .planning-shortcut {
+        padding: 3px 8px;
+        font-size: 10px;
+    }
+
+    .planning-shortcut__count {
+        font-size: 8px;
+        padding: 1px 5px;
     }
 
     .type-badge {
@@ -1108,12 +1186,7 @@
 }
 
 /* ============================================
-   TENDER SEARCH RESULTS STYLING
-   TenderZen v2.1 - Toevoegen aan tender-cards.css
-   ============================================ */
-
-/* ============================================
-   SEARCH RESULTS INFO BAR
+   SEARCH RESULTS STYLING
    ============================================ */
 
 .search-results-info {
@@ -1138,10 +1211,6 @@
     font-weight: 600;
 }
 
-/* ============================================
-   SEARCH HIGHLIGHT IN TENDER CARDS
-   ============================================ */
-
 .search-highlight {
     background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
     color: #854d0e;
@@ -1150,10 +1219,7 @@
     font-weight: inherit;
 }
 
-/* ============================================
-   NO SEARCH RESULTS EMPTY STATE
-   ============================================ */
-
+/* No Search Results */
 .empty-state--search {
     text-align: center;
     padding: 60px 20px;
@@ -1187,64 +1253,9 @@
     color: #94a3b8;
 }
 
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-
 @media (max-width: 768px) {
     .search-results-info {
         font-size: 13px;
         padding: 8px 12px;
     }
-}
-
-/**
- * TENDER CARDS CSS PATCH - Sticky Header Fix
- * TenderZen v3.1
- * 
- * Voeg dit toe aan het EINDE van tender-cards.css OF
- * vervang de bestaande .tenders-wrapper en #app-content regels
- * 
- * PROBLEEM: .tenders-wrapper had overflow-x: auto wat sticky brak
- * OPLOSSING: overflow alleen op #app-content, niet op .tenders-wrapper
- */
-
-/* ============================================
-   FIX: Verwijder overflow van tenders-wrapper
-   ============================================ */
-
-.tenders-wrapper {
-    width: 100%;
-    /* overflow-x: auto; ← VERWIJDERD - dit brak sticky */
-    padding: var(--space-1, 4px);
-}
-
-/* ============================================
-   FIX: #app-content is nu de enige scroll container
-   ============================================ */
-
-#app-content {
-    overflow-y: auto;
-    overflow-x: auto;  /* Horizontaal scrollen hier */
-    flex: 1;
-}
-
-/* ============================================
-   FIX: tender-list-view krijgt min-width voor horizontaal scrollen
-   ============================================ */
-
-.tender-list-view {
-    width: 100%;
-    min-width: max-content;  /* Zorgt voor horizontaal scrollen indien nodig */
-}
-
-/* ============================================
-   STICKY HEADER - Nu correct werkend
-   ============================================ */
-
-.headers-row {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 100 !important;
-    background: var(--bg-surface, #ffffff) !important;
 }

@@ -1,18 +1,18 @@
 /**
  * HeadersRow Component
- * TenderZen v2.3
+ * TenderZen v2.4
  * 
- * CHANGELOG v2.3:
- * - ✅ Structuur matcht nu exact met tender cards
- * - ✅ section-timeline wrapper toegevoegd
+ * CHANGELOG v2.4:
+ * - ✅ Chevron iconen (chevronUp/chevronDown) voor sortering
+ * - ✅ header-timeline-wrapper matcht section-timeline (flex: 1)
+ * - ✅ Aanbesteding 450px matcht section-aanbesteding
+ * - ✅ Timeline kolommen 110px matcht timeline-cell
  * 
- * CHANGELOG v2.2:
- * - Classes gefixed om te matchen met headers-row.css
- * - Sorteer indicators werken nu (↑↓ pijlen)
- * 
- * CHANGELOG v2.1:
- * - Team en Status kolommen verwijderd (nu in card)
- * - Alleen Aanbesteding + Timeline kolommen
+ * STRUCTUUR (matcht tender cards):
+ * .headers-row
+ * ├── .column-header.aanbesteding (450px)
+ * └── .header-timeline-wrapper (flex: 1)
+ *     └── 10x .column-header.timeline (110px)
  */
 
 // Referentie naar globale Icons
@@ -43,18 +43,14 @@ export class HeadersRow {
         this.element = document.createElement('div');
         this.element.className = 'headers-row';
         
-        // Structuur matcht nu met tender cards:
-        // - section-aanbesteding (420px fixed)
-        // - section-timeline (flex: 1, bevat timeline kolommen)
-        
         this.element.innerHTML = `
-            <!-- Aanbesteding kolom - zelfde als section-aanbesteding -->
+            <!-- Aanbesteding kolom - matcht section-aanbesteding (450px) -->
             <div class="column-header aanbesteding">
                 ${this.getIcon('clipboardList', 14)}
                 <span>Aanbesteding</span>
             </div>
             
-            <!-- Timeline wrapper - zelfde als section-timeline -->
+            <!-- Timeline wrapper - matcht section-timeline (flex: 1) -->
             <div class="header-timeline-wrapper">
                 <div class="column-header timeline sortable" data-column="publicatie_datum">
                     ${this.getIcon('calendar', 14)}
@@ -140,7 +136,7 @@ export class HeadersRow {
     }
 
     /**
-     * Update sort indicators
+     * Update sort indicators - gebruikt chevronUp/chevronDown iconen
      */
     updateSortIndicators(activeHeader) {
         // Remove all sort classes and icons

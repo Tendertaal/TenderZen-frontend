@@ -1,13 +1,17 @@
 """
 Tender business logic - with team assignments support
-TenderZen v2.3 - Smart Import Support
+TenderZen v2.2 - Multi-Tenancy Support + Bedrijven Refactor
+
+FIXES:
+- Filter op tenderbureau_id ipv alleen created_by
+- Collega's binnen hetzelfde bureau kunnen elkaars tenders zien
+- Super-admins kunnen alle tenders zien
 
 CHANGELOG:
 - v1.0: Initial version
 - v2.0: Multi-tenancy fix - filter op tenderbureau_id
 - v2.1: Bedrijfsvelden verwijderd uit tenders (nu via bedrijf_id JOIN)
 - v2.2: Fix Decimal serialization for JSON (geraamde_waarde, minimale_omzet, etc.)
-- v2.3: smart_import_id en ai_model_used toegevoegd aan SELECT queries
 """
 from typing import List, Optional
 from decimal import Decimal
@@ -62,7 +66,7 @@ class TenderService:
         # Log if we filtered anything
         removed = set(data.keys()) & REMOVED_TENDER_FIELDS
         if removed:
-            print(f"ℹ️ Filtered removed bedrijf fields: {removed}")
+            print(f"â„¹ï¸ Filtered removed bedrijf fields: {removed}")
         
         return filtered
     
@@ -103,7 +107,7 @@ class TenderService:
             return None
             
         except Exception as e:
-            print(f"⚠️ Error getting user tenderbureau_id: {e}")
+            print(f"âš ï¸ Error getting user tenderbureau_id: {e}")
             return None
     
     async def _is_super_admin(self, user_id: str) -> bool:
@@ -134,7 +138,7 @@ class TenderService:
                 .eq('tender_id', tender_id)\
                 .execute()
             
-            print(f"🗑️ Deleted existing team assignments for tender {tender_id}")
+            print(f"ðŸ—‘ï¸ Deleted existing team assignments for tender {tender_id}")
             
             # Insert new assignments
             if team_assignments and len(team_assignments) > 0:
@@ -156,10 +160,10 @@ class TenderService:
                         .insert(assignments_to_insert)\
                         .execute()
                     
-                    print(f"✅ Saved {len(assignments_to_insert)} team assignments for tender {tender_id}")
+                    print(f"âœ… Saved {len(assignments_to_insert)} team assignments for tender {tender_id}")
             
         except Exception as e:
-            print(f"❌ Error saving team assignments: {e}")
+            print(f"âŒ Error saving team assignments: {e}")
             # Don't raise - we don't want to fail the whole tender save
     
     async def _get_team_assignments(self, tender_id: str) -> List[dict]:
@@ -186,7 +190,7 @@ class TenderService:
             return assignments
             
         except Exception as e:
-            print(f"❌ Error getting team assignments: {e}")
+            print(f"âŒ Error getting team assignments: {e}")
             return []
     
     async def get_all_tenders(self, user_id: str, tenderbureau_id: Optional[str] = None) -> List[dict]:
@@ -198,7 +202,6 @@ class TenderService:
         - Super-admins kunnen optioneel alle bureaus zien
         
         v2.1: Nu met JOIN naar bedrijven tabel voor bedrijfsgegevens
-        v2.3: smart_import_id en ai_model_used toegevoegd
         
         Args:
             user_id: UUID van de ingelogde user
@@ -217,17 +220,17 @@ class TenderService:
                 bureau_id = await self._get_user_tenderbureau_id(user_id)
             
             if not bureau_id:
-                print(f"⚠️ No tenderbureau found for user {user_id}")
+                print(f"âš ï¸ No tenderbureau found for user {user_id}")
                 return []
             
-            # v2.3: smart_import_id en ai_model_used expliciet toegevoegd
+            # Query alle tenders van dit bureau (met tenderbureau naam EN bedrijf)
             result = self.db.table('tenders')\
-                .select('*, smart_import_id, ai_model_used, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .eq('tenderbureau_id', bureau_id)\
                 .order('created_at', desc=True)\
                 .execute()
             
-            print(f"✅ Found {len(result.data)} tenders for bureau {bureau_id}")
+            print(f"âœ… Found {len(result.data)} tenders for bureau {bureau_id}")
             
             # Add team_assignments and flatten bedrijf data
             tenders = []
@@ -243,33 +246,36 @@ class TenderService:
                 tender['contact_email'] = bedrijf.get('contact_email')
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
+                # ⭐ v2.7: Flatten tenderbureau naam
+                tenderbureau = tender.pop('tenderbureaus', None) or {}
+                tender['tenderbureau_naam'] = tenderbureau.get('naam')
+                
                 tenders.append(tender)
             
             return tenders
             
         except Exception as e:
-            print(f"❌ Error getting tenders: {e}")
+            print(f"âŒ Error getting tenders: {e}")
             raise
     
     async def get_all_tenders_all_bureaus(self, user_id: str) -> List[dict]:
         """
         Get all tenders across all bureaus (super-admin only).
-        v2.3: smart_import_id en ai_model_used toegevoegd
         """
         try:
             # Check if super admin
             is_super = await self._is_super_admin(user_id)
             if not is_super:
-                print(f"⚠️ User {user_id} is not super admin")
+                print(f"âš ï¸ User {user_id} is not super admin")
                 return []
             
-            # v2.3: smart_import_id en ai_model_used expliciet toegevoegd
+            # Query alle tenders (met tenderbureau naam EN bedrijf)
             result = self.db.table('tenders')\
-                .select('*, smart_import_id, ai_model_used, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .order('created_at', desc=True)\
                 .execute()
             
-            print(f"✅ Found {len(result.data)} tenders across all bureaus")
+            print(f"âœ… Found {len(result.data)} tenders across all bureaus")
             
             # Add team_assignments and flatten bedrijf data
             tenders = []
@@ -285,12 +291,16 @@ class TenderService:
                 tender['contact_email'] = bedrijf.get('contact_email')
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
+                # ⭐ v2.7: Flatten tenderbureau naam
+                tenderbureau = tender.pop('tenderbureaus', None) or {}
+                tender['tenderbureau_naam'] = tenderbureau.get('naam')
+                
                 tenders.append(tender)
             
             return tenders
             
         except Exception as e:
-            print(f"❌ Error getting all tenders: {e}")
+            print(f"âŒ Error getting all tenders: {e}")
             raise
     
     async def get_tender_by_id(self, tender_id: str, user_id: str) -> Optional[dict]:
@@ -300,16 +310,13 @@ class TenderService:
         MULTI-TENANCY:
         - User moet in hetzelfde tenderbureau zitten als de tender
         - Of super-admin zijn
-        
-        v2.3: smart_import_id en ai_model_used toegevoegd
         """
         try:
             user_bureau_id = await self._get_user_tenderbureau_id(user_id)
             is_super = await self._is_super_admin(user_id)
             
-            # v2.3: smart_import_id en ai_model_used expliciet toegevoegd
             query = self.db.table('tenders')\
-                .select('*, smart_import_id, ai_model_used, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .eq('id', tender_id)
             
             # Filter op bureau (tenzij super-admin)
@@ -331,12 +338,16 @@ class TenderService:
                 tender['contact_email'] = bedrijf.get('contact_email')
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
+                # ⭐ v2.7: Flatten tenderbureau naam
+                tenderbureau = tender.pop('tenderbureaus', None) or {}
+                tender['tenderbureau_naam'] = tenderbureau.get('naam')
+                
                 return tender
             
             return None
             
         except Exception as e:
-            print(f"❌ Error getting tender by ID: {e}")
+            print(f"âŒ Error getting tender by ID: {e}")
             return None
     
     async def create_tender(
@@ -356,7 +367,7 @@ class TenderService:
         try:
             tender_data = tender.model_dump(exclude_unset=True)
             
-            # ⭐ Filter removed bedrijf fields
+            # â­ Filter removed bedrijf fields
             tender_data = self._filter_removed_fields(tender_data)
             
             # Set tenderbureau_id if not provided
@@ -372,14 +383,14 @@ class TenderService:
             # Serialize dates and Decimals for JSON
             tender_data = self._serialize_data(tender_data)
             
-            print(f"📝 Creating tender for bureau {tender_data.get('tenderbureau_id')}: {tender_data.get('naam')}")
+            print(f"ðŸ“ Creating tender for bureau {tender_data.get('tenderbureau_id')}: {tender_data.get('naam')}")
             
             result = self.db.table('tenders')\
                 .insert(tender_data)\
                 .execute()
             
             created_tender = result.data[0]
-            print(f"✅ Tender created: {created_tender['id']}")
+            print(f"âœ… Tender created: {created_tender['id']}")
             
             # Save team assignments separately
             if team_assignments:
@@ -391,7 +402,7 @@ class TenderService:
             return created_tender
             
         except Exception as e:
-            print(f"❌ Error creating tender: {e}")
+            print(f"âŒ Error creating tender: {e}")
             raise
     
     async def update_tender(
@@ -412,71 +423,102 @@ class TenderService:
         """
         try:
             tender_data = tender.model_dump(exclude_unset=True)
-            
-            # ⭐ Filter removed bedrijf fields
+
+            # ⭐ Veiligheidsnet: Bij fase-wijziging zonder fase_status → eerste status ophalen
+            if 'fase' in tender_data and 'fase_status' not in tender_data:
+                nieuwe_fase = tender_data['fase']
+                eerste_status = await self._get_first_fase_status(nieuwe_fase)
+                if eerste_status:
+                    tender_data['fase_status'] = eerste_status
+                    print(f"🔄 Backend fallback: fase_status gezet naar {eerste_status}")
+                else:
+                    tender_data['fase_status'] = None
+
+            # â­ Filter removed bedrijf fields
             tender_data = self._filter_removed_fields(tender_data)
-            
+
             # Get user's bureau and check permissions
             user_bureau_id = await self._get_user_tenderbureau_id(user_id)
             is_super = await self._is_super_admin(user_id)
-            
+
             # Extract team_assignments before serializing
             team_assignments = self._extract_team_assignments(tender_data)
-            
+
             # Serialize dates and Decimals for JSON
             tender_data = self._serialize_data(tender_data)
-            
+
             # Don't allow changing tenderbureau_id (unless super-admin)
             if not is_super:
                 tender_data.pop('tenderbureau_id', None)
-            
-            print(f"📝 Updating tender {tender_id}")
-            
+
+            print(f"📋 Updating tender {tender_id}")
+
             # Build update query
             if tender_data:
                 query = self.db.table('tenders')\
                     .update(tender_data)\
                     .eq('id', tender_id)
-                
+
                 # Filter op bureau (tenzij super-admin)
                 if not is_super and user_bureau_id:
                     query = query.eq('tenderbureau_id', user_bureau_id)
-                
+
                 result = query.execute()
-                
+
                 if not result.data:
                     return None
-                
+
                 updated_tender = result.data[0]
             else:
                 # No tender data to update, just get current tender
                 query = self.db.table('tenders')\
                     .select('*')\
                     .eq('id', tender_id)
-                
+
                 if not is_super and user_bureau_id:
                     query = query.eq('tenderbureau_id', user_bureau_id)
-                
+
                 result = query.execute()
-                
+
                 if not result.data:
                     return None
-                
+
                 updated_tender = result.data[0]
-            
+
             # Save team assignments separately (if provided)
             if team_assignments is not None:
                 await self._save_team_assignments(tender_id, team_assignments)
-            
+
             # Return tender with team_assignments
             updated_tender['team_assignments'] = await self._get_team_assignments(tender_id)
-            
+
             print(f"✅ Tender updated: {updated_tender['id']}")
             return updated_tender
-            
+
         except Exception as e:
             print(f"❌ Error updating tender: {e}")
             raise
+
+    async def _get_first_fase_status(self, fase: str) -> Optional[str]:
+        """
+        Haal de eerste status op voor een fase uit de fase_statussen tabel.
+        Sorteert op volgorde (laagste eerst).
+        Returns:
+            str: De status_key van de eerste status, of None als niets gevonden
+        """
+        try:
+            result = self.db.table('fase_statussen')\
+                .select('status_key')\
+                .eq('fase', fase)\
+                .order('volgorde', desc=False)\
+                .limit(1)\
+                .execute()
+            if result.data:
+                return result.data[0]['status_key']
+            return None
+        except Exception as e:
+            print(f"⚠️ Fout bij ophalen eerste fase status: {e}")
+            return None
     
     async def delete_tender(self, tender_id: str, user_id: str) -> bool:
         """
@@ -504,20 +546,19 @@ class TenderService:
             
             success = len(result.data) > 0
             if success:
-                print(f"✅ Tender deleted: {tender_id}")
+                print(f"âœ… Tender deleted: {tender_id}")
             else:
-                print(f"⚠️ Tender not found or no permission: {tender_id}")
+                print(f"âš ï¸ Tender not found or no permission: {tender_id}")
             
             return success
             
         except Exception as e:
-            print(f"❌ Error deleting tender: {e}")
+            print(f"âŒ Error deleting tender: {e}")
             raise
     
     async def get_tenders_by_fase(self, user_id: str, fase: str, tenderbureau_id: Optional[str] = None) -> List[dict]:
         """
         Get tenders by fase for user's tenderbureau.
-        v2.3: smart_import_id en ai_model_used toegevoegd
         """
         try:
             # Bepaal het tenderbureau
@@ -526,9 +567,8 @@ class TenderService:
             if not bureau_id:
                 return []
             
-            # v2.3: smart_import_id en ai_model_used expliciet toegevoegd
             result = self.db.table('tenders')\
-                .select('*, smart_import_id, ai_model_used, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, plaats)')\
+                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, plaats)')\
                 .eq('tenderbureau_id', bureau_id)\
                 .eq('fase', fase)\
                 .order('created_at', desc=True)\
@@ -544,12 +584,16 @@ class TenderService:
                 tender['kvk_nummer'] = bedrijf.get('kvk_nummer')
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
+                # ⭐ v2.7: Flatten tenderbureau naam
+                tenderbureau = tender.pop('tenderbureaus', None) or {}
+                tender['tenderbureau_naam'] = tenderbureau.get('naam')
+                
                 tenders.append(tender)
             
             return tenders
             
         except Exception as e:
-            print(f"❌ Error getting tenders by fase: {e}")
+            print(f"âŒ Error getting tenders by fase: {e}")
             raise
     
     async def get_tender_stats(self, user_id: str, tenderbureau_id: Optional[str] = None) -> dict:
@@ -586,5 +630,5 @@ class TenderService:
             }
             
         except Exception as e:
-            print(f"❌ Error getting tender stats: {e}")
+            print(f"âŒ Error getting tender stats: {e}")
             return {'total': 0, 'by_fase': {}, 'by_status': {}}

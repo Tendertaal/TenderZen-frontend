@@ -1,6 +1,9 @@
 /**
- * TenderAanmaken Component v3.4.0
+ * TenderAanmaken Component v3.4.1
  * TenderZen Design System
+ * 
+ * CHANGELOG v3.4.1:
+ * - ⭐ FIX: URL velden type="url" → type="text" (voorkomt browser validatie blokkade)
  * 
  * CHANGELOG v3.4.0:
  * - ⭐ Tenderbureau als apart inklapbaar blok direct onder Tender Informatie
@@ -614,6 +617,7 @@ export class TenderAanmaken {
 
     /**
      * Sectie 7: Documenten & Links (INKLAPBAAR)
+     * ⭐ v3.4.1 FIX: type="url" → type="text" (voorkomt browser validatie blokkade)
      */
     renderDocumenten() {
         return `
@@ -646,7 +650,7 @@ export class TenderAanmaken {
                         
                         <div class="form-group">
                             <label for="tender-tenderned-url">Platform URL</label>
-                            <input type="url" id="tender-tenderned-url" class="form-control" 
+                            <input type="text" id="tender-tenderned-url" class="form-control" 
                                    placeholder="https://www.tenderned.nl/...">
                         </div>
                     </div>
@@ -654,13 +658,13 @@ export class TenderAanmaken {
                     <div class="form-row">
                         <div class="form-group">
                             <label for="tender-documenten-link">Tender documenten</label>
-                            <input type="url" id="tender-documenten-link" class="form-control" 
+                            <input type="text" id="tender-documenten-link" class="form-control" 
                                    placeholder="Link naar documenten">
                         </div>
                         
                         <div class="form-group">
                             <label for="tender-interne-map-link">Interne map</label>
-                            <input type="url" id="tender-interne-map-link" class="form-control" 
+                            <input type="text" id="tender-interne-map-link" class="form-control" 
                                    placeholder="SharePoint / Google Drive">
                         </div>
                     </div>
@@ -2550,6 +2554,12 @@ export class TenderAanmaken {
         const setValue = (id, value) => {
             const el = this.modal.querySelector(`#${id}`);
             if (el && value !== null && value !== undefined) {
+                // ⭐ v3.4.1 FIX: Strip tijd-component voor date inputs
+                // Database timestamps ("2026-01-30T00:00:00Z") matchen niet
+                // met het vereiste "yyyy-MM-dd" formaat van <input type="date">
+                if (el.type === 'date' && typeof value === 'string' && value.includes('T')) {
+                    value = value.split('T')[0];
+                }
                 el.value = value;
             }
         };

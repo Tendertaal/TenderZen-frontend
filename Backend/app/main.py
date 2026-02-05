@@ -4,8 +4,9 @@ FastAPI Application Entry Point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.v1 import tenders, users, ai_documents, smart_import  # ← smart_import toegevoegd
+from app.api.v1 import tenders, users, ai_documents, smart_import
 from app.api.v1.password_history import router as password_router
+from app.api.v1.planning import router as planning_router  # Planning & Checklist
 
 # Create FastAPI app
 app = FastAPI(
@@ -17,7 +18,7 @@ app = FastAPI(
     redirect_slashes=False  # ← FIX: Voorkom CORS errors bij redirects
 )
 
-# CORS middleware
+# CORS middleware - HERSTELD NA DEBUG
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -31,7 +32,8 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(tenders.router, prefix="/api/v1")
 app.include_router(password_router, prefix="/api/v1")
 app.include_router(ai_documents.router, prefix="/api/v1")
-app.include_router(smart_import.router, prefix="/api/v1")  # ← Smart Import
+app.include_router(smart_import.router, prefix="/api/v1")
+app.include_router(planning_router, prefix="/api/v1")  # Planning & Checklist
 
 
 @app.get("/")

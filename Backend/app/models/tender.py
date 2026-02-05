@@ -6,6 +6,7 @@ v2.1: bedrijf_id toegevoegd voor bedrijf koppeling
 v2.2: Status pattern verwijderd - nu dynamisch via fase_statussen tabel
 v2.3: Smart Import koppeling
 v2.4: date → datetime voor timestamp velden (tijd ondersteuning)
+v2.7: tenderbureau_naam in TenderResponse voor kaart weergave
 """
 from datetime import datetime
 from typing import Optional, List, Set
@@ -310,6 +311,8 @@ class TenderResponse(TenderBase):
     # ⭐ v2.3: Smart Import koppeling
     smart_import_id: Optional[str] = None
     ai_model_used: Optional[str] = None
+    # ⭐ v2.7: Tenderbureau naam (geflatened uit join)
+    tenderbureau_naam: Optional[str] = None
     
     class Config:
         from_attributes = True

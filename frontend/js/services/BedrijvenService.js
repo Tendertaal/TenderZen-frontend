@@ -35,15 +35,15 @@ class BedrijvenService {
         try {
             const tenderbureauId = options.tenderbureauId || this._getActiveBureauIdSync();
             const loadAll = options.loadAll === true;
-            
+
             console.log('🔍 Loading bedrijven...', { tenderbureauId, loadAll });
-            
+
             let query = supabase
                 .from('bedrijven')
-                .select('*')
+                .select('*, tenderbureau:tenderbureaus(id, naam)')
                 .eq('is_actief', true)
                 .order('bedrijfsnaam');
-            
+
             // Filter op tenderbureau tenzij loadAll = true
             if (!loadAll && tenderbureauId) {
                 query = query.eq('tenderbureau_id', tenderbureauId);
@@ -55,7 +55,7 @@ class BedrijvenService {
 
             this.bedrijven = data || [];
             this.loaded = true;
-            
+
             console.log(`✅ ${this.bedrijven.length} bedrijven geladen${tenderbureauId ? ` voor bureau ${tenderbureauId}` : ' (alle bureaus)'}`);
             return this.bedrijven;
 
@@ -64,48 +64,24 @@ class BedrijvenService {
             throw error;
         }
     }
-    
+
     /**
-     * Get current tenderbureau ID from BureauSwitcher (synchronous)
-     * ⭐ v3.1: Fixed localStorage key mismatch en BureauAccessService integratie
+     * Get current tenderbureau ID (synchronous)
+     * ⭐ v3.2: Simplified - BureauAccessService as single source of truth
      */
     _getActiveBureauIdSync() {
-        // 1. Try window.currentTenderbureauId (set by BureauSwitcher)
-        if (window.currentTenderbureauId) {
-            return window.currentTenderbureauId;
-        }
-        
-        // 2. ⭐ Try BureauAccessService (most reliable)
-        if (window.bureauAccessService) {
-            const currentBureau = window.bureauAccessService.getCurrentBureau();
-            if (currentBureau?.bureau_id) {
-                console.log('📍 Bureau from BureauAccessService:', currentBureau.bureau_naam);
-                return currentBureau.bureau_id;
+        try {
+            // Import may not be available, try window fallback
+            const bas = window.bureauAccessService
+                || (typeof bureauAccessService !== 'undefined' ? bureauAccessService : null);
+            if (bas) {
+                const currentBureau = bas.getCurrentBureau();
+                // null = "Alle bureau's" (super-admin) → geen filter
+                return currentBureau?.bureau_id || null;
             }
+        } catch (e) {
+            console.warn('⚠️ BureauAccessService niet beschikbaar');
         }
-        
-        // 3. ⭐ FIXED: Use correct localStorage key
-        const stored = localStorage.getItem('tenderzen_current_bureau');
-        if (stored) {
-            console.log('📍 Bureau from localStorage');
-            return stored;
-        }
-        
-        // 4. Fallback: old localStorage key for backwards compatibility
-        const oldStored = localStorage.getItem('activeBureauId');
-        if (oldStored) {
-            console.log('📍 Bureau from old localStorage key');
-            return oldStored;
-        }
-        
-        // 5. Try to get from BureauSwitcher component
-        const bureauSwitcher = window.bureauSwitcher;
-        if (bureauSwitcher?.currentBureau?.bureau_id) {
-            console.log('📍 Bureau from BureauSwitcher component');
-            return bureauSwitcher.currentBureau.bureau_id;
-        }
-        
-        console.warn('⚠️ Kon tenderbureau_id niet bepalen');
         return null;
     }
 
@@ -118,8 +94,8 @@ class BedrijvenService {
         }
 
         const lowerQuery = query.toLowerCase();
-        
-        return this.bedrijven.filter(b => 
+
+        return this.bedrijven.filter(b =>
             b.bedrijfsnaam?.toLowerCase().includes(lowerQuery) ||
             b.kvk_nummer?.includes(query) ||
             b.plaats?.toLowerCase().includes(lowerQuery) ||
@@ -134,7 +110,7 @@ class BedrijvenService {
         try {
             const { data, error } = await supabase
                 .from('bedrijven')
-                .select('*')
+                .select('*, tenderbureau:tenderbureaus(id, naam)')
                 .eq('id', id)
                 .single();
 
@@ -166,11 +142,11 @@ class BedrijvenService {
      */
     checkDuplicaatKvK(kvkNummer, excludeId = null) {
         if (!kvkNummer || kvkNummer.trim() === '') return null;
-        
+
         const cleanKvK = kvkNummer.trim();
-        
-        return this.bedrijven.find(b => 
-            b.kvk_nummer === cleanKvK && 
+
+        return this.bedrijven.find(b =>
+            b.kvk_nummer === cleanKvK &&
             b.id !== excludeId
         ) || null;
     }
@@ -183,11 +159,11 @@ class BedrijvenService {
      */
     checkDuplicaatBTW(btwNummer, excludeId = null) {
         if (!btwNummer || btwNummer.trim() === '') return null;
-        
+
         const cleanBTW = btwNummer.trim().toUpperCase();
-        
-        return this.bedrijven.find(b => 
-            b.btw_nummer?.toUpperCase() === cleanBTW && 
+
+        return this.bedrijven.find(b =>
+            b.btw_nummer?.toUpperCase() === cleanBTW &&
             b.id !== excludeId
         ) || null;
     }
@@ -200,11 +176,11 @@ class BedrijvenService {
      */
     checkDuplicaatNaamExact(naam, excludeId = null) {
         if (!naam || naam.trim() === '') return null;
-        
+
         const cleanNaam = this._normalizeBedrijfsnaam(naam);
-        
-        return this.bedrijven.find(b => 
-            this._normalizeBedrijfsnaam(b.bedrijfsnaam) === cleanNaam && 
+
+        return this.bedrijven.find(b =>
+            this._normalizeBedrijfsnaam(b.bedrijfsnaam) === cleanNaam &&
             b.id !== excludeId
         ) || null;
     }
@@ -218,16 +194,16 @@ class BedrijvenService {
      */
     findSimilarBedrijven(naam, excludeId = null, threshold = 0.7) {
         if (!naam || naam.trim().length < 3) return [];
-        
+
         const cleanNaam = this._normalizeBedrijfsnaam(naam);
         const results = [];
-        
+
         for (const bedrijf of this.bedrijven) {
             if (bedrijf.id === excludeId) continue;
-            
+
             const bedrijfNaam = this._normalizeBedrijfsnaam(bedrijf.bedrijfsnaam);
             const score = this._calculateSimilarity(cleanNaam, bedrijfNaam);
-            
+
             if (score >= threshold) {
                 results.push({
                     bedrijf,
@@ -236,7 +212,7 @@ class BedrijvenService {
                 });
             }
         }
-        
+
         // Sorteer op score (hoogste eerst)
         return results.sort((a, b) => b.score - a.score).slice(0, 5);
     }
@@ -340,11 +316,10 @@ class BedrijvenService {
 
         switch (field) {
             case 'kvk_nummer':
-                // Format validatie
+                // Format validatie (alleen waarschuwing, niet blokkerend)
                 if (!this.validateKvK(value)) {
-                    result.isValid = false;
-                    result.error = 'KvK nummer moet 8 cijfers bevatten';
-                    return result;
+                    result.warning = 'KvK nummer is meestal 8 cijfers';
+                    // geen return, want mag niet blokkerend zijn
                 }
                 // Duplicaat check
                 const kvkDup = this.checkDuplicaatKvK(value, excludeId);
@@ -402,7 +377,7 @@ class BedrijvenService {
      */
     _normalizeBedrijfsnaam(naam) {
         if (!naam) return '';
-        
+
         return naam
             .toLowerCase()
             .trim()
@@ -455,7 +430,7 @@ class BedrijvenService {
 
         const distance = matrix[len1][len2];
         const maxLen = Math.max(len1, len2);
-        
+
         return 1 - (distance / maxLen);
     }
 
@@ -522,12 +497,19 @@ class BedrijvenService {
                 created_by: user.id
             };
 
+            // Sanitize: lege strings → null (voorkomt unique constraint conflicts)
+            for (const key of Object.keys(dataWithTenderbureau)) {
+                if (dataWithTenderbureau[key] === '') {
+                    dataWithTenderbureau[key] = null;
+                }
+            }
+
             console.log('📝 Creating bedrijf for tenderbureau:', tenderbureauId);
 
             const { data, error } = await supabase
                 .from('bedrijven')
                 .insert([dataWithTenderbureau])
-                .select()
+                .select('*, tenderbureau:tenderbureaus(id, naam)')
                 .single();
 
             if (error) {
@@ -546,7 +528,7 @@ class BedrijvenService {
 
             // Add to cache
             this.bedrijven.push(data);
-            this.bedrijven.sort((a, b) => 
+            this.bedrijven.sort((a, b) =>
                 a.bedrijfsnaam.localeCompare(b.bedrijfsnaam)
             );
 
@@ -578,12 +560,13 @@ class BedrijvenService {
             delete cleanUpdates.tenderbureau_id;
             delete cleanUpdates.created_by;
             delete cleanUpdates.created_at;
+            delete cleanUpdates.tenderbureau;  // v3.2: Verwijder join-object voor update
 
             const { data, error } = await supabase
                 .from('bedrijven')
                 .update(cleanUpdates)
                 .eq('id', id)
-                .select()
+                .select('*, tenderbureau:tenderbureaus(id, naam)')
                 .single();
 
             if (error) throw error;

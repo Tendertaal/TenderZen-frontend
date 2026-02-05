@@ -1,0 +1,399 @@
+/**
+ * KanbanView Styling
+ * TenderZen v1.2 â€” Gelijke kolombreedtes + drag & drop feedback
+ *
+ * CHANGELOG:
+ * - v1.2: min-width: 0 op kolommen voor gelijke breedte, overflow fix
+ * - v1.1: Drag-over highlight, dragging state, transitie feedback
+ * - v1.0: InitiÃ«le styling
+ */
+
+/* ============================================
+   KANBAN BOARD LAYOUT
+   ============================================ */
+
+.kanban-board {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    padding: 20px 24px;
+    min-height: calc(100vh - 160px);
+    align-items: start;
+}
+
+/* ============================================
+   KOLOM
+   ============================================ */
+
+.kanban-kolom {
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 180px);
+    min-width: 0;        /* BELANGRIJK: voorkomt dat content de kolom breder maakt dan 1fr */
+    overflow: hidden;     /* Houdt alles binnen de kolom grenzen */
+}
+
+/* Header */
+.kanban-kolom-header {
+    padding: 16px 16px 12px;
+    background: #ffffff;
+    border-bottom: 2px solid var(--fase-kleur, #94a3b8);
+    border-radius: 12px 12px 0 0;
+}
+
+.kanban-kolom-titel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kanban-kolom-icon {
+    font-size: 16px;
+}
+
+.kanban-kolom-label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.kanban-kolom-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--fase-kleur, #94a3b8);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: auto;
+}
+
+.kanban-kolom-status {
+    display: block;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 4px;
+}
+
+/* Body (scrollable) */
+.kanban-kolom-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 100px;
+    transition: background 0.15s ease;
+}
+
+/* Drop zone indicator */
+.kanban-kolom-body.drag-over {
+    background: #ede9fe;
+    border-radius: 0 0 12px 12px;
+    outline: 2px dashed #8b5cf6;
+    outline-offset: -4px;
+}
+
+/* Empty state */
+.kanban-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px 16px;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.kanban-empty-icon {
+    font-size: 24px;
+    opacity: 0.5;
+}
+
+/* Add button */
+.kanban-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    margin: 8px 12px 12px;
+    background: transparent;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.kanban-add-btn:hover {
+    background: #ffffff;
+    border-color: #7c3aed;
+    color: #7c3aed;
+}
+
+/* ============================================
+   KANBAN KAART
+   ============================================ */
+
+.kanban-kaart {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-left: 3px solid var(--kaart-accent, #94a3b8);
+    cursor: grab;
+    transition: all 0.15s ease;
+    user-select: none;
+    min-width: 0;        /* Voorkomt overflow van kaart content */
+}
+
+.kanban-kaart:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+    border-color: #cbd5e1;
+}
+
+.kanban-kaart:active {
+    cursor: grabbing;
+}
+
+/* Dragging state */
+.kanban-kaart.dragging {
+    opacity: 0.4;
+    transform: rotate(2deg);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Top row (type + waarde) */
+.kanban-kaart-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.kanban-type-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: color-mix(in srgb, var(--tag-kleur, #94a3b8) 12%, transparent);
+    color: var(--tag-kleur, #64748b);
+}
+
+.kanban-waarde {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+}
+
+/* Status badge (gewonnen/verloren) */
+.kanban-status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.kanban-status-badge.gewonnen {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.kanban-status-badge.verloren {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+/* Naam */
+.kanban-kaart-naam {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 4px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Opdrachtgever */
+.kanban-kaart-opdrachtgever {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 0 0 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================
+   DEADLINE
+   ============================================ */
+
+.kanban-deadline {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 10px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border-radius: 6px;
+}
+
+.kanban-deadline.binnenkort {
+    background: #fefce8;
+    color: #a16207;
+}
+
+.kanban-deadline.urgent {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.kanban-deadline.kritiek {
+    background: #fef2f2;
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+.kanban-deadline.verlopen {
+    background: #fef2f2;
+    color: #991b1b;
+    font-weight: 700;
+}
+
+.kanban-urgentie-label {
+    margin-left: auto;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+/* ============================================
+   VOORTGANG
+   ============================================ */
+
+.kanban-voortgang {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.kanban-voortgang-bar {
+    flex: 1;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.kanban-voortgang-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.kanban-voortgang-label {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ============================================
+   TEAM AVATARS
+   ============================================ */
+
+.kanban-team {
+    display: flex;
+    gap: 0;
+    margin-top: 4px;
+}
+
+.kanban-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    margin-left: -6px;
+}
+
+.kanban-avatar:first-child {
+    margin-left: 0;
+}
+
+.kanban-avatar.overflow {
+    background: #e2e8f0;
+    color: #64748b;
+    font-size: 9px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1200px) {
+    .kanban-board {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .kanban-board {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+
+    .kanban-kolom {
+        max-height: none;
+    }
+}
+
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
+
+.kanban-kolom-body::-webkit-scrollbar {
+    width: 4px;
+}
+
+.kanban-kolom-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.kanban-kolom-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+}
+
+.kanban-kolom-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}

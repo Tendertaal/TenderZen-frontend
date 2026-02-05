@@ -1,0 +1,1080 @@
+/* ============================================
+ * PlanningModal.css — Styling voor Planning, Tenderplanning & Checklist Modal
+ * TenderZen v2.9
+ *
+ * v2.9: Tenderplanning tab styling toegevoegd (blauw thema)
+ *
+ * INSTALLATIE:
+ * Kopieer naar Frontend/css/PlanningModal.css
+ * Voeg toe in index.html: <link rel="stylesheet" href="css/PlanningModal.css">
+ * ============================================ */
+
+/* ============================================
+   ⭐ OUTER WRAPPER — FIXED OVERLAY
+   Dit was ontbrekend in v2.8, waardoor de modal
+   onzichtbaar werd gerenderd.
+   ============================================ */
+.planning-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: none;              /* JS zet dit op 'flex' via open() */
+    align-items: center;
+    justify-content: center;
+}
+
+.planning-modal .modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.planning-modal .modal-container {
+    position: relative;
+    z-index: 1;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+    overflow: hidden;
+    animation: planning-modal-in 0.2s ease-out;
+}
+
+@keyframes planning-modal-in {
+    from { opacity: 0; transform: scale(0.97) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.planning-modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.planning-modal .modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.planning-modal .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.planning-modal .modal-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+
+.planning-modal .modal-close:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.planning-modal .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-shrink: 0;
+    border-radius: 0 0 16px 16px;
+}
+
+/* ============================================
+   MODAL CONTAINER (breder dan standaard)
+   ============================================ */
+.planning-modal-container {
+    max-width: 960px !important;
+    width: 100%;
+}
+
+/* ============================================
+   HEADER OVERRIDES
+   ============================================ */
+.planning-modal-icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(139, 92, 246, 0.1) !important;
+    border-radius: 11px;
+    flex-shrink: 0;
+}
+
+.planning-modal-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 2px 0 0 0;
+    font-weight: 400;
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+.planning-modal-tabs {
+    display: flex;
+    border-bottom: 2px solid #e2e8f0;
+    padding: 0 28px;
+    background: #f8fafc;
+    flex-shrink: 0;
+}
+
+.planning-tab {
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+    background: none;
+    font-family: inherit;
+}
+
+.planning-tab:hover {
+    color: #64748b;
+}
+
+.planning-tab.active {
+    color: #7c3aed;
+    border-bottom-color: #7c3aed;
+}
+
+.planning-tab svg {
+    width: 15px;
+    height: 15px;
+}
+
+/* Tab badges */
+.planning-tab-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 8px;
+}
+
+.planning-tab-badge--purple {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.planning-tab-badge--green {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+/* ============================================
+   BODY (scrollable)
+   ============================================ */
+.planning-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 300px;
+}
+
+/* Loading state */
+.planning-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 20px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.planning-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #7c3aed;
+    border-radius: 50%;
+    animation: planning-spin 0.7s linear infinite;
+}
+
+@keyframes planning-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.planning-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px;
+    text-align: center;
+}
+
+.planning-empty-icon {
+    margin-bottom: 16px;
+}
+
+.planning-empty h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+}
+
+.planning-empty p {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* ============================================
+   TOOLBAR (sticky bovenaan content)
+   ============================================ */
+.planning-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 1px solid #f1f5f9;
+    background: white;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.planning-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.planning-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Add button - paars */
+.btn-planning-add {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: none;
+    background: #7c3aed;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+
+.btn-planning-add:hover {
+    background: #6d28d9;
+}
+
+.btn-planning-add svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Add button - groen variant */
+.btn-planning-add--green {
+    background: #16a34a;
+}
+
+.btn-planning-add--green:hover {
+    background: #15803d;
+}
+
+/* Progress inline */
+.planning-progress-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.planning-progress-track {
+    width: 100px;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.planning-progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #8b5cf6, #a78bfa);
+    transition: width 0.3s ease;
+}
+
+.planning-progress-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+/* ============================================
+   PLANNING TASK LIST
+   ============================================ */
+.planning-task-list {
+    padding: 0 28px 20px;
+}
+
+/* Category header */
+.planning-category {
+    margin-top: 8px;
+}
+
+.planning-category:first-child {
+    margin-top: 0;
+}
+
+.planning-cat-header {
+    padding: 14px 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.planning-cat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.planning-cat-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #64748b;
+}
+
+.planning-cat-count {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: auto;
+}
+
+/* Task row */
+.planning-task-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 160px 110px 72px 32px;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.1s;
+    border-radius: 6px;
+    margin: 0 -4px;
+}
+
+.planning-task-row:hover {
+    background: #f8fafc;
+}
+
+.planning-task-row:last-child {
+    border-bottom: none;
+}
+
+.planning-task-row--active {
+    background: rgba(249, 115, 22, 0.04);
+}
+
+.planning-task-row--active:hover {
+    background: rgba(249, 115, 22, 0.07);
+}
+
+.planning-task-row--milestone {
+    background: rgba(239, 68, 68, 0.03);
+}
+
+/* Checkbox */
+.planning-task-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: white;
+    margin-left: 6px;
+    flex-shrink: 0;
+}
+
+.planning-task-check:hover {
+    border-color: #a78bfa;
+}
+
+.planning-task-check.done {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: white;
+}
+
+.planning-task-check.active {
+    border-color: #8b5cf6;
+    background: #f5f3ff;
+}
+
+.planning-task-check svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Task name */
+.planning-task-name {
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.planning-task-name.done {
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+.planning-task-name.active {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Assignees */
+.planning-task-assignees {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.planning-assignee-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px 2px 2px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    font-size: 11px;
+    color: #475569;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.planning-assignee-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+}
+
+.planning-assignee-more {
+    font-size: 10px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+/* Task date */
+.planning-task-date {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+}
+
+.planning-task-date.done {
+    color: #94a3b8;
+}
+
+.planning-task-date.highlight {
+    background: #fff7ed;
+    color: #ea580c;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-weight: 600;
+}
+
+.planning-task-date.overdue {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Status pill */
+.planning-task-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.status--done {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.status--active {
+    background: #ffedd5;
+    color: #ea580c;
+}
+
+.status--todo {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* Task menu button */
+.planning-task-menu {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-family: inherit;
+    flex-shrink: 0;
+}
+
+.planning-task-menu:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.planning-task-menu svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Add task row */
+.planning-add-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 8px;
+    margin-top: 8px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.planning-add-row:hover {
+    border-color: #c4b5fd;
+    color: #7c3aed;
+    background: #f5f3ff;
+}
+
+.planning-add-row svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ============================================
+   CHECKLIST STYLING
+   ============================================ */
+
+/* Progress ring in toolbar */
+.checklist-progress-ring {
+    flex-shrink: 0;
+}
+
+.checklist-progress-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.checklist-progress-number {
+    font-size: 14px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.checklist-progress-sub {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* Checklist items list */
+.checklist-items-list {
+    padding: 0 28px 20px;
+}
+
+/* Category */
+.checklist-category {
+    margin-top: 16px;
+}
+
+.checklist-category:first-child {
+    margin-top: 8px;
+}
+
+.checklist-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0 6px;
+}
+
+.checklist-cat-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.checklist-cat-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.checklist-cat-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.checklist-cat-progress {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: auto;
+}
+
+/* Checklist item row */
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: background 0.1s;
+    cursor: default;
+}
+
+.checklist-item:hover {
+    background: #f8fafc;
+}
+
+/* Checkbox */
+.checklist-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid #cbd5e1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    cursor: pointer;
+    background: white;
+}
+
+.checklist-box:hover {
+    border-color: #4ade80;
+}
+
+.checklist-box.checked {
+    background: #22c55e;
+    border-color: #22c55e;
+    color: white;
+}
+
+.checklist-box svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Checklist text */
+.checklist-text {
+    flex: 1;
+    font-size: 13px;
+    color: #334155;
+}
+
+.checklist-text.checked {
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+/* Tags */
+.checklist-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.checklist-tag--required {
+    background: #fef2f2;
+    color: #ef4444;
+}
+
+.checklist-tag--optional {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* Note */
+.checklist-note {
+    font-size: 11px;
+    color: #94a3b8;
+    font-style: italic;
+    flex-shrink: 0;
+}
+
+/* Add item button in section */
+.checklist-add-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    border: 2px dashed #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 500;
+    background: none;
+    width: 100%;
+    font-family: inherit;
+}
+
+.checklist-add-item:hover {
+    border-color: #4ade80;
+    color: #16a34a;
+    background: #f0fdf4;
+}
+
+.checklist-add-item svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ============================================
+   TENDERPLANNING STYLING
+   ============================================ */
+.tp-list {
+    padding: 0 28px 20px;
+}
+
+/* Milestone item row */
+.tp-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.1s;
+    border-radius: 6px;
+    margin: 0 -4px;
+}
+
+.tp-item:hover {
+    background: #f8fafc;
+}
+
+.tp-item:last-child {
+    border-bottom: none;
+}
+
+.tp-item--passed {
+    opacity: 0.5;
+}
+
+.tp-item--next {
+    background: rgba(37, 99, 235, 0.04);
+}
+
+.tp-item--next:hover {
+    background: rgba(37, 99, 235, 0.07);
+}
+
+.tp-item--deadline {
+    background: rgba(239, 68, 68, 0.03);
+}
+
+/* Icon box */
+.tp-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tp-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.tp-icon--blue {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.tp-icon--orange {
+    background: #ffedd5;
+    color: #ea580c;
+}
+
+.tp-icon--red {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.tp-icon--green {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.tp-icon--gray {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* Content */
+.tp-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.tp-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.tp-item--passed .tp-label {
+    color: #94a3b8;
+}
+
+.tp-label--deadline {
+    color: #ef4444 !important;
+    font-weight: 700;
+}
+
+.tp-sublabel {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 1px;
+}
+
+/* Date */
+.tp-date {
+    text-align: right;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tp-date-main {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.tp-item--passed .tp-date-main {
+    color: #94a3b8;
+}
+
+.tp-date--deadline {
+    color: #ef4444 !important;
+}
+
+.tp-weekday {
+    font-weight: 400;
+    color: #94a3b8;
+}
+
+.tp-date-time {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* Status badges */
+.tp-status {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+    text-align: center;
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.tp-status--passed {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.tp-status--next {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.tp-status--upcoming {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.tp-status--deadline {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* Eerst volgende marker */
+.tp-next-marker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    margin: 2px -4px;
+}
+
+.tp-next-marker-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #2563eb;
+    white-space: nowrap;
+}
+
+.tp-next-marker-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, #60a5fa, transparent);
+}
+
+/* ============================================
+   FOOTER OVERRIDES
+   ============================================ */
+.planning-footer-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.planning-footer-info svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 768px) {
+    .planning-modal-container {
+        max-width: 100% !important;
+        margin: 8px;
+        max-height: calc(100vh - 16px);
+    }
+
+    .planning-task-row {
+        grid-template-columns: 28px 1fr 72px 32px;
+        gap: 6px;
+    }
+
+    .planning-task-assignees,
+    .planning-task-date {
+        display: none;
+    }
+
+    .planning-toolbar {
+        padding: 12px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .planning-task-list,
+    .checklist-items-list,
+    .tp-list {
+        padding: 0 16px 16px;
+    }
+
+    .tp-item {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .tp-sublabel {
+        display: none;
+    }
+
+    .tp-status {
+        min-width: 60px;
+        font-size: 9px;
+    }
+
+    .planning-modal-tabs {
+        padding: 0 16px;
+    }
+}

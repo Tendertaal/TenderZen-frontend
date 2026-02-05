@@ -1,6 +1,11 @@
 /**
  * Header Component
- * TenderZen v2.9 - Smart Import Only (geen + Tender knop meer)
+ * TenderZen v3.0 - Quick Nav Icons in Header
+ * 
+ * CHANGELOG v3.0:
+ * - NIEUW: Quick-nav iconen (Tenders, Bedrijven, Team) direct zichtbaar in header
+ * - NIEUW: Actieve context wordt gehighlight in nav iconen
+ * - NIEUW: Geen extra klik via Menu meer nodig voor primaire navigatie
  * 
  * CHANGELOG v2.9:
  * - VERWIJDERD: "+ Tender" knop (handmatig aanmaken)
@@ -83,6 +88,95 @@ export class Header {
         this.bureauSwitcher = null;
         this.currentBureau = null;
         this.onBureauChange = null;
+
+        // ⭐ v3.0: Inject nav icon styles
+        this._injectNavStyles();
+    }
+
+    /**
+     * ⭐ v3.0: Inject CSS for header nav icons
+     */
+    _injectNavStyles() {
+        if (document.getElementById('header-nav-styles')) return;
+
+        const style = document.createElement('style');
+        style.id = 'header-nav-styles';
+        style.textContent = `
+            /* ============================================
+               HEADER QUICK NAV ICONS - v3.0
+               ============================================ */
+            .header-nav {
+                display: flex;
+                align-items: center;
+                gap: 2px;
+                margin-right: 8px;
+                padding: 3px;
+                background: #f1f5f9;
+                border-radius: 10px;
+            }
+
+            .header-nav-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                padding: 7px 12px;
+                border: none;
+                background: transparent;
+                border-radius: 8px;
+                color: #64748b;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                font-size: 13px;
+                font-weight: 500;
+                white-space: nowrap;
+            }
+
+            .header-nav-btn:hover {
+                background: #e2e8f0;
+                color: #334155;
+            }
+
+            .header-nav-btn.active {
+                background: white;
+                color: #8b5cf6;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            }
+
+            .header-nav-btn .nav-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 18px;
+                height: 18px;
+            }
+
+            .header-nav-btn .nav-label {
+                display: inline;
+            }
+
+            /* Responsive: verberg labels op smalle schermen */
+            @media (max-width: 900px) {
+                .header-nav-btn .nav-label {
+                    display: none;
+                }
+                .header-nav-btn {
+                    padding: 7px 10px;
+                }
+            }
+
+            @media (max-width: 600px) {
+                .header-nav {
+                    gap: 1px;
+                    margin-right: 4px;
+                    padding: 2px;
+                }
+                .header-nav-btn {
+                    padding: 6px 8px;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     }
 
     /**
@@ -99,7 +193,24 @@ export class Header {
             this.searchResultsCount = null;
         }
 
+        // ⭐ v3.0: Update nav icons active state
+        this.updateNavIcons(context);
+
         this.updateSubHeader();
+    }
+
+    /**
+     * ⭐ v3.0: Update active state of nav icons
+     */
+    updateNavIcons(context) {
+        const navBtns = document.querySelectorAll('.header-nav-btn');
+        navBtns.forEach(btn => {
+            if (btn.dataset.nav === context) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
     }
 
     /**
@@ -514,7 +625,23 @@ export class Header {
                 </div>
 
                 <div class="header-right">
-                    <!-- Menu -->
+                    <!-- ⭐ v3.0: Quick Nav Icons -->
+                    <div class="header-nav" id="header-nav">
+                        <button class="header-nav-btn active" data-nav="tenders" title="Tenders">
+                            <span class="nav-icon">${Icons.clipboardList ? Icons.clipboardList({ size: 18 }) : '📋'}</span>
+                            <span class="nav-label">Tenders</span>
+                        </button>
+                        <button class="header-nav-btn" data-nav="bedrijven" title="Bedrijven">
+                            <span class="nav-icon">${Icons.building ? Icons.building({ size: 18 }) : '🏢'}</span>
+                            <span class="nav-label">Bedrijven</span>
+                        </button>
+                        <button class="header-nav-btn" data-nav="team" title="Team">
+                            <span class="nav-icon">${Icons.users ? Icons.users({ size: 18 }) : '👥'}</span>
+                            <span class="nav-label">Team</span>
+                        </button>
+                    </div>
+
+                    <!-- Menu (overige opties) -->
                     <div class="menu-dropdown">
                         <button class="menu-btn" id="menu-btn">
                             <span class="menu-icon">${Icons.menu ? Icons.menu({ size: 18 }) : ''}</span>
@@ -905,9 +1032,13 @@ export class Header {
                         
                         <select id="context-filter-1" class="filter-select-compact">
                             <option value="">Alle rollen</option>
-                            ${(filterOptions.roles || ['manager', 'coordinator', 'schrijver', 'designer', 'calculator', 'reviewer', 'sales', 'klant_contact']).map(r => `
-                                <option value="${r}" ${filters.rol === r ? 'selected' : ''}>${r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ')}</option>
-                            `).join('')}
+                            ${(filterOptions.roles || ['manager', 'coordinator', 'schrijver', 'designer', 'calculator', 'reviewer', 'sales', 'klant_contact']).map(r => {
+                                const key = typeof r === 'string' ? r : (r.key || r.value || r.naam || String(r));
+                                const label = typeof r === 'string' 
+                                    ? r.charAt(0).toUpperCase() + r.slice(1).replace('_', ' ') 
+                                    : (r.label || r.naam || key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' '));
+                                return `<option value="${key}" ${filters.role === key || filters.rol === key ? 'selected' : ''}>${label}</option>`;
+                            }).join('')}
                         </select>
                         
                         <select id="context-filter-2" class="filter-select-compact">
@@ -934,7 +1065,6 @@ export class Header {
 
     /**
      * Attach event listeners for sub-header
-     * ⭐ v2.9: Verwijderd: create-tender-btn listener (niet meer nodig)
      */
     attachSubHeaderListeners() {
         const subHeader = document.getElementById('sub-header-container');
@@ -975,9 +1105,6 @@ export class Header {
         // Tender search input
         const tenderSearchInput = subHeader.querySelector('#tender-search-input');
         if (tenderSearchInput) {
-            // ⭐ v2.8: GEEN live filtering meer - alleen zoeken bij Enter
-            // Dit voorkomt dat de view wisselt tijdens het typen
-
             // Enter key creates chip and triggers search
             tenderSearchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -1083,6 +1210,20 @@ export class Header {
     attachEventListeners(container) {
         const self = this;
 
+        // ⭐ v3.0: Quick Nav Icons
+        container.querySelectorAll('.header-nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const nav = btn.dataset.nav;
+
+                // Update active state
+                container.querySelectorAll('.header-nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Trigger menu action (same as menu items)
+                if (self.onMenuAction) self.onMenuAction(nav);
+            });
+        });
+
         // Menu toggle
         const menuBtn = container.querySelector('#menu-btn');
         const menuContent = container.querySelector('#menu-content');
@@ -1141,6 +1282,9 @@ export class Header {
                 self.menuOpen = false;
                 menuContent?.classList.remove('show');
                 menuBtn?.classList.remove('active');
+
+                // ⭐ v3.0: Sync nav icons when navigating via menu
+                self.updateNavIcons(action);
 
                 if (self.onMenuAction) self.onMenuAction(action);
             });
