@@ -2,9 +2,12 @@
  * FaseTransitieRules — Business Rules voor Kanban Fase Transities
  * TenderZen v1.1
  *
- * CHANGELOG:
- * - v1.1: fase_status reset regel gedocumenteerd + helper functie
- * - v1.0: Initiële versie
+ * DOEL-PAD:  Frontend/js/utils/FaseTransitieRules.js
+ *
+ * CHANGELOG v1.1:
+ * - Fase "evaluatie" toegevoegd (label: Afronden)
+ * - Business rules voor evaluatie transities
+ * - 5 fases: acquisitie → inschrijvingen → ingediend → evaluatie → archief
  *
  * Drie niveaus:
  *   1. VRIJ     — Logische voorwaartse stap, geen melding
@@ -12,24 +15,19 @@
  *   3. WAARSCHUW — Er mist iets, maar actie is tóch mogelijk
  *
  * Nooit blokkeren — altijd doorlaten na bevestiging.
- *
- * FASE_STATUS REGEL:
- *   Bij elke fase-wijziging wordt de fase_status automatisch gereset
- *   naar de eerste status van de nieuwe fase (via FaseService.getDefaultStatus).
- *   Dit voorkomt foreign key violations op de (fase, fase_status) constraint.
- *   De implementatie zit in App.js onFaseChange callback.
  */
 
 // ============================================
 // FASE DEFINITIES
 // ============================================
 
-const FASE_ORDER = ['acquisitie', 'inschrijvingen', 'ingediend', 'archief'];
+const FASE_ORDER = ['acquisitie', 'inschrijvingen', 'ingediend', 'evaluatie', 'archief'];
 
 const FASE_LABELS = {
     acquisitie: 'Acquisitie',
     inschrijvingen: 'Lopend',
     ingediend: 'Ingediend',
+    evaluatie: 'Afronden',
     archief: 'Archief'
 };
 
@@ -53,13 +51,6 @@ const TRANSITIE = {
  * @param {string} vanFase - Huidige fase (bijv. 'acquisitie')
  * @param {string} naarFase - Nieuwe fase (bijv. 'inschrijvingen')
  * @param {Object} tender - Het tender object met context data
- * @param {Object} tender.id - Tender ID
- * @param {string} tender.naam - Tender naam
- * @param {string} tender.opdrachtgever - Opdrachtgever naam
- * @param {Object} [tender._planningCounts] - { done, total }
- * @param {Object} [tender._checklistCounts] - { done, total }
- * @param {string} [tender.bedrijf_id] - Gekoppeld bedrijf
- * @param {string} [tender.contactpersoon_id] - Gekoppeld contactpersoon
  * @returns {Object} { type, titel, bericht, warnings[], vanLabel, naarLabel }
  */
 export function evalueerTransitie(vanFase, naarFase, tender = {}) {
@@ -76,7 +67,7 @@ export function evalueerTransitie(vanFase, naarFase, tender = {}) {
     const basis = { vanLabel, naarLabel, tenderNaam: tender.naam || 'Onbekende tender' };
     const warnings = [];
 
-    // ——— VOORWAARTSE STAPPEN ———
+    // ─── VOORWAARTSE STAPPEN ───
 
     // Acquisitie → Lopend
     if (vanFase === 'acquisitie' && naarFase === 'inschrijvingen') {
@@ -122,12 +113,39 @@ export function evalueerTransitie(vanFase, naarFase, tender = {}) {
         return { ...basis, type: TRANSITIE.VRIJ };
     }
 
-    // Ingediend → Archief
-    if (vanFase === 'ingediend' && naarFase === 'archief') {
+    // Ingediend → Afronden (logische stap)
+    if (vanFase === 'ingediend' && naarFase === 'evaluatie') {
         return { ...basis, type: TRANSITIE.VRIJ };
     }
 
-    // ——— TERUGWAARTSE STAPPEN ———
+    // Afronden → Archief (logische stap)
+    if (vanFase === 'evaluatie' && naarFase === 'archief') {
+        return { ...basis, type: TRANSITIE.VRIJ };
+    }
+
+    // Ingediend → Archief (slaat Afronden over)
+    if (vanFase === 'ingediend' && naarFase === 'archief') {
+        return {
+            ...basis,
+            type: TRANSITIE.BEVESTIG,
+            titel: 'Fase overslaan',
+            bericht: `"${basis.tenderNaam}" direct archiveren? Dit slaat de fase "Afronden" over.`,
+            warnings: []
+        };
+    }
+
+    // ─── TERUGWAARTSE STAPPEN ───
+
+    // Afronden → terug naar eerdere fase
+    if (vanFase === 'evaluatie' && naarIndex < vanIndex) {
+        return {
+            ...basis,
+            type: TRANSITIE.BEVESTIG,
+            titel: 'Terug naar ' + naarLabel + '?',
+            bericht: `"${basis.tenderNaam}" staat in Afronden. Weet je zeker dat je deze terug wilt zetten naar ${naarLabel}?`,
+            warnings: []
+        };
+    }
 
     // Ingediend → Lopend
     if (vanFase === 'ingediend' && naarFase === 'inschrijvingen') {
@@ -151,7 +169,7 @@ export function evalueerTransitie(vanFase, naarFase, tender = {}) {
         };
     }
 
-    // ——— FASE OVERSLAAN ———
+    // ─── FASE OVERSLAAN ───
 
     // Acquisitie → Ingediend (slaat Lopend over)
     if (vanFase === 'acquisitie' && naarFase === 'ingediend') {
@@ -160,6 +178,17 @@ export function evalueerTransitie(vanFase, naarFase, tender = {}) {
             type: TRANSITIE.BEVESTIG,
             titel: 'Fase overslaan',
             bericht: `"${basis.tenderNaam}" direct als Ingediend markeren? Dit slaat de fase "Lopend" over.`,
+            warnings: []
+        };
+    }
+
+    // Acquisitie → Afronden (slaat Lopend + Ingediend over)
+    if (vanFase === 'acquisitie' && naarFase === 'evaluatie') {
+        return {
+            ...basis,
+            type: TRANSITIE.BEVESTIG,
+            titel: 'Meerdere fases overslaan',
+            bericht: `"${basis.tenderNaam}" direct naar Afronden? Dit slaat "Lopend" en "Ingediend" over.`,
             warnings: []
         };
     }
@@ -175,18 +204,29 @@ export function evalueerTransitie(vanFase, naarFase, tender = {}) {
         };
     }
 
-    // Lopend → Archief (slaat Ingediend over)
+    // Lopend → Archief (slaat Ingediend + Afronden over)
     if (vanFase === 'inschrijvingen' && naarFase === 'archief') {
         return {
             ...basis,
             type: TRANSITIE.BEVESTIG,
             titel: 'Direct archiveren',
-            bericht: `"${basis.tenderNaam}" direct archiveren? Dit slaat de fase "Ingediend" over.`,
+            bericht: `"${basis.tenderNaam}" direct archiveren? Dit slaat "Ingediend" en "Afronden" over.`,
             warnings: []
         };
     }
 
-    // ——— VANUIT ARCHIEF ———
+    // Lopend → Afronden (slaat Ingediend over)
+    if (vanFase === 'inschrijvingen' && naarFase === 'evaluatie') {
+        return {
+            ...basis,
+            type: TRANSITIE.BEVESTIG,
+            titel: 'Fase overslaan',
+            bericht: `"${basis.tenderNaam}" direct naar Afronden? Dit slaat "Ingediend" over.`,
+            warnings: []
+        };
+    }
+
+    // ─── VANUIT ARCHIEF ───
 
     if (vanFase === 'archief') {
         return {
@@ -198,7 +238,7 @@ export function evalueerTransitie(vanFase, naarFase, tender = {}) {
         };
     }
 
-    // ——— OVERIGE TERUGWAARTSE STAPPEN ———
+    // ─── OVERIGE TERUGWAARTSE STAPPEN ───
 
     if (naarIndex < vanIndex) {
         return {
@@ -210,7 +250,7 @@ export function evalueerTransitie(vanFase, naarFase, tender = {}) {
         };
     }
 
-    // ——— FALLBACK: voorwaarts zonder specifieke regel ———
+    // ─── FALLBACK: voorwaarts zonder specifieke regel ───
     return { ...basis, type: TRANSITIE.VRIJ };
 }
 

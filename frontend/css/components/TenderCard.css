@@ -1,0 +1,420 @@
+/**
+ * TenderCard — Shared + List View Styles
+ * TenderZen v3.9
+ *
+ * DOEL-PAD:  Frontend/css/components/TenderCard.css
+ *
+ * SECTIE A: SHARED STYLES — Werken in List, Kanban, Planning
+ * SECTIE B: LIST VIEW ONLY — Gescooped naar .tender-list-view
+ *
+ * CHANGELOG v3.9:
+ * - NIEUW: tc-footer-band (volle breedte), tc-footer-left, tc-footer-right
+ * - NIEUW: tc-footer-cell (110px, uitgelijnd met timeline kolommen)
+ * - NIEUW: tc-days-badge (vervangt days-to-deadline in de cel)
+ * - Footer uit tc-body-section → eigen tc-footer-band
+ * - Responsive breakpoints gesynchroniseerd voor footer-cellen
+ */
+
+
+/* ╔══════════════════════════════════════════════╗
+   ║  SECTIE A: SHARED STYLES (alle views)       ║
+   ╚══════════════════════════════════════════════╝ */
+
+/* ── Solid color bar ── */
+.tc-header-wrap {
+    padding: 10px 16px;
+}
+
+/* White overrides voor elementen op de solid bar */
+.tc-header-wrap .tch-fase-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.tc-header-wrap .tch-status-trigger {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.tc-header-wrap .tch-status-trigger:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.tc-header-wrap .tch-status-trigger svg {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tc-header-wrap .tch-action-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+}
+
+.tc-header-wrap .tch-action-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.tc-header-wrap .tch-status-menu {
+    background: #ffffff;
+    color: var(--text-primary, #1e293b);
+}
+
+/* ── Waarde badge ── */
+.tc-waarde {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+}
+
+/* ── Body wrap ── */
+.tc-body-wrap {
+    padding: 12px 16px 8px;
+}
+
+/* ── Deadline indicator ── */
+.tc-deadline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 6px;
+}
+
+.tc-deadline-label { font-weight: 700; }
+
+.tc-deadline--verlopen {
+    background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+}
+
+.tc-deadline--kritiek {
+    background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+    animation: pulse-urgency 2s ease-in-out infinite;
+}
+
+.tc-deadline--urgent {
+    background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa;
+}
+
+.tc-deadline--binnenkort {
+    background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;
+}
+
+@keyframes pulse-urgency {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+
+/* ╔══════════════════════════════════════════════╗
+   ║  SECTIE B: LIST VIEW ONLY                   ║
+   ║  Alle regels gescooped naar                  ║
+   ║  .tender-list-view                           ║
+   ╚══════════════════════════════════════════════╝ */
+
+/* ── Fase badge verbergen — header-band toont al de fase ── */
+.tender-list-view .tch-fase-badge {
+    display: none;
+}
+
+/* ── Tender-row: column layout ── */
+.tender-list-view .tender-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+}
+
+/* ── Band 1: Header ── */
+.tender-list-view .tc-header-band {
+    display: flex;
+    align-items: stretch;
+    border-radius: var(--radius-xl, 16px) var(--radius-xl, 16px) 0 0;
+    overflow: visible;
+    position: relative;
+    z-index: 10;
+}
+
+.tender-list-view .tc-header-wrap {
+    width: 420px;
+    min-width: 420px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ── Timeline headers ── */
+.tender-list-view .tc-timeline-headers {
+    display: flex;
+    flex: 1;
+    background: var(--bg-surface, #ffffff);
+    border-bottom: 1px solid var(--border-light, #e2e8f0);
+}
+
+.tender-list-view .tc-timeline-header {
+    width: 110px;
+    min-width: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border-right: 1px solid var(--border-light, #e2e8f0);
+}
+
+.tender-list-view .tc-timeline-header:last-child {
+    border-right: none;
+}
+
+.tender-list-view .tc-timeline-header-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tender-list-view .tc-timeline-header-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-tertiary, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+/* ── Deadline header: dynamisch op basis van dagen tot deadline ── */
+
+/* Groen: >7 dagen — alles onder controle */
+.tender-list-view .tc-timeline-header--dl-ok {
+    background: #f0fdf4;
+}
+.tender-list-view .tc-timeline-header--dl-ok .tc-timeline-header-icon {
+    color: #059669;
+}
+.tender-list-view .tc-timeline-header--dl-ok .tc-timeline-header-label {
+    color: #059669;
+    font-weight: 700;
+}
+
+/* Geel: 4-7 dagen — aandacht nodig */
+.tender-list-view .tc-timeline-header--dl-soon {
+    background: #fefce8;
+}
+.tender-list-view .tc-timeline-header--dl-soon .tc-timeline-header-icon {
+    color: #a16207;
+}
+.tender-list-view .tc-timeline-header--dl-soon .tc-timeline-header-label {
+    color: #a16207;
+    font-weight: 700;
+}
+
+/* Rood: 0-3 dagen — urgent */
+.tender-list-view .tc-timeline-header--dl-urgent {
+    background: #fef2f2;
+}
+.tender-list-view .tc-timeline-header--dl-urgent .tc-timeline-header-icon {
+    color: #dc2626;
+}
+.tender-list-view .tc-timeline-header--dl-urgent .tc-timeline-header-label {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+/* Donkerrood: verlopen */
+.tender-list-view .tc-timeline-header--dl-verlopen {
+    background: #fee2e2;
+}
+.tender-list-view .tc-timeline-header--dl-verlopen .tc-timeline-header-icon {
+    color: #991b1b;
+}
+.tender-list-view .tc-timeline-header--dl-verlopen .tc-timeline-header-label {
+    color: #991b1b;
+    font-weight: 700;
+}
+
+/* Neutraal: geen deadline ingevuld */
+.tender-list-view .tc-timeline-header--dl-neutral {
+    background: transparent;
+}
+
+/* ── Band 2: Content ── */
+.tender-list-view .tc-content-band {
+    display: flex;
+    align-items: stretch;
+    flex: 1;
+}
+
+.tender-list-view .tc-body-section {
+    width: 420px;
+    min-width: 420px;
+    border-right: 1px solid var(--border-light, #e2e8f0);
+    display: flex;
+    flex-direction: column;
+}
+
+.tender-list-view .tc-body-wrap {
+    flex: 1;
+}
+
+.tender-list-view .tc-data-section {
+    display: flex;
+    flex: 1;
+}
+
+
+/* ╔══════════════════════════════════════════════╗
+   ║  BAND 3: FOOTER (volle breedte)             ║
+   ╚══════════════════════════════════════════════╝ */
+
+.tender-list-view .tc-footer-band {
+    display: flex;
+    align-items: stretch;
+    border-top: 1px solid var(--border-light, #e2e8f0);
+    background: #f8fafc;
+    border-radius: 0 0 var(--radius-xl, 16px) var(--radius-xl, 16px);
+}
+
+/* ── Footer links: team avatars + shortcuts (420px) ── */
+.tender-list-view .tc-footer-left {
+    width: 420px;
+    min-width: 420px;
+    border-right: 1px solid var(--border-light, #e2e8f0);
+}
+
+/* Reset TenderCardFooter styling wanneer in footer-band */
+.tender-list-view .tc-footer-left .tcf {
+    padding: 8px 16px;
+    margin: 0;
+    background: transparent;
+    border-top: none;
+    border-radius: 0;
+}
+
+/* ── Footer rechts: cellen uitgelijnd met timeline kolommen ── */
+.tender-list-view .tc-footer-right {
+    display: flex;
+    flex: 1;
+    align-items: center;
+}
+
+.tender-list-view .tc-footer-cell {
+    width: 110px;
+    min-width: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8px 4px;
+    position: relative;
+    overflow: visible;
+}
+
+
+/* ╔══════════════════════════════════════════════╗
+   ║  DAGEN BADGE (in footer-band)               ║
+   ╚══════════════════════════════════════════════╝ */
+
+.tc-days-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.tc-days-badge svg {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+}
+
+.tc-days-badge--ok {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.tc-days-badge--soon {
+    background: #fef9c3;
+    color: #a16207;
+}
+
+.tc-days-badge--urgent {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.tc-days-badge--verlopen {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+
+/* ╔══════════════════════════════════════════════╗
+   ║  RESPONSIVE (list view only)                ║
+   ╚══════════════════════════════════════════════╝ */
+
+@media (max-width: 1400px) {
+    .tender-list-view .tc-header-wrap,
+    .tender-list-view .tc-body-section,
+    .tender-list-view .tc-footer-left {
+        width: 400px;
+        min-width: 400px;
+    }
+
+    .tender-list-view .tc-timeline-header,
+    .tender-list-view .tc-footer-cell {
+        width: 100px;
+        min-width: 100px;
+    }
+
+    .tender-list-view .tc-timeline-header {
+        padding: 6px 2px;
+    }
+
+    .tender-list-view .tc-timeline-header-label { font-size: 8px; }
+
+    .tc-days-badge {
+        font-size: 11px;
+        padding: 3px 10px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .tender-list-view .tc-header-wrap,
+    .tender-list-view .tc-body-section,
+    .tender-list-view .tc-footer-left {
+        width: 360px;
+        min-width: 360px;
+    }
+
+    .tender-list-view .tc-header-wrap { padding: 8px 12px; }
+
+    .tender-list-view .tc-timeline-header,
+    .tender-list-view .tc-footer-cell {
+        width: 90px;
+        min-width: 90px;
+    }
+
+    .tender-list-view .tc-timeline-header-label { font-size: 7px; }
+
+    .tc-days-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+}

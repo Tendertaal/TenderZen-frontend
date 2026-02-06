@@ -1,446 +1,308 @@
-// frontend/js/components/TenderCard.js
-// VERSIE: 20250204_0230 - Volledig functioneel (gesynchroniseerd met TenderListView v2.6)
-//
-// Standalone component met ALLE features uit TenderListView:
-// - AI Badge met 3 states (new/haiku/pro)
-// - Status dropdown met fase-groepen
-// - Inline datum editing op timeline cellen
-// - Urgentie badges (deadline countdown)
-// - Tijd weergave bij expliciete tijden
-// - Team avatars met rol-sortering + overflow
-// - Search highlighting
-// - Planning/Checklist shortcut knoppen
+/**
+ * TenderCard — Samengesteld kaart-component voor de lijstweergave
+ * TenderZen v3.6 — 3-Band Layout: Header + Content + Footer (volle breedte)
+ *
+ * DOEL-PAD:  Frontend/js/components/TenderCard.js
+ *
+ * STRUCTUUR:
+ *   tender-row (flex column)
+ *   ├── tc-header-band    = solid bar (420px) + timeline headers (flex:1)
+ *   ├── tc-content-band   = body-section (420px) + data-section (flex:1)
+ *   └── tc-footer-band    = footer-left (420px) + footer-right (flex:1)
+ *                            └── avatars/shortcuts    └── dagen-badge onder deadline
+ *
+ * CHANGELOG v3.6:
+ * - Footer verplaatst van tc-body-section naar eigen tc-footer-band (volle breedte)
+ * - "X dagen" badge verplaatst van timeline-cel naar tc-footer-right, onder deadline kolom
+ * - tc-content-band bevat nu alleen body + timeline data (geen footer meer)
+ */
+
+import { TenderCardHeader, FASE_CONFIG } from './TenderCardHeader.js';
+import { TenderCardBody } from './TenderCardBody.js';
+import { TenderCardFooter } from './TenderCardFooter.js';
+
+const SOLID_BAR_GRADIENTS = {
+    acquisitie:     { start: '#d97706', end: '#f59e0b' },
+    inschrijvingen: { start: '#6d5ccd', end: '#7c6fe0' },
+    ingediend:      { start: '#059669', end: '#10b981' },
+    evaluatie:      { start: '#0d9488', end: '#14b8a6' },
+    archief:        { start: '#64748b', end: '#94a3b8' }
+};
+
+const TIMELINE_COLUMNS = [
+    { field: 'publicatie_datum',    label: 'PUBLICATIE',      iconName: 'calendar' },
+    { field: 'schouw_datum',        label: 'SCHOUW',          iconName: 'eye' },
+    { field: 'nvi1_datum',          label: 'NVI 1',           iconName: 'info' },
+    { field: 'nvi2_datum',          label: 'NVI 2',           iconName: 'info' },
+    { field: 'presentatie_datum',   label: 'PRESENTATIE',     iconName: 'users' },
+    { field: 'interne_deadline',    label: 'INTERN',          iconName: 'clock' },
+    { field: 'deadline_indiening',  label: 'DEADLINE',        iconName: 'alertTriangle', isDeadline: true },
+    { field: 'voorlopige_gunning',  label: 'VOORL. GUNNING', iconName: 'checkCircle' },
+    { field: 'definitieve_gunning', label: 'DEF. GUNNING',   iconName: 'checkCircle' },
+    { field: 'start_uitvoering',    label: 'START',           iconName: 'play' }
+];
+
+function getIcon(name, size, color) {
+    size = size || 14;
+    if (window.Icons && typeof window.Icons[name] === 'function') {
+        var opts = { size: size };
+        if (color) opts.color = color;
+        return window.Icons[name](opts);
+    }
+    return '';
+}
+
+function getDaysUntil(ds) {
+    if (!ds) return null;
+    var t = new Date(ds), today = new Date();
+    today.setHours(0,0,0,0); t.setHours(0,0,0,0);
+    return Math.ceil((t - today) / 86400000);
+}
+
+function hasExplicitTime(ds) {
+    if (!ds) return false;
+    var m = ds.match(/T(\d{2}):(\d{2})/);
+    return m ? (parseInt(m[1],10) !== 0 || parseInt(m[2],10) !== 0) : false;
+}
 
 export class TenderCard {
-    /**
-     * @param {Object} tender - Tender data object
-     * @param {Object} options - Configuratie opties
-     * @param {string} [options.searchQuery=''] - Huidige zoekterm voor highlighting
-     * @param {Object} [options.allFaseStatussen={}] - Status opties per fase
-     * @param {Object} [options.planningCounts=null] - { done: 8, total: 12 } of null
-     * @param {Object} [options.checklistCounts=null] - { done: 5, total: 7 } of null
-     */
-    constructor(tender, options = {}) {
-        this.tender = tender;
-        this.searchQuery = options.searchQuery || '';
-        this.allFaseStatussen = options.allFaseStatussen || {};
-        this.planningCounts = options.planningCounts || null;
-        this.checklistCounts = options.checklistCounts || null;
-    }
-
-    // ─────────────────────────────────────────────
-    // Icon helper - gebruikt window.Icons
-    // ─────────────────────────────────────────────
-    getIcon(name, size = 14, color = null) {
-        const Icons = window.Icons;
-        if (Icons && typeof Icons[name] === 'function') {
-            const options = { size };
-            if (color) options.color = color;
-            return Icons[name](options);
-        }
-        return '';
-    }
-
-    // ─────────────────────────────────────────────
-    // Datum helpers
-    // ─────────────────────────────────────────────
-    getDaysUntil(dateString) {
-        if (!dateString) return null;
-        const targetDate = new Date(dateString);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        targetDate.setHours(0, 0, 0, 0);
-        const diffTime = targetDate - today;
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
-
-    /**
-     * Check of datum string een echte tijd bevat (niet 00:00:00)
-     * Voorkomt false positives door timezone conversie
-     */
-    hasExplicitTime(dateString) {
-        if (!dateString) return false;
-        const timeMatch = dateString.match(/T(\d{2}):(\d{2})/);
-        if (!timeMatch) return false;
-        const hours = parseInt(timeMatch[1], 10);
-        const minutes = parseInt(timeMatch[2], 10);
-        return hours !== 0 || minutes !== 0;
-    }
-
-    getInitials(name) {
-        if (!name) return '?';
-        const parts = name.trim().split(' ');
-        if (parts.length === 1) {
-            return parts[0].substring(0, 2).toUpperCase();
-        }
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-
-    // ─────────────────────────────────────────────
-    // Search highlighting
-    // ─────────────────────────────────────────────
-    highlightSearchTerm(text) {
-        if (!text || !this.searchQuery) return text;
-        const escapedQuery = this.searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${escapedQuery})`, 'gi');
-        return text.replace(regex, '<mark class="search-highlight">$1</mark>');
-    }
-
-    // ─────────────────────────────────────────────
-    // ⭐ AI Badge - ALTIJD ZICHTBAAR (3 states)
-    // ─────────────────────────────────────────────
-    renderAIBadge(tender) {
-        const hasAnalysis = !!tender.smart_import_id;
-        const modelUsed = tender.ai_model_used || 'haiku';
-        const isPro = modelUsed === 'sonnet' || (modelUsed && modelUsed.includes('sonnet'));
-
-        let badgeClass, icon, label, tooltip;
-
-        if (!hasAnalysis) {
-            badgeClass = 'ai-badge ai-badge--new';
-            icon = '✨';
-            label = 'AI';
-            tooltip = 'Start AI analyse - Upload documenten om automatisch gegevens te extraheren';
-        } else if (isPro) {
-            badgeClass = 'ai-badge ai-badge--pro';
-            icon = '⚡';
-            label = 'AI Pro';
-            tooltip = 'Geanalyseerd met AI Pro - Klik voor details';
+    constructor(tenderOrOptions, legacyOptions) {
+        if (tenderOrOptions && tenderOrOptions.id !== undefined && !tenderOrOptions.tender) {
+            var opts = legacyOptions || {};
+            this.tender = tenderOrOptions;
+            this.allFaseStatussen = opts.allFaseStatussen || {};
+            this.searchQuery = opts.searchQuery || '';
+            this.planningCounts = opts.planningCounts || { done: 0, total: 0 };
+            this.checklistCounts = opts.checklistCounts || { done: 0, total: 0 };
         } else {
-            badgeClass = 'ai-badge ai-badge--haiku';
-            icon = '✨';
-            label = 'AI';
-            tooltip = 'Geanalyseerd met AI - Klik voor details of upgrade naar Pro';
+            var opts = tenderOrOptions || {};
+            this.tender = opts.tender || {};
+            this.allFaseStatussen = opts.allFaseStatussen || {};
+            this.searchQuery = opts.searchQuery || '';
+            this.planningCounts = opts.planningCounts || { done: 0, total: 0 };
+            this.checklistCounts = opts.checklistCounts || { done: 0, total: 0 };
         }
-
-        return `
-            <button class="${badgeClass}" 
-                    data-tender-id="${tender.id}"
-                    data-smart-import-id="${tender.smart_import_id || ''}"
-                    data-has-analysis="${hasAnalysis}"
-                    title="${tooltip}">
-                <span class="badge-icon">${icon}</span>
-                <span class="badge-label">${label}</span>
-            </button>
-        `;
     }
 
-    // ─────────────────────────────────────────────
-    // Status dropdown met fase-groepen
-    // ─────────────────────────────────────────────
-    renderStatusSelect(tender) {
-        const currentStatus = tender.fase_status || tender.status;
-        const currentFase = tender.fase;
+    render() {
+        var tender = this.tender;
+        var fase = tender.fase || 'acquisitie';
+        var gradient = SOLID_BAR_GRADIENTS[fase] || SOLID_BAR_GRADIENTS.acquisitie;
 
-        let currentStatusFase = currentFase;
-        let currentStatusDisplay = currentStatus;
-
-        // Zoek display naam van huidige status
-        for (const [fase, statussen] of Object.entries(this.allFaseStatussen)) {
-            const found = statussen.find(s => s.status_key === currentStatus);
-            if (found) {
-                currentStatusFase = fase;
-                currentStatusDisplay = found.status_display;
-                break;
-            }
-        }
-
-        // Bouw opties HTML per fase
-        let optionsHtml = '';
-        const faseVolgorde = ['acquisitie', 'inschrijvingen', 'ingediend', 'archief'];
-        const faseLabels = {
-            'acquisitie': 'ACQUISITIE',
-            'inschrijvingen': 'LOPEND',
-            'ingediend': 'INGEDIEND',
-            'archief': 'ARCHIEF'
-        };
-
-        for (const fase of faseVolgorde) {
-            const statussen = this.allFaseStatussen[fase] || [];
-            if (statussen.length > 0) {
-                optionsHtml += `<div class="status-dropdown-group" data-fase="${fase}">
-                    <div class="status-dropdown-label">${faseLabels[fase]}</div>`;
-                for (const status of statussen) {
-                    const isSelected = status.status_key === currentStatus;
-                    const isSpecial = ['gewonnen', 'verloren'].includes(status.status_key);
-                    optionsHtml += `
-                        <div class="status-dropdown-option ${isSelected ? 'is-selected' : ''} ${isSpecial ? 'status--' + status.status_key : ''}" 
-                             data-value="${status.status_key}" 
-                             data-fase="${fase}">
-                            ${status.status_display}
-                        </div>`;
-                }
-                optionsHtml += `</div>`;
-            }
-        }
-
-        return `
-            <div class="status-dropdown" data-tender-id="${tender.id}" data-current-fase="${currentStatusFase}">
-                <button class="status-dropdown-trigger" type="button">
-                    <span class="status-dropdown-value">${currentStatusDisplay}</span>
-                    <svg class="status-dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
-                <div class="status-dropdown-menu">
-                    ${optionsHtml}
-                </div>
-            </div>
-        `;
-    }
-
-    // ─────────────────────────────────────────────
-    // ⭐ Timeline cell met inline editing + urgentie
-    // ─────────────────────────────────────────────
-    renderTimelineCell(tenderId, fieldName, date, isDeadline = false) {
-        const dataAttrs = `data-tender-id="${tenderId}" data-field="${fieldName}" data-date="${date || ''}"`;
-
-        if (!date) {
-            return `
-                <div class="timeline-cell timeline-cell--editable" ${dataAttrs} title="Klik om datum in te vullen">
-                    <div class="date-display empty">
-                        <span class="date-add-icon">+</span>
-                    </div>
-                </div>
-            `;
-        }
-
-        const dateObj = new Date(date);
-        const day = dateObj.getDate();
-        const month = dateObj.toLocaleDateString('nl-NL', { month: 'short' });
-        const isPast = dateObj < new Date();
-        const daysUntil = this.getDaysUntil(date);
-
-        // Check echte tijd (niet 00:00:00)
-        const hasRealTime = this.hasExplicitTime(date);
-        let timeString = null;
-        if (hasRealTime) {
-            const hours = dateObj.getHours();
-            const minutes = dateObj.getMinutes();
-            timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-        }
-
-        let cellClasses = ['filled'];
-        let badgeClass = 'ok';
-
-        if (isPast) {
-            cellClasses = ['completed'];
-        } else if (isDeadline) {
-            if (daysUntil <= 3) {
-                cellClasses = ['urgent'];
-                badgeClass = 'urgent';
-            } else if (daysUntil <= 7) {
-                cellClasses = ['soon'];
-                badgeClass = 'soon';
-            } else {
-                cellClasses = ['deadline'];
-                badgeClass = 'ok';
-            }
-        }
-
-        const showBadge = isDeadline && !isPast && daysUntil !== null;
-
-        return `
-            <div class="timeline-cell timeline-cell--editable" ${dataAttrs} title="Klik om datum te wijzigen">
-                <div class="date-display ${cellClasses.join(' ')} ${hasRealTime ? 'has-time' : ''}">
-                    <span class="date-day">${day}</span>
-                    <span class="date-month">${month}</span>
-                    ${hasRealTime ? `<span class="date-time">${timeString}</span>` : ''}
-                </div>
-                ${showBadge ? `
-                    <div class="days-to-deadline ${badgeClass}">
-                        ${daysUntil === 0 ? 'Vandaag!' : daysUntil === 1 ? 'Morgen' : `${daysUntil} dagen`}
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }
-
-    // ─────────────────────────────────────────────
-    // Team avatars met rol-sortering + overflow
-    // ─────────────────────────────────────────────
-    renderTeamAvatars(teamAssignments) {
-        if (!teamAssignments || teamAssignments.length === 0) {
-            return '';
-        }
-
-        const rolVolgorde = ['manager', 'coordinator', 'schrijver', 'designer', 'calculator', 'reviewer', 'sales', 'klant_contact'];
-
-        const sorted = [...teamAssignments].sort((a, b) => {
-            const indexA = rolVolgorde.indexOf(a.rol) !== -1 ? rolVolgorde.indexOf(a.rol) : 99;
-            const indexB = rolVolgorde.indexOf(b.rol) !== -1 ? rolVolgorde.indexOf(b.rol) : 99;
-            return indexA - indexB;
+        var header = new TenderCardHeader({
+            tender: tender, allFaseStatussen: this.allFaseStatussen,
+            size: 'default', showActions: true, showStatusDropdown: true
         });
 
-        const rolLabels = {
-            'manager': 'Manager',
-            'coordinator': 'Coördinator',
-            'schrijver': 'Schrijver',
-            'designer': 'Designer',
-            'calculator': 'Calculator',
-            'reviewer': 'Reviewer',
-            'sales': 'Sales',
-            'klant_contact': 'Klant contact'
-        };
+        var body = new TenderCardBody({
+            tender: tender, searchQuery: this.searchQuery,
+            size: 'default', showBureau: true
+        });
 
-        const maxVisible = 5;
-        const visible = sorted.slice(0, maxVisible);
-        const overflow = sorted.length - maxVisible;
+        var footer = new TenderCardFooter({
+            tenderId: tender.id, teamAssignments: tender.team_assignments,
+            planningCounts: this.planningCounts, checklistCounts: this.checklistCounts,
+            size: 'default'
+        });
 
-        let html = visible.map(member => {
-            const rolLabel = rolLabels[member.rol] || member.rol || 'Teamlid';
-            const initialen = member.initialen || this.getInitials(member.naam);
-            const urenText = member.uren ? ` - ${member.uren}u` : '';
+        var waardeHtml = tender.geschatte_waarde
+            ? '<div class="tc-waarde">' + this._formatWaarde(tender.geschatte_waarde) + '</div>'
+            : '';
 
-            return `
-                <div class="avatar avatar--${member.rol || 'teamlid'}" 
-                     title="${member.naam} (${rolLabel}${urenText})"
-                     data-member-id="${member.team_member_id}">
-                    ${initialen}
-                </div>
-            `;
-        }).join('');
+        return ''
+            + '<div class="tender-row phase-' + fase + '"'
+            + ' data-tender-id="' + tender.id + '"'
+            + ' data-fase="' + fase + '"'
+            + ' data-status="' + (tender.fase_status || tender.status || '') + '">'
 
-        if (overflow > 0) {
-            html += `
-                <div class="avatar avatar--overflow" title="${overflow} meer teamleden">
-                    +${overflow}
-                </div>
-            `;
+            // ── BAND 1: Header (volle breedte) ──
+            + '<div class="tc-header-band">'
+            +   '<div class="tc-header-wrap"'
+            +   ' style="background: linear-gradient(135deg, ' + gradient.start + ', ' + gradient.end + ')">'
+            +     header.render()
+            +     waardeHtml
+            +   '</div>'
+            +   '<div class="tc-timeline-headers">'
+            +     this._renderTimelineHeaders()
+            +   '</div>'
+            + '</div>'
+
+            // ── BAND 2: Content (volle breedte, ZONDER footer) ──
+            + '<div class="tc-content-band">'
+
+            // Links: body + deadline (420px)
+            +   '<div class="tc-body-section">'
+            +     '<div class="tc-body-wrap">'
+            +       body.render()
+            +       this._renderDeadline()
+            +     '</div>'
+            +   '</div>'
+
+            // Rechts: timeline data (flex:1)
+            +   '<div class="tc-data-section">'
+            +     this._renderTimelineCells()
+            +   '</div>'
+
+            + '</div>'
+
+            // ── BAND 3: Footer (volle breedte) ──
+            + this._renderFooterBand(footer)
+
+            + '</div>';
+    }
+
+    // ── BAND 3: Footer band (volle breedte) ──
+    _renderFooterBand(footer) {
+        return ''
+            + '<div class="tc-footer-band">'
+
+            // Links: team avatars + shortcuts (420px)
+            + '<div class="tc-footer-left">'
+            +   footer.render()
+            + '</div>'
+
+            // Rechts: footer cellen uitgelijnd met timeline kolommen
+            + '<div class="tc-footer-right">'
+            +   this._renderFooterCells()
+            + '</div>'
+
+            + '</div>';
+    }
+
+    // ── Footer cellen: lege cellen + dagen badge onder deadline kolom ──
+    _renderFooterCells() {
+        var html = '';
+        for (var i = 0; i < TIMELINE_COLUMNS.length; i++) {
+            var col = TIMELINE_COLUMNS[i];
+            var cellContent = '';
+
+            // Deadline kolom (index 6): dagen badge
+            if (col.isDeadline) {
+                cellContent = this._renderDaysBadge();
+            }
+
+            html += '<div class="tc-footer-cell">' + cellContent + '</div>';
         }
-
         return html;
     }
 
-    // ─────────────────────────────────────────────
-    // Planning/Checklist count badges
-    // ─────────────────────────────────────────────
-    renderPlanningCount() {
-        if (this.planningCounts) {
-            return `${this.planningCounts.done}/${this.planningCounts.total}`;
+    // ── Dagen badge berekening (was in _renderCell) ──
+    _renderDaysBadge() {
+        var dl = this.tender.deadline_indiening;
+        if (!dl) return '';
+
+        var d = new Date(dl);
+        var isPast = new Date(dl) < new Date(new Date().toDateString());
+        var du = getDaysUntil(dl);
+
+        if (isPast) {
+            return '<div class="tc-days-badge tc-days-badge--verlopen">'
+                + getIcon('alertTriangle', 11, 'currentColor')
+                + '<span>Verlopen</span></div>';
         }
-        return '0/0';
+
+        if (du === null) return '';
+
+        var cls = '', label = '';
+        if (du === 0)       { cls = 'tc-days-badge--urgent';  label = 'Vandaag!'; }
+        else if (du === 1)  { cls = 'tc-days-badge--urgent';  label = 'Nog 1 dag tot deadline'; }
+        else if (du <= 3)   { cls = 'tc-days-badge--urgent';  label = 'Nog ' + du + ' dagen tot deadline'; }
+        else if (du <= 7)   { cls = 'tc-days-badge--soon';    label = 'Nog ' + du + ' dagen tot deadline'; }
+        else                { cls = 'tc-days-badge--ok';      label = 'Nog ' + du + ' dagen tot deadline'; }
+
+        return '<div class="tc-days-badge ' + cls + '">'
+            + getIcon('clock', 11, 'currentColor')
+            + '<span>' + label + '</span></div>';
     }
 
-    renderChecklistCount() {
-        if (this.checklistCounts) {
-            return `${this.checklistCounts.done}/${this.checklistCounts.total}`;
+    _renderTimelineHeaders() {
+        var html = '';
+        for (var i = 0; i < TIMELINE_COLUMNS.length; i++) {
+            var col = TIMELINE_COLUMNS[i];
+            var cls = '';
+            var iconColor = '#94a3b8';
+
+            if (col.isDeadline) {
+                var dlState = this._getDeadlineState();
+                cls = ' tc-timeline-header--dl-' + dlState;
+                var stateColors = {
+                    ok: '#059669', soon: '#a16207', urgent: '#dc2626',
+                    verlopen: '#991b1b', neutral: '#94a3b8'
+                };
+                iconColor = stateColors[dlState] || '#94a3b8';
+            }
+
+            html += '<div class="tc-timeline-header' + cls + '">'
+                + '<span class="tc-timeline-header-icon">' + getIcon(col.iconName, 14, iconColor) + '</span>'
+                + '<span class="tc-timeline-header-label">' + col.label + '</span>'
+                + '</div>';
         }
-        return '0/0';
+        return html;
     }
 
-    // ─────────────────────────────────────────────
-    // ⭐ MAIN RENDER - Volledige tender card
-    // ─────────────────────────────────────────────
-    render() {
-        const tender = this.tender;
-        const daysUntil = this.getDaysUntil(tender.deadline_indiening);
-        const isCritical = daysUntil !== null && daysUntil <= 3;
+    // ── Deadline state voor dynamische header-kleuring ──
+    _getDeadlineState() {
+        var dl = this.tender.deadline_indiening;
+        if (!dl) return 'neutral';
+        var du = getDaysUntil(dl);
+        if (du < 0)  return 'verlopen';
+        if (du <= 3) return 'urgent';
+        if (du <= 7) return 'soon';
+        return 'ok';
+    }
 
-        const faseBadgeLabels = {
-            acquisitie: 'ACQUISITIE',
-            inschrijvingen: 'LOPEND',
-            ingediend: 'INGEDIEND',
-            archief: 'ARCHIEF'
-        };
-        const faseLabel = faseBadgeLabels[tender.fase] || (tender.fase ? tender.fase.toUpperCase() : '');
+    _renderDeadline() {
+        var dl = this.tender.deadline_indiening;
+        if (!dl) return '';
+        var diff = getDaysUntil(dl), cls = '', label = '';
+        if (diff < 0)       { cls = 'tc-deadline--verlopen';   label = 'Verlopen'; }
+        else if (diff <= 3) { cls = 'tc-deadline--kritiek';    label = diff + 'd'; }
+        else if (diff <= 7) { cls = 'tc-deadline--urgent';     label = diff + 'd'; }
+        else if (diff <= 14){ cls = 'tc-deadline--binnenkort'; label = diff + 'd'; }
+        if (!label) return '';
+        var d = new Date(dl);
+        return '<div class="tc-deadline ' + cls + '">' + getIcon('clock', 13, 'currentColor')
+            + '<span>' + this._formatDateShort(d) + '</span>'
+            + '<span class="tc-deadline-label">' + label + '</span></div>';
+    }
 
-        return `
-            <div class="tender-row phase-${tender.fase || ''}" data-tender-id="${tender.id}">
-                <!-- Sectie 1: Aanbesteding -->
-                <div class="section-aanbesteding">
-                    
-                    <!-- Header: Fase badge + Status dropdown + Action buttons -->
-                    <div class="card-header-row">
-                        <div class="card-header-left">
-                            <div class="fase-status-group">
-                                <span class="fase-badge fase-badge--${tender.fase}">${faseLabel}</span>
-                                ${this.renderStatusSelect(tender)}
-                            </div>
-                        </div>
-                        <div class="card-header-right">
-                            <button class="action-btn doc-button" title="AI Documenten" data-tender-id="${tender.id}">
-                                ${this.getIcon('ai', 18)}
-                            </button>
-                            <button class="action-btn edit-button" title="Tender instellingen" data-tender-id="${tender.id}">
-                                ${this.getIcon('settings', 18)}
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Content: Tender naam + AI Badge + info -->
-                    <div class="card-content">
-                        <div class="tender-name-row">
-                            <h3 class="tender-name">${this.highlightSearchTerm(tender.naam || 'Geen naam')}</h3>
-                            ${this.renderAIBadge(tender)}
-                        </div>
-                        
-                        <div class="info-lines">
-                            ${tender.opdrachtgever ? `
-                                <div class="info-line info-line--opdrachtgever">
-                                    ${this.getIcon('building', 14)}
-                                    <span>${this.highlightSearchTerm(tender.opdrachtgever)}</span>
-                                </div>
-                            ` : ''}
-                            
-                            ${tender.bedrijfsnaam ? `
-                                <div class="info-line info-line--inschrijver">
-                                    ${this.getIcon('users', 14)}
-                                    <span>Inschrijver: <strong style="color: #7c3aed;">${this.highlightSearchTerm(tender.bedrijfsnaam)}</strong></span>
-                                </div>
-                            ` : ''}
-                            
-                            ${(tender.tenderbureau_naam || tender.tenderbureaus?.naam) ? `
-                                <div class="info-line info-line--tenderbureau">
-                                    ${this.getIcon('edit', 14)}
-                                    <span>Bureau: ${this.highlightSearchTerm(tender.tenderbureau_naam || tender.tenderbureaus?.naam)}</span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                    
-                    <!-- Footer: Team + Planning/Checklist knoppen -->
-                    <div class="card-footer-row">
-                        <div class="team-avatars">
-                            ${this.renderTeamAvatars(tender.team_assignments)}
-                            <button class="avatar avatar--add" title="Team bewerken" data-tender-id="${tender.id}">
-                                ${this.getIcon('plus', 12)}
-                            </button>
-                        </div>
-                        
-                        <div class="meta-row">
-                            <button class="planning-shortcut planning-shortcut--planning" 
-                                    data-tender-id="${tender.id}" 
-                                    data-open="planning"
-                                    title="Projectplanning openen">
-                                ${this.getIcon('calendar', 13)}
-                                <span class="planning-shortcut__count">${this.renderPlanningCount()}</span>
-                            </button>
-                            <button class="planning-shortcut planning-shortcut--checklist" 
-                                    data-tender-id="${tender.id}" 
-                                    data-open="checklist"
-                                    title="Indieningschecklist openen">
-                                ${this.getIcon('check', 13)}
-                                <span class="planning-shortcut__count">${this.renderChecklistCount()}</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Sectie 2: Timeline -->
-                <div class="section-timeline">
-                    ${this.renderTimelineCell(tender.id, 'publicatie_datum', tender.publicatie_datum)}
-                    ${this.renderTimelineCell(tender.id, 'schouw_datum', tender.schouw_datum)}
-                    ${this.renderTimelineCell(tender.id, 'nvi1_datum', tender.nvi1_datum)}
-                    ${this.renderTimelineCell(tender.id, 'nvi2_datum', tender.nvi2_datum)}
-                    ${this.renderTimelineCell(tender.id, 'presentatie_datum', tender.presentatie_datum)}
-                    ${this.renderTimelineCell(tender.id, 'interne_deadline', tender.interne_deadline)}
-                    ${this.renderTimelineCell(tender.id, 'deadline_indiening', tender.deadline_indiening, true)}
-                    ${this.renderTimelineCell(tender.id, 'voorlopige_gunning', tender.voorlopige_gunning)}
-                    ${this.renderTimelineCell(tender.id, 'definitieve_gunning', tender.definitieve_gunning)}
-                    ${this.renderTimelineCell(tender.id, 'start_uitvoering', tender.start_uitvoering)}
-                </div>
-            </div>
-        `;
+    _renderTimelineCells() {
+        var t = this.tender, html = '';
+        for (var i = 0; i < TIMELINE_COLUMNS.length; i++) {
+            var col = TIMELINE_COLUMNS[i];
+            html += this._renderCell(t.id, col.field, t[col.field] || '', !!col.isDeadline);
+        }
+        return html;
+    }
+
+    _renderCell(id, field, date, isDL) {
+        var a = 'data-tender-id="' + id + '" data-field="' + field + '" data-date="' + (date||'') + '"';
+        if (!date) return '<div class="timeline-cell timeline-cell--editable" ' + a + '><div class="date-display empty"><span class="date-add-icon">+</span></div></div>';
+
+        var d = new Date(date), day = d.getDate(), mon = d.toLocaleDateString('nl-NL',{month:'short'});
+        var isPast = d < new Date(), du = getDaysUntil(date), ht = hasExplicitTime(date);
+        var ts = ht ? String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') : '';
+        var cls = ['filled'];
+        if (isPast) cls = ['completed'];
+        else if (isDL) { if (du<=3){cls=['urgent'];} else if(du<=7){cls=['soon'];} else cls=['deadline']; }
+
+        // v3.6: days-to-deadline badge NIET meer in de cel — verplaatst naar tc-footer-band
+        return '<div class="timeline-cell timeline-cell--editable" '+a+'>'
+            +'<div class="date-display '+cls.join(' ')+(ht?' has-time':'')+'">'
+            +'<span class="date-day">'+day+'</span><span class="date-month">'+mon+'</span>'
+            +(ht?'<span class="date-time">'+ts+'</span>':'')
+            +'</div></div>';
+    }
+
+    _formatWaarde(w) {
+        var n = parseFloat(w); if (isNaN(n)) return '';
+        if (n>=1e6) return '\u20AC'+(n/1e6).toFixed(1).replace('.0','')+'M';
+        if (n>=1e3) return '\u20AC'+(n/1e3).toFixed(0)+'K';
+        return '\u20AC'+n.toLocaleString('nl-NL');
+    }
+
+    _formatDateShort(d) {
+        if (!d||isNaN(d.getTime())) return '';
+        return d.getDate()+' '+['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()];
     }
 }

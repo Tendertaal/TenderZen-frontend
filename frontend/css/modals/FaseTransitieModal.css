@@ -85,7 +85,7 @@
 }
 
 /* ============================================
-   TRANSITIE BAR (Van â†’ Naar)
+   TRANSITIE BAR (Van → Naar)
    ============================================ */
 
 .fase-transitie-bar {
@@ -198,7 +198,7 @@
     color: #334155;
 }
 
-/* Bevestigen â€” .is-confirm modus (paars) */
+/* Bevestigen — .is-confirm modus (paars) */
 .is-confirm .fase-transitie-btn.confirm {
     background: #6366f1;
     color: #ffffff;
@@ -208,7 +208,7 @@
     background: #4f46e5;
 }
 
-/* Bevestigen â€” .is-warning modus (amber) */
+/* Bevestigen — .is-warning modus (amber) */
 .is-warning .fase-transitie-btn.confirm {
     background: #d97706;
     color: #ffffff;

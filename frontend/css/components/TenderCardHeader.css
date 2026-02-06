@@ -1,0 +1,302 @@
+/**
+ * TenderCardHeader Styling
+ * TenderZen v1.1
+ *
+ * DOEL-PAD:  Frontend/css/components/TenderCardHeader.css
+ *
+ * CHANGELOG v1.1:
+ * - .tch-fase-badge--evaluatie toegevoegd (teal)
+ * - .tch-dropdown-group[data-fase="evaluatie"] label kleur
+ *
+ * Twee formaten: default (.tch) en compact (.tch--compact).
+ */
+
+/* ============================================
+   HEADER CONTAINER
+   ============================================ */
+
+.tch {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.tch-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.tch-right {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ============================================
+   FASE BADGE
+   ============================================ */
+
+.tch-fase-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: 1px solid;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.tch-fase-badge--acquisitie {
+    background-color: #fef3c7;
+    color: #92400e;
+    border-color: #f59e0b;
+}
+
+.tch-fase-badge--inschrijvingen {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    border-color: #8b5cf6;
+}
+
+.tch-fase-badge--ingediend {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-color: #10b981;
+}
+
+.tch-fase-badge--evaluatie {
+    background-color: #ccfbf1;
+    color: #115e59;
+    border-color: #14b8a6;
+}
+
+.tch-fase-badge--archief {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #94a3b8;
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.tch-action-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.tch-action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.tch-action-btn--ai:hover {
+    border-color: #8b5cf6;
+    color: #7c3aed;
+}
+
+.tch-action-btn--settings:hover {
+    border-color: #f59e0b;
+    color: #d97706;
+}
+
+.tch-action-btn:active {
+    transform: scale(0.95);
+}
+
+.tch-action-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================
+   STATUS DROPDOWN
+   ============================================ */
+
+.tch-status-dropdown {
+    position: relative;
+    flex-shrink: 1;
+    min-width: 100px;
+    max-width: 180px;
+    z-index: 1;
+}
+
+.tch-status-dropdown.is-open {
+    z-index: 9999;
+}
+
+.tch-status-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tch-status-trigger:hover {
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
+}
+
+.tch-status-dropdown.is-open .tch-status-trigger {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.tch-status-value {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tch-status-trigger svg {
+    color: #64748b;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.tch-status-dropdown.is-open .tch-status-trigger svg {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.tch-status-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 200px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 9999;
+    display: none;
+}
+
+.tch-status-dropdown.is-open .tch-status-menu {
+    display: block;
+}
+
+/* Dropdown Groups */
+.tch-dropdown-group {
+    padding: 4px 0;
+}
+
+.tch-dropdown-group:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.tch-dropdown-label {
+    padding: 8px 14px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.tch-dropdown-group[data-fase="acquisitie"] .tch-dropdown-label { color: #b45309; }
+.tch-dropdown-group[data-fase="inschrijvingen"] .tch-dropdown-label { color: #7c3aed; }
+.tch-dropdown-group[data-fase="ingediend"] .tch-dropdown-label { color: #059669; }
+.tch-dropdown-group[data-fase="evaluatie"] .tch-dropdown-label { color: #0d9488; }
+.tch-dropdown-group[data-fase="archief"] .tch-dropdown-label { color: #475569; }
+
+/* Dropdown Options */
+.tch-dropdown-option {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.tch-dropdown-option:hover {
+    background: #f8fafc;
+}
+
+.tch-dropdown-option.is-selected {
+    background: #f1f5f9;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.tch-dropdown-option.is-selected::before {
+    content: '\2714';
+    margin-right: 8px;
+    color: #667eea;
+}
+
+.tch-status--gewonnen { color: #059669; font-weight: 600; }
+.tch-status--verloren { color: #dc2626; font-weight: 600; }
+
+/* Scrollbar */
+.tch-status-menu::-webkit-scrollbar { width: 6px; }
+.tch-status-menu::-webkit-scrollbar-track { background: transparent; }
+.tch-status-menu::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.tch-status-menu::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ============================================
+   COMPACT VARIANT
+   ============================================ */
+
+.tch--compact .tch-fase-badge {
+    padding: 3px 8px;
+    font-size: 10px;
+}
+
+.tch--compact .tch-action-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+}
+
+.tch--compact .tch-action-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1400px) {
+    .tch-action-btn {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+    }
+}

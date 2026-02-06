@@ -1,10 +1,14 @@
 /**
  * KanbanView Styling
- * TenderZen v1.2 — Gelijke kolombreedtes + drag & drop feedback
+ * TenderZen v2.5 — Fase badge verborgen (kolom header toont fase)
  *
  * CHANGELOG:
- * - v1.2: min-width: 0 op kolommen voor gelijke breedte, overflow fix
- * - v1.1: Drag-over highlight, dragging state, transitie feedback
+ * - v2.5: Fase badge verbergen op kanban kaarten
+ * - v2.4: Footer override .tcf ipv .tcf--compact (fix negatieve marges)
+ * - v2.3: SVG icon wrappers in kolom headers, solid color bar kaart header
+ * - v2.2: Solid bar + pill accent
+ * - v2.0: TenderCard component overrides
+ * - v1.2: Gelijke kolombreedtes, overflow fix
  * - v1.0: Initiële styling
  */
 
@@ -32,31 +36,48 @@
     display: flex;
     flex-direction: column;
     max-height: calc(100vh - 180px);
-    min-width: 0;        /* BELANGRIJK: voorkomt dat content de kolom breder maakt dan 1fr */
-    overflow: hidden;     /* Houdt alles binnen de kolom grenzen */
+    min-width: 0;
+    overflow: hidden;
 }
 
-/* Header */
+/* ============================================
+   KOLOM HEADER — met SVG icon cirkel
+   ============================================ */
+
 .kanban-kolom-header {
     padding: 16px 16px 12px;
     border-bottom: 2px solid var(--fase-kleur, #94a3b8);
+    background: #ffffff;
 }
 
 .kanban-kolom-titel {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
-.kanban-kolom-icon {
-    font-size: 16px;
+.kanban-kolom-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--icon-kleur, #94a3b8) 12%, transparent);
+    flex-shrink: 0;
+}
+
+.kanban-kolom-icon-wrap svg {
+    display: block;
+    width: 18px;
+    height: 18px;
 }
 
 .kanban-kolom-label {
     font-size: 14px;
     font-weight: 700;
     color: #0f172a;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
 }
 
@@ -64,24 +85,30 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 8px;
     background: var(--fase-kleur, #94a3b8);
     color: #ffffff;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     margin-left: auto;
+    flex-shrink: 0;
 }
 
 .kanban-kolom-status {
     display: block;
-    font-size: 11px;
+    font-size: 12px;
     color: #94a3b8;
     margin-top: 4px;
+    margin-left: 42px;
 }
 
-/* Body (scrollable) */
+/* ============================================
+   KOLOM BODY (scrollable)
+   ============================================ */
+
 .kanban-kolom-body {
     flex: 1;
     overflow-y: auto;
@@ -93,7 +120,6 @@
     transition: background 0.15s ease;
 }
 
-/* Drop zone indicator */
 .kanban-kolom-body.drag-over {
     background: #ede9fe;
     border-radius: 0 0 12px 12px;
@@ -101,23 +127,35 @@
     outline-offset: -4px;
 }
 
-/* Empty state */
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
 .kanban-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding: 32px 16px;
+    gap: 10px;
+    padding: 36px 16px;
     color: #94a3b8;
     font-size: 13px;
 }
 
 .kanban-empty-icon {
-    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0.5;
 }
 
-/* Add button */
+.kanban-empty-icon svg {
+    display: block;
+}
+
+/* ============================================
+   ADD BUTTON
+   ============================================ */
+
 .kanban-add-btn {
     display: flex;
     align-items: center;
@@ -141,20 +179,26 @@
     color: #7c3aed;
 }
 
+.kanban-add-btn svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
 /* ============================================
-   KANBAN KAART
+   KANBAN KAART — Container
    ============================================ */
 
 .kanban-kaart {
     background: #ffffff;
     border-radius: 10px;
-    padding: 14px;
     border: 1px solid #e2e8f0;
-    border-left: 3px solid var(--kaart-accent, #94a3b8);
     cursor: grab;
     transition: all 0.15s ease;
     user-select: none;
-    min-width: 0;        /* Voorkomt overflow van kaart content */
+    min-width: 0;
+    overflow: visible;
 }
 
 .kanban-kaart:hover {
@@ -167,66 +211,112 @@
     cursor: grabbing;
 }
 
-/* Dragging state */
 .kanban-kaart.dragging {
     opacity: 0.4;
     transform: rotate(2deg);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-/* Top row (type + waarde) */
-.kanban-kaart-top {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
+/* Kaart boven andere kaarten tillen wanneer dropdown open is */
+.kanban-kaart:has(.is-open) {
+    z-index: 100;
+    position: relative;
 }
 
-.kanban-type-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    background: color-mix(in srgb, var(--tag-kleur, #94a3b8) 12%, transparent);
-    color: var(--tag-kleur, #64748b);
+/* ============================================
+   SOLID COLOR BAR HEADER — Wrapper
+   ============================================ */
+
+.kanban-kaart-header-wrap {
+    padding: 8px 12px;
+    border-radius: 9px 9px 0 0;
 }
 
-.kanban-waarde {
-    margin-left: auto;
+/* Alle TenderCardHeader elementen wit maken op gekleurde achtergrond */
+.kanban-kaart-header-wrap .tch {
+    margin: 0;
+}
+
+/* Fase badge verbergen — kolom header toont al de fase */
+.kanban-kaart .tch-fase-badge {
+    display: none;
+}
+
+.kanban-kaart-header-wrap .tch-fase-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.kanban-kaart-header-wrap .tch-status-trigger {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.kanban-kaart-header-wrap .tch-status-trigger:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.kanban-kaart-header-wrap .tch-status-trigger svg {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.kanban-kaart-header-wrap .tch-status-value {
+    color: #ffffff;
+}
+
+.kanban-kaart-header-wrap .tch-action-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.kanban-kaart-header-wrap .tch-action-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+}
+
+.kanban-kaart-header-wrap .tch-action-btn svg {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Dropdown menu BLIJFT wit (verschijnt onder de gekleurde header) */
+.kanban-kaart-header-wrap .tch-status-menu {
+    background: #ffffff;
+    color: #334155;
+}
+
+.kanban-kaart-header-wrap .tch-dropdown-option {
+    color: #334155;
+}
+
+/* ============================================
+   WAARDE
+   ============================================ */
+
+.kanban-kaart-waarde {
+    padding: 8px 14px 0;
     font-size: 12px;
     font-weight: 600;
     color: #475569;
-    white-space: nowrap;
 }
 
-/* Status badge (gewonnen/verloren) */
-.kanban-status-badge {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 4px;
+/* ============================================
+   COMPONENT OVERRIDES — Body (compact) in kanban
+   ============================================ */
+
+.kanban-kaart .tcb {
+    padding: 8px 14px;
 }
 
-.kanban-status-badge.gewonnen {
-    background: #dcfce7;
-    color: #15803d;
-}
-
-.kanban-status-badge.verloren {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-/* Naam */
-.kanban-kaart-naam {
+.kanban-kaart .tcb--compact .tcb-name {
     font-size: 14px;
     font-weight: 600;
-    color: #0f172a;
-    margin: 0 0 4px;
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -234,18 +324,12 @@
     overflow: hidden;
 }
 
-/* Opdrachtgever */
-.kanban-kaart-opdrachtgever {
+.kanban-kaart .tcb--compact .tcb-info-line {
     font-size: 12px;
-    color: #94a3b8;
-    margin: 0 0 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 /* ============================================
-   DEADLINE
+   DEADLINE — Kanban-specifiek
    ============================================ */
 
 .kanban-deadline {
@@ -254,10 +338,17 @@
     gap: 6px;
     font-size: 12px;
     color: #64748b;
-    margin-bottom: 10px;
+    margin: 0 14px 8px;
     padding: 6px 10px;
     background: #f8fafc;
     border-radius: 6px;
+}
+
+.kanban-deadline svg {
+    display: block;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
 .kanban-deadline.binnenkort {
@@ -289,14 +380,14 @@
 }
 
 /* ============================================
-   VOORTGANG
+   VOORTGANG — Kanban-specifiek
    ============================================ */
 
 .kanban-voortgang {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
+    margin: 0 14px 8px;
 }
 
 .kanban-voortgang-bar {
@@ -321,37 +412,16 @@
 }
 
 /* ============================================
-   TEAM AVATARS
+   COMPONENT OVERRIDES — Footer in kanban
+   Override ALLE base .tcf styles (margin, background, padding)
    ============================================ */
 
-.kanban-team {
-    display: flex;
-    gap: 0;
-    margin-top: 4px;
-}
-
-.kanban-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    font-weight: 700;
-    color: #ffffff;
-    border: 2px solid #ffffff;
-    margin-left: -6px;
-}
-
-.kanban-avatar:first-child {
-    margin-left: 0;
-}
-
-.kanban-avatar.overflow {
-    background: #e2e8f0;
-    color: #64748b;
-    font-size: 9px;
+.kanban-kaart .tcf {
+    padding: 8px 14px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border-top: 1px solid #f1f5f9 !important;
+    border-radius: 0 !important;
 }
 
 /* ============================================

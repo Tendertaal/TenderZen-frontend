@@ -1,0 +1,1114 @@
+/* Smart Import Button */
+#smart-import-btn {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    margin-right: 8px;
+}
+
+#smart-import-btn:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/**
+ * Tender Cards Styles - TenderZen v3.2
+ * 
+ * CHANGELOG v3.2:
+ * - ✅ STICKY HEADER FIX: overflow verwijderd van tenders-wrapper
+ * - ✅ Alleen #app-content mag scrollen
+ * - ✅ section-aanbesteding: 450px
+ * 
+ * CHANGELOG v3.0:
+ * - Geen gradients meer
+ * - Geen dubbele code
+ * - Cleane structuur
+ */
+
+/* ============================================
+   CSS VARIABLES (indien niet elders gedefinieerd)
+   ============================================ */
+
+:root {
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+}
+
+.headers-row .header-timeline {
+    width: 110px;
+    min-width: 110px;
+}
+
+.headers-row .header-cell.deadline-highlight {
+    background: var(--color-error-50);
+    color: var(--color-error-600);
+}
+
+.headers-row .header-cell.deadline-highlight .header-icon {
+    color: var(--color-error-500);
+}
+
+/* ============================================
+   TENDER ROW - Basis
+   ============================================ */
+
+.tender-row {
+    display: flex;
+    align-items: stretch;
+    background: #ffffff;
+    border-radius: var(--radius-xl);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+    transition: all var(--transition-normal);
+    overflow: visible;
+    min-width: max-content;
+    position: relative;
+    z-index: 1;
+}
+
+.tender-row.dropdown-open {
+    z-index: 100;
+}
+
+.tender-row:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
+}
+
+/* Phase-specific styling */
+.tender-row.phase-acquisitie,
+.tender-row.phase-inschrijvingen,
+.tender-row.phase-schrijven,
+.tender-row.phase-ingediend,
+.tender-row.phase-archief {
+    border-left: none;
+}
+
+.tender-row.phase-archief[data-status="verloren"] {
+    opacity: 0.85;
+}
+
+/* ============================================
+   SECTIE AANBESTEDING - v3.0 Design
+   ============================================ */
+
+.section-aanbesteding {
+    width: 450px;
+    min-width: 450px;
+    padding: 20px 24px;
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    overflow: visible;
+    background: #ffffff;
+    border-top-left-radius: var(--radius-xl);
+    border-bottom-left-radius: var(--radius-xl);
+}
+
+/* ============================================
+   CARD HEADER ROW - Fase + Status + Actions
+   ============================================ */
+
+.card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-header-left {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.card-header-right {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.fase-status-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+
+/* ============================================
+   FASE BADGE
+   ============================================ */
+
+.fase-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border: 1px solid;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.fase-badge--acquisitie {
+    background-color: #fef3c7;
+    color: #92400e;
+    border-color: #f59e0b;
+}
+
+.fase-badge--inschrijvingen {
+    background-color: #ede9fe;
+    color: #5b21b6;
+    border-color: #8b5cf6;
+}
+
+.fase-badge--ingediend {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-color: #10b981;
+}
+
+.fase-badge--archief {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #94a3b8;
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #64748b;
+    flex-shrink: 0;
+}
+
+.action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.action-btn.doc-button:hover {
+    border-color: #8b5cf6;
+    color: #7c3aed;
+}
+
+.action-btn.edit-button:hover {
+    border-color: #f59e0b;
+    color: #d97706;
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+.action-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ============================================
+   STATUS DROPDOWN
+   ============================================ */
+
+.status-dropdown {
+    position: relative;
+    flex-shrink: 1;
+    min-width: 100px;
+    max-width: 180px;
+    z-index: 1;
+}
+
+.status-dropdown.is-open {
+    z-index: 9999;
+}
+
+.status-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background-color: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.status-dropdown-trigger:hover {
+    border-color: #cbd5e1;
+    background-color: #f8fafc;
+}
+
+.status-dropdown.is-open .status-dropdown-trigger {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.status-dropdown-value {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.status-dropdown-chevron {
+    color: #64748b;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.status-dropdown.is-open .status-dropdown-chevron {
+    transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.status-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 200px;
+    max-height: 320px;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+    z-index: 9999;
+    display: none;
+}
+
+.status-dropdown.is-open .status-dropdown-menu {
+    display: block;
+}
+
+/* Dropdown Groups */
+.status-dropdown-group {
+    padding: 4px 0;
+}
+
+.status-dropdown-group:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.status-dropdown-label {
+    padding: 8px 14px 6px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+}
+
+.status-dropdown-group[data-fase="acquisitie"] .status-dropdown-label {
+    color: #b45309;
+}
+
+.status-dropdown-group[data-fase="inschrijvingen"] .status-dropdown-label {
+    color: #7c3aed;
+}
+
+.status-dropdown-group[data-fase="ingediend"] .status-dropdown-label {
+    color: #059669;
+}
+
+.status-dropdown-group[data-fase="archief"] .status-dropdown-label {
+    color: #475569;
+}
+
+/* Dropdown Options */
+.status-dropdown-option {
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.status-dropdown-option:hover {
+    background: #f8fafc;
+}
+
+.status-dropdown-option.is-selected {
+    background: #f1f5f9;
+    color: #667eea;
+    font-weight: 600;
+}
+
+.status-dropdown-option.is-selected::before {
+    content: '✓';
+    margin-right: 8px;
+    color: #667eea;
+}
+
+.status-dropdown-option.status--gewonnen {
+    color: #059669;
+    font-weight: 600;
+}
+
+.status-dropdown-option.status--verloren {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* Scrollbar */
+.status-dropdown-menu::-webkit-scrollbar {
+    width: 6px;
+}
+
+.status-dropdown-menu::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.status-dropdown-menu::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.status-dropdown-menu::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ============================================
+   CARD CONTENT - Naam + Info
+   ============================================ */
+
+.card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.tender-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+}
+
+.info-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.info-line svg {
+    flex-shrink: 0;
+    color: #94a3b8;
+}
+
+.info-line--opdrachtgever {
+    color: #475569;
+    font-weight: 500;
+}
+
+.info-line--opdrachtgever svg {
+    color: #64748b;
+}
+
+.info-line--inschrijver {
+    color: #64748b;
+}
+
+.info-line--tenderbureau {
+    color: #94a3b8;
+}
+
+/* ============================================
+   CARD FOOTER - Team + Meta
+   ============================================ */
+
+.card-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 24px;
+    margin: 0 -24px -20px -24px;
+    border-top: 1px solid rgba(139, 92, 246, 0.08);
+    background: rgba(139, 92, 246, 0.035);
+    border-radius: 0 0 0 12px;
+}
+
+/* ============================================
+   PLANNING & CHECKLIST SHORTCUT KNOPPEN v2.7
+   ============================================ */
+.planning-shortcut {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1.5px solid transparent;
+    font-family: inherit;
+}
+
+.planning-shortcut__count {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 5px;
+    color: white;
+    letter-spacing: 0.3px;
+}
+
+/* Planning knop - paars */
+.planning-shortcut--planning {
+    background: rgba(139, 92, 246, 0.06);
+    border-color: rgba(139, 92, 246, 0.15);
+    color: #7c3aed;
+}
+
+.planning-shortcut--planning:hover {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.planning-shortcut--planning .planning-shortcut__count {
+    background: #7c3aed;
+}
+
+/* Checklist knop - groen */
+.planning-shortcut--checklist {
+    background: rgba(34, 197, 94, 0.06);
+    border-color: rgba(34, 197, 94, 0.15);
+    color: #16a34a;
+}
+
+.planning-shortcut--checklist:hover {
+    background: rgba(34, 197, 94, 0.12);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.planning-shortcut--checklist .planning-shortcut__count {
+    background: #16a34a;
+}
+
+.planning-shortcut svg {
+    width: 13px;
+    height: 13px;
+}
+
+/* Team Avatars */
+.team-avatars {
+    display: flex;
+    align-items: center;
+}
+
+.avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    border: 2px solid white;
+    margin-left: -8px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.avatar:first-child {
+    margin-left: 0;
+}
+
+.avatar:hover {
+    transform: scale(1.1);
+    z-index: 5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Avatar kleuren per rol */
+.avatar--manager {
+    background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+}
+
+.avatar--schrijver {
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.avatar--teamlid {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.avatar--coordinator {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.avatar--designer {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.avatar--calculator {
+    background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+}
+
+.avatar--reviewer {
+    background: linear-gradient(135deg, #84cc16 0%, #a3e635 100%);
+}
+
+.avatar--sales {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.avatar--klant_contact {
+    background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%);
+}
+
+.avatar--overflow {
+    background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+    font-size: 9px;
+}
+
+.avatar--add {
+    background: #f1f5f9;
+    color: #94a3b8;
+    border: 2px dashed #cbd5e1;
+}
+
+.avatar--add:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
+    color: #667eea;
+}
+
+/* Meta Row */
+.meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.type-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.meta-item svg {
+    color: #94a3b8;
+}
+
+.meta-item--urgent {
+    color: #dc2626;
+}
+
+.meta-item--urgent svg {
+    color: #dc2626;
+}
+
+/* ============================================
+   SECTIE TIMELINE
+   ============================================ */
+
+.section-timeline {
+    display: flex;
+    flex: 1;
+}
+
+.section-timeline .timeline-cell:last-child {
+    border-top-right-radius: var(--radius-xl);
+    border-bottom-right-radius: var(--radius-xl);
+}
+
+.timeline-cell {
+    width: 110px;
+    min-width: 110px;
+    padding: 16px 8px;
+    border-right: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.timeline-cell:last-child {
+    border-right: none;
+}
+
+/* Basis date display */
+.date-display {
+    padding: 20px 16px;
+    border-radius: 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    min-height: 80px;
+    min-width: 80px;
+}
+
+.date-display .date-day {
+    font-size: 28px;
+    font-weight: 700;
+    color: #334155;
+    line-height: 1;
+}
+
+.date-display .date-month {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+}
+
+/* Gevulde datum */
+.date-display.filled {
+    background: #f1f5f9;
+}
+
+/* Lege datum - placeholder blok */
+.date-display.empty {
+    background: #f8fafc;
+    border: 2px dashed #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.date-display.empty .date-add-icon {
+    font-size: 20px;
+    font-weight: 300;
+    color: #cbd5e1;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.date-display.empty:hover {
+    background: #f1f5f9;
+    border-color: #a5b4fc;
+}
+
+.date-display.empty:hover .date-add-icon {
+    color: #6366f1;
+}
+
+/* Deadline - paarse accent */
+.date-display.deadline {
+    background: #f3f0ff;
+}
+
+/* ⭐ v2.7: Subtiele deadline kolom highlight
+   Geeft de hele deadline kolom een zachte tint zodat
+   het visueel duidelijk is welke kolom de deadline is */
+.section-timeline .timeline-cell:nth-child(7) {
+    background: rgba(124, 58, 237, 0.035);
+    border-left: 2px solid rgba(124, 58, 237, 0.12);
+    border-right: 2px solid rgba(124, 58, 237, 0.12);
+}
+
+.date-display.deadline .date-day {
+    color: #7c3aed;
+}
+
+.date-display.deadline .date-month {
+    color: #8b5cf6;
+}
+
+/* Urgente deadline */
+.date-display.urgent {
+    background: #fef2f2;
+}
+
+.date-display.urgent .date-day {
+    color: #dc2626;
+}
+
+.date-display.urgent .date-month {
+    color: #ef4444;
+}
+
+/* Binnenkort deadline */
+.date-display.soon {
+    background: #fffbeb;
+}
+
+.date-display.soon .date-day {
+    color: #d97706;
+}
+
+.date-display.soon .date-month {
+    color: #f59e0b;
+}
+
+/* Verstreken datum */
+.date-display.completed {
+    background: #f8fafc;
+}
+
+.date-display.completed .date-day {
+    color: #94a3b8;
+}
+
+.date-display.completed .date-month {
+    color: #cbd5e1;
+}
+
+/* Days to Deadline Badge */
+.days-to-deadline {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-top: 2px;
+}
+
+.days-to-deadline.ok {
+    background: #10b981;
+    color: white;
+}
+
+.days-to-deadline.soon {
+    background: #f59e0b;
+    color: white;
+}
+
+.days-to-deadline.urgent {
+    background: #dc2626;
+    color: white;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-16);
+    text-align: center;
+    color: var(--text-tertiary);
+}
+
+.empty-state-icon {
+    color: var(--text-muted);
+    margin-bottom: var(--space-4);
+}
+
+.empty-state-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.empty-state-text {
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+    max-width: 300px;
+}
+
+/* ============================================
+   LOADING STATE
+   ============================================ */
+
+.tender-row.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.tender-row.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1400px) {
+    .section-aanbesteding {
+        width: 400px;
+        min-width: 400px;
+    }
+
+    .headers-row .header-aanbesteding {
+        width: 400px;
+        min-width: 400px;
+    }
+
+    .timeline-cell {
+        width: 100px;
+        min-width: 100px;
+    }
+
+    .headers-row .header-timeline {
+        width: 100px;
+        min-width: 100px;
+    }
+
+    .date-display {
+        min-height: 70px;
+        min-width: 70px;
+        padding: 16px 12px;
+    }
+
+    .date-display .date-day {
+        font-size: 24px;
+    }
+
+    .date-display .date-month {
+        font-size: 11px;
+    }
+
+    .avatar {
+        width: 26px;
+        height: 26px;
+        font-size: 9px;
+        margin-left: -6px;
+    }
+
+    .planning-shortcut {
+        padding: 3px 8px;
+        font-size: 10px;
+    }
+
+    .planning-shortcut__count {
+        font-size: 8px;
+        padding: 1px 5px;
+    }
+
+    .type-badge {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .section-aanbesteding {
+        width: 360px;
+        min-width: 360px;
+        padding: 16px 20px;
+    }
+
+    .headers-row .header-aanbesteding {
+        width: 360px;
+        min-width: 360px;
+    }
+
+    .timeline-cell {
+        width: 90px;
+        min-width: 90px;
+    }
+
+    .headers-row .header-timeline {
+        width: 90px;
+        min-width: 90px;
+    }
+
+    .date-display {
+        min-height: 60px;
+        min-width: 60px;
+        padding: 12px 10px;
+    }
+
+    .date-display .date-day {
+        font-size: 20px;
+    }
+
+    .date-display .date-month {
+        font-size: 10px;
+    }
+
+    .days-to-deadline {
+        font-size: 10px;
+        padding: 3px 8px;
+    }
+
+    .tender-name {
+        font-size: 15px;
+    }
+
+    .info-line {
+        font-size: 12px;
+    }
+}
+
+/* Scroll hint */
+@media (max-width: 1600px) {
+    .tenders-wrapper {
+        position: relative;
+    }
+
+    .tenders-wrapper::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 60px;
+        background: linear-gradient(90deg, transparent, rgba(248, 250, 252, 0.9));
+        pointer-events: none;
+    }
+
+    .tenders-wrapper.scrolled-right::after {
+        display: none;
+    }
+}
+
+/* ============================================
+   SEARCH RESULTS STYLING
+   ============================================ */
+
+.search-results-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%);
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #4338ca;
+}
+
+.search-results-count {
+    font-weight: 700;
+    color: #4f46e5;
+}
+
+.search-results-info strong {
+    font-weight: 600;
+}
+
+.search-highlight {
+    background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
+    color: #854d0e;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: inherit;
+}
+
+/* No Search Results */
+.empty-state--search {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-state--search .empty-state-icon {
+    color: #94a3b8;
+    margin-bottom: 16px;
+}
+
+.empty-state--search .empty-state-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.empty-state--search .empty-state-text {
+    font-size: 14px;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.empty-state--search .empty-state-text strong {
+    color: #4f46e5;
+    font-weight: 600;
+}
+
+.empty-state--search .empty-state-hint {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+@media (max-width: 768px) {
+    .search-results-info {
+        font-size: 13px;
+        padding: 8px 12px;
+    }
+}

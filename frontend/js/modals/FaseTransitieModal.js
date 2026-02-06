@@ -1,11 +1,13 @@
 /**
- * FaseTransitieModal - Bevestigings/waarschuwingsmodal voor Kanban fase transities
+ * FaseTransitieModal — Bevestigings/waarschuwingsmodal voor Kanban fase transities
  * TenderZen v1.0
+ *
+ * Gebruikt Icons uit icons.js voor consistentie door de hele app.
  *
  * Gebruik:
  *   const modal = new FaseTransitieModal();
  *   const confirmed = await modal.show(transitieResult);
-  *   if (confirmed) { // voer transitie uit }
+ *   if (confirmed) { // voer transitie uit }
  */
 
 export class FaseTransitieModal {
@@ -44,7 +46,7 @@ export class FaseTransitieModal {
         this.header.appendChild(this.iconEl);
         this.header.appendChild(this.titleEl);
 
-        // Transitie indicator (Van â†’ Naar)
+        // Transitie indicator (Van → Naar)
         this.transitieBar = document.createElement('div');
         this.transitieBar.className = 'fase-transitie-bar';
 
@@ -83,17 +85,18 @@ export class FaseTransitieModal {
     }
 
     // ============================================
-    // FASE KLEUREN & ICONEN
+    // FASE KLEUREN & ICONEN (via Icons library)
     // ============================================
 
     _getFaseConfig(fase) {
+        const iconOpts = { size: 14, color: 'currentColor' };
         const configs = {
-            acquisitie: { kleur: '#ea580c', label: 'Acquisitie', icon: '\uD83D\uDD0D' }, // 🔍
-            inschrijvingen: { kleur: '#2563eb', label: 'Lopend', icon: '\u270F\uFE0F' }, // ✏️
-            ingediend: { kleur: '#16a34a', label: 'Ingediend', icon: '\uD83D\uDCE4' }, // 📤
-            archief: { kleur: '#64748b', label: 'Archief', icon: '\uD83D\uDCC1' } // 📁
+            acquisitie:     { kleur: '#ea580c', label: 'Acquisitie',  icon: Icons.search(iconOpts) },
+            inschrijvingen: { kleur: '#2563eb', label: 'Lopend',      icon: Icons.edit(iconOpts) },
+            ingediend:      { kleur: '#16a34a', label: 'Ingediend',   icon: Icons.checkCircle(iconOpts) },
+            archief:        { kleur: '#64748b', label: 'Archief',     icon: Icons.archive(iconOpts) }
         };
-        return configs[fase] || { kleur: '#94a3b8', label: fase, icon: '\uD83D\uDCCB' }; // 📋
+        return configs[fase] || { kleur: '#94a3b8', label: fase, icon: Icons.clipboardList(iconOpts) };
     }
 
     // ============================================
@@ -102,7 +105,7 @@ export class FaseTransitieModal {
 
     /**
      * Toon de modal en wacht op bevestiging.
-     * @param {Object} transitie â€” Resultaat van evalueerTransitie()
+     * @param {Object} transitie — Resultaat van evalueerTransitie()
      * @returns {Promise<boolean>} true als bevestigd, false als geannuleerd
      */
     show(transitie) {
@@ -111,21 +114,17 @@ export class FaseTransitieModal {
 
             const isWaarschuwing = transitie.type === 'waarschuw';
 
-            // Icon
+            // Icon — via Icons library
             this.iconEl.innerHTML = isWaarschuwing
-                ? `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
-                : `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+                ? Icons.warning({ size: 28, color: IconColors.amber })
+                : Icons.helpCircle({ size: 28, color: IconColors.indigo });
 
             this.iconEl.className = `fase-transitie-icon ${isWaarschuwing ? 'warning' : 'confirm'}`;
 
             // Titel
             this.titleEl.textContent = transitie.titel || 'Fase wijzigen';
 
-            // Transitie bar (Van â†’ Naar)
-            const vanConfig = this._getFaseConfig(transitie.vanLabel?.toLowerCase() === 'lopend' ? 'inschrijvingen' : transitie.vanLabel?.toLowerCase());
-            const naarConfig = this._getFaseConfig(transitie.naarLabel?.toLowerCase() === 'lopend' ? 'inschrijvingen' : transitie.naarLabel?.toLowerCase());
-
-            // Lookup by label instead
+            // Transitie bar (Van → Naar)
             const vanFaseKey = Object.entries({
                 acquisitie: 'Acquisitie',
                 inschrijvingen: 'Lopend',
@@ -147,7 +146,7 @@ export class FaseTransitieModal {
                 <span class="fase-badge" style="--fase-kleur: ${vanCfg.kleur}">
                     ${vanCfg.icon} ${transitie.vanLabel}
                 </span>
-                <span class="fase-arrow">&#8594;</span>
+                <span class="fase-arrow">→</span>
                 <span class="fase-badge" style="--fase-kleur: ${naarCfg.kleur}">
                     ${naarCfg.icon} ${transitie.naarLabel}
                 </span>
@@ -156,14 +155,13 @@ export class FaseTransitieModal {
             // Bericht
             this.berichtEl.textContent = transitie.bericht || '';
 
-            // Waarschuwingen
+            // Waarschuwingen — via Icons library
             if (transitie.warnings && transitie.warnings.length > 0) {
                 this.warningsEl.style.display = 'block';
+                const warningIcon = Icons.alertCircle({ size: 16, color: IconColors.amber });
                 this.warningsEl.innerHTML = transitie.warnings.map(w => `
                     <div class="fase-warning-item">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
+                        ${warningIcon}
                         <span>${w}</span>
                     </div>
                 `).join('');
