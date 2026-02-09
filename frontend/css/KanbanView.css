@@ -1,14 +1,18 @@
 /**
  * KanbanView Styling
- * TenderZen v2.5 — Fase badge verborgen (kolom header toont fase)
+ * TenderZen v2.7 — Portal dropdown fix + transform verwijderd
+ *
+ * DOEL-PAD: Frontend/css/KanbanView.css
  *
  * CHANGELOG:
+ * - v2.7: Portal class voor dropdown menu (.tch-menu-portal)
+ *         transform: translateY(-1px) verwijderd van :hover (breekt stacking context)
+ * - v2.6: grid 4 naar 5 kolommen, responsive 5 > 3 > 2 > 1
  * - v2.5: Fase badge verbergen op kanban kaarten
- * - v2.4: Footer override .tcf ipv .tcf--compact (fix negatieve marges)
+ * - v2.4: Footer override .tcf ipv .tcf--compact
  * - v2.3: SVG icon wrappers in kolom headers, solid color bar kaart header
  * - v2.2: Solid bar + pill accent
  * - v2.0: TenderCard component overrides
- * - v1.2: Gelijke kolombreedtes, overflow fix
  * - v1.0: Initiële styling
  */
 
@@ -18,7 +22,7 @@
 
 .kanban-board {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 16px;
     padding: 20px 24px;
     min-height: calc(100vh - 160px);
@@ -188,6 +192,9 @@
 
 /* ============================================
    KANBAN KAART — Container
+   ⚠️ v2.7: GEEN transform op :hover!
+   transform maakt een nieuwe containing block,
+   waardoor position:fixed als absolute werkt
    ============================================ */
 
 .kanban-kaart {
@@ -195,7 +202,7 @@
     border-radius: 10px;
     border: 1px solid #e2e8f0;
     cursor: grab;
-    transition: all 0.15s ease;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
     user-select: none;
     min-width: 0;
     overflow: visible;
@@ -203,7 +210,7 @@
 
 .kanban-kaart:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transform: translateY(-1px);
+    /* ⚠️ v2.7: GEEN transform hier — breekt position:fixed in kinderen */
     border-color: #cbd5e1;
 }
 
@@ -217,10 +224,17 @@
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-/* Kaart boven andere kaarten tillen wanneer dropdown open is */
-.kanban-kaart:has(.is-open) {
-    z-index: 100;
-    position: relative;
+/* ============================================
+   ⭐ v2.7: PORTAL DROPDOWN
+   Wanneer het menu naar document.body is verplaatst,
+   krijgt het deze class. Overschrijft display:none
+   uit TenderCardHeader.css
+   ============================================ */
+
+.tch-menu-portal {
+    display: block !important;
+    position: fixed !important;
+    z-index: 99999 !important;
 }
 
 /* ============================================
@@ -232,7 +246,6 @@
     border-radius: 9px 9px 0 0;
 }
 
-/* Alle TenderCardHeader elementen wit maken op gekleurde achtergrond */
 .kanban-kaart-header-wrap .tch {
     margin: 0;
 }
@@ -413,7 +426,6 @@
 
 /* ============================================
    COMPONENT OVERRIDES — Footer in kanban
-   Override ALLE base .tcf styles (margin, background, padding)
    ============================================ */
 
 .kanban-kaart .tcf {
@@ -428,7 +440,24 @@
    RESPONSIVE
    ============================================ */
 
+@media (max-width: 1400px) {
+    .kanban-board {
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .kanban-kaart .tcb--compact .tcb-name {
+        font-size: 13px;
+    }
+}
+
 @media (max-width: 1200px) {
+    .kanban-board {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
     .kanban-board {
         grid-template-columns: repeat(2, 1fr);
     }

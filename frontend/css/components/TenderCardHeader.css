@@ -1,12 +1,16 @@
 /**
  * TenderCardHeader Styling
- * TenderZen v1.1
+ * TenderZen v2.0 — Dynamische kleuren via inline styles
  *
  * DOEL-PAD:  Frontend/css/components/TenderCardHeader.css
  *
+ * CHANGELOG v2.0:
+ * - Per-fase badge kleuren verwijderd (komen nu via inline styles uit database)
+ * - Per-fase dropdown label kleuren verwijderd (idem)
+ * - Structurele styles ongewijzigd
+ *
  * CHANGELOG v1.1:
  * - .tch-fase-badge--evaluatie toegevoegd (teal)
- * - .tch-dropdown-group[data-fase="evaluatie"] label kleur
  *
  * Twee formaten: default (.tch) en compact (.tch--compact).
  */
@@ -38,6 +42,8 @@
 
 /* ============================================
    FASE BADGE
+   Kleuren komen via inline style uit database.
+   Structuur en layout hier, kleuren dynamisch.
    ============================================ */
 
 .tch-fase-badge {
@@ -52,36 +58,6 @@
     border: 1px solid;
     flex-shrink: 0;
     white-space: nowrap;
-}
-
-.tch-fase-badge--acquisitie {
-    background-color: #fef3c7;
-    color: #92400e;
-    border-color: #f59e0b;
-}
-
-.tch-fase-badge--inschrijvingen {
-    background-color: #ede9fe;
-    color: #5b21b6;
-    border-color: #8b5cf6;
-}
-
-.tch-fase-badge--ingediend {
-    background-color: #d1fae5;
-    color: #065f46;
-    border-color: #10b981;
-}
-
-.tch-fase-badge--evaluatie {
-    background-color: #ccfbf1;
-    color: #115e59;
-    border-color: #14b8a6;
-}
-
-.tch-fase-badge--archief {
-    background-color: #f1f5f9;
-    color: #475569;
-    border-color: #94a3b8;
 }
 
 /* ============================================
@@ -219,20 +195,15 @@
     border-bottom: 1px solid #f1f5f9;
 }
 
+/* Label kleur komt via inline style uit database */
 .tch-dropdown-label {
     padding: 8px 14px 6px;
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #64748b;
+    color: #64748b; /* fallback als geen inline style */
 }
-
-.tch-dropdown-group[data-fase="acquisitie"] .tch-dropdown-label { color: #b45309; }
-.tch-dropdown-group[data-fase="inschrijvingen"] .tch-dropdown-label { color: #7c3aed; }
-.tch-dropdown-group[data-fase="ingediend"] .tch-dropdown-label { color: #059669; }
-.tch-dropdown-group[data-fase="evaluatie"] .tch-dropdown-label { color: #0d9488; }
-.tch-dropdown-group[data-fase="archief"] .tch-dropdown-label { color: #475569; }
 
 /* Dropdown Options */
 .tch-dropdown-option {

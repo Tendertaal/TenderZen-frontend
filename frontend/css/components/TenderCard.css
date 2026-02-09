@@ -1,26 +1,30 @@
 /**
  * TenderCard — Shared + List View Styles
- * TenderZen v3.9
+ * TenderZen v4.0
  *
  * DOEL-PAD:  Frontend/css/components/TenderCard.css
  *
  * SECTIE A: SHARED STYLES — Werken in List, Kanban, Planning
  * SECTIE B: LIST VIEW ONLY — Gescooped naar .tender-list-view
  *
+ * CHANGELOG v4.0:
+ * - FIX: z-index management voor open dropdowns (voorkomt overlap met andere kaarten)
+ * - FIX: .tender-row position: relative voor correcte z-index stacking
+ *
  * CHANGELOG v3.9:
  * - NIEUW: tc-footer-band (volle breedte), tc-footer-left, tc-footer-right
  * - NIEUW: tc-footer-cell (110px, uitgelijnd met timeline kolommen)
  * - NIEUW: tc-days-badge (vervangt days-to-deadline in de cel)
- * - Footer uit tc-body-section → eigen tc-footer-band
+ * - Footer uit tc-body-section naar eigen tc-footer-band
  * - Responsive breakpoints gesynchroniseerd voor footer-cellen
  */
 
 
-/* ╔══════════════════════════════════════════════╗
-   ║  SECTIE A: SHARED STYLES (alle views)       ║
-   ╚══════════════════════════════════════════════╝ */
+/* ======================================================
+   SECTIE A: SHARED STYLES (alle views)
+   ====================================================== */
 
-/* ── Solid color bar ── */
+/* -- Solid color bar -- */
 .tc-header-wrap {
     padding: 10px 16px;
 }
@@ -62,7 +66,7 @@
     color: var(--text-primary, #1e293b);
 }
 
-/* ── Waarde badge ── */
+/* -- Waarde badge -- */
 .tc-waarde {
     display: inline-block;
     margin-top: 4px;
@@ -75,12 +79,12 @@
     letter-spacing: 0.3px;
 }
 
-/* ── Body wrap ── */
+/* -- Body wrap -- */
 .tc-body-wrap {
     padding: 12px 16px 8px;
 }
 
-/* ── Deadline indicator ── */
+/* -- Deadline indicator -- */
 .tc-deadline {
     display: inline-flex;
     align-items: center;
@@ -117,25 +121,36 @@
 }
 
 
-/* ╔══════════════════════════════════════════════╗
-   ║  SECTIE B: LIST VIEW ONLY                   ║
-   ║  Alle regels gescooped naar                  ║
-   ║  .tender-list-view                           ║
-   ╚══════════════════════════════════════════════╝ */
+/* ======================================================
+   SECTIE B: LIST VIEW ONLY
+   Alle regels gescooped naar .tender-list-view
+   ====================================================== */
 
-/* ── Fase badge verbergen — header-band toont al de fase ── */
+/* -- Fase badge verbergen: header-band toont al de fase -- */
 .tender-list-view .tch-fase-badge {
     display: none;
 }
 
-/* ── Tender-row: column layout ── */
+/* -- Tender-row: column layout + z-index stacking -- */
 .tender-list-view .tender-row {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    position: relative;
+    z-index: 1;
 }
 
-/* ── Band 1: Header ── */
+/* Kaart met open dropdown krijgt hogere z-index */
+.tender-list-view .tender-row.dropdown-open {
+    z-index: 100;
+}
+
+
+/* ======================================================
+   BAND 1: HEADER
+   Solid bar (420px) + Timeline headers (flex:1)
+   ====================================================== */
+
 .tender-list-view .tc-header-band {
     display: flex;
     align-items: stretch;
@@ -152,9 +167,10 @@
     flex-direction: column;
     justify-content: center;
     border-right: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-xl, 16px) 0 0 0;
 }
 
-/* ── Timeline headers ── */
+/* -- Timeline headers -- */
 .tender-list-view .tc-timeline-headers {
     display: flex;
     flex: 1;
@@ -176,6 +192,7 @@
 
 .tender-list-view .tc-timeline-header:last-child {
     border-right: none;
+    border-radius: 0 var(--radius-xl, 16px) 0 0;
 }
 
 .tender-list-view .tc-timeline-header-icon {
@@ -195,9 +212,13 @@
     white-space: nowrap;
 }
 
-/* ── Deadline header: dynamisch op basis van dagen tot deadline ── */
 
-/* Groen: >7 dagen — alles onder controle */
+/* ======================================================
+   DEADLINE HEADER KLEURING
+   Dynamisch op basis van dagen tot deadline
+   ====================================================== */
+
+/* Groen: >7 dagen */
 .tender-list-view .tc-timeline-header--dl-ok {
     background: #f0fdf4;
 }
@@ -209,7 +230,7 @@
     font-weight: 700;
 }
 
-/* Geel: 4-7 dagen — aandacht nodig */
+/* Geel: 4-7 dagen */
 .tender-list-view .tc-timeline-header--dl-soon {
     background: #fefce8;
 }
@@ -221,7 +242,7 @@
     font-weight: 700;
 }
 
-/* Rood: 0-3 dagen — urgent */
+/* Rood: 0-3 dagen */
 .tender-list-view .tc-timeline-header--dl-urgent {
     background: #fef2f2;
 }
@@ -250,7 +271,12 @@
     background: transparent;
 }
 
-/* ── Band 2: Content ── */
+
+/* ======================================================
+   BAND 2: CONTENT
+   Body (420px) + Timeline data (flex:1)
+   ====================================================== */
+
 .tender-list-view .tc-content-band {
     display: flex;
     align-items: stretch;
@@ -275,9 +301,9 @@
 }
 
 
-/* ╔══════════════════════════════════════════════╗
-   ║  BAND 3: FOOTER (volle breedte)             ║
-   ╚══════════════════════════════════════════════╝ */
+/* ======================================================
+   BAND 3: FOOTER (volle breedte)
+   ====================================================== */
 
 .tender-list-view .tc-footer-band {
     display: flex;
@@ -287,7 +313,7 @@
     border-radius: 0 0 var(--radius-xl, 16px) var(--radius-xl, 16px);
 }
 
-/* ── Footer links: team avatars + shortcuts (420px) ── */
+/* -- Footer links: team avatars + shortcuts (420px) -- */
 .tender-list-view .tc-footer-left {
     width: 420px;
     min-width: 420px;
@@ -303,7 +329,7 @@
     border-radius: 0;
 }
 
-/* ── Footer rechts: cellen uitgelijnd met timeline kolommen ── */
+/* -- Footer rechts: cellen uitgelijnd met timeline kolommen -- */
 .tender-list-view .tc-footer-right {
     display: flex;
     flex: 1;
@@ -322,9 +348,9 @@
 }
 
 
-/* ╔══════════════════════════════════════════════╗
-   ║  DAGEN BADGE (in footer-band)               ║
-   ╚══════════════════════════════════════════════╝ */
+/* ======================================================
+   DAGEN BADGE (in footer-band)
+   ====================================================== */
 
 .tc-days-badge {
     display: inline-flex;
@@ -365,9 +391,9 @@
 }
 
 
-/* ╔══════════════════════════════════════════════╗
-   ║  RESPONSIVE (list view only)                ║
-   ╚══════════════════════════════════════════════╝ */
+/* ======================================================
+   RESPONSIVE (list view only)
+   ====================================================== */
 
 @media (max-width: 1400px) {
     .tender-list-view .tc-header-wrap,

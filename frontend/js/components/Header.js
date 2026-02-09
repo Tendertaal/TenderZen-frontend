@@ -1,6 +1,28 @@
 /**
  * Header Component
- * TenderZen v3.0 - Quick Nav Icons in Header
+ * TenderZen v3.3 - Altijd gekleurde badges + view toggle links + separator
+ * 
+ * DOEL-PAD: Frontend/js/components/Header.js
+ * 
+ * CHANGELOG v3.3:
+ * - GEWIJZIGD: Badges altijd gekleurd (niet alleen bij active tab)
+ * - GEWIJZIGD: _injectDynamicFaseStyles() genereert kleuren zonder .active selector
+ * - GEWIJZIGD: View toggle verplaatst naar links (vóór fase tabs)
+ * - NIEUW: Visuele separator tussen view toggle en fase tabs
+ * - GEWIJZIGD: Layout sub-header: [view-toggle | separator | fase-tabs ... | search + import]
+ * 
+ * CHANGELOG v3.2:
+ * - DYNAMISCH: Tabs worden opgebouwd uit faseConfig (fase_config DB tabel)
+ * - DYNAMISCH: updateBadges() querySelectorAll i.p.v. hardcoded per fase
+ * - DYNAMISCH: Fase-kleuren via geïnjecteerde CSS (geen hardcoded kleuren meer)
+ * - NIEUW: setFaseConfig() methode — wordt aangeroepen door App.js
+ * - NIEUW: _injectDynamicFaseStyles() — genereert CSS per fase
+ * - Geen code-aanpassing nodig bij toevoegen nieuwe fases
+ * 
+ * CHANGELOG v3.1:
+ * - NIEUW: Evaluatie tab in filterbalk (teal kleur, label "Afronden")
+ * - NIEUW: evaluatie count in tenderCounts + updateBadges
+ * - Evaluatie tab actieve styling (teal: #0d9488)
  * 
  * CHANGELOG v3.0:
  * - NIEUW: Quick-nav iconen (Tenders, Bedrijven, Team) direct zichtbaar in header
@@ -50,13 +72,10 @@ export class Header {
         this.searchQuery = '';           // Huidige waarde in zoekbalk (voor live filtering)
         this.activeSearchChip = '';      // Actieve filter chip (na Enter)
         this.searchResultsCount = null;  // ⭐ v2.7: Resultaten count
-        this.tenderCounts = {
-            totaal: 0,
-            acquisitie: 0,
-            inschrijvingen: 0,
-            ingediend: 0,
-            archief: 0
-        };
+
+        // ⭐ v3.2: Dynamische fase configuratie (uit fase_config DB tabel)
+        this.faseConfig = [];  // Wordt gezet via setFaseConfig() vanuit App.js
+        this.tenderCounts = { totaal: 0 };  // Wordt dynamisch opgebouwd uit faseConfig
 
         // User state
         this.isSuperAdmin = false;
@@ -225,8 +244,53 @@ export class Header {
     }
 
     /**
-     * Set super-admin status
+     * ⭐ v3.2: Stel dynamische fase configuratie in vanuit faseService
+     * Wordt aangeroepen door App.js na faseService.loadConfig()
+     * 
+     * @param {Array} faseConfig - Array van fase objecten uit fase_config DB tabel
+     *   Elk object: { fase, naam_display, volgorde, kleur, icon, beschrijving }
      */
+    setFaseConfig(faseConfig) {
+        this.faseConfig = (faseConfig || []).sort((a, b) => a.volgorde - b.volgorde);
+
+        // Bouw tenderCounts dynamisch op met initiële waarden
+        this.tenderCounts = { totaal: 0 };
+        this.faseConfig.forEach(fc => {
+            this.tenderCounts[fc.fase] = 0;
+        });
+
+        // Injecteer dynamische CSS voor fase-specifieke kleuren
+        this._injectDynamicFaseStyles();
+
+        console.log('📊 Header faseConfig set:', this.faseConfig.map(f => f.fase));
+    }
+
+    /**
+     * ⭐ v3.3: Injecteer CSS custom properties voor fase kleuren
+     * Badges zijn ALTIJD gekleurd — niet alleen bij .active tab
+     */
+    _injectDynamicFaseStyles() {
+        const existing = document.getElementById('dynamic-fase-styles');
+        if (existing) existing.remove();
+
+        if (!this.faseConfig.length) return;
+
+        const style = document.createElement('style');
+        style.id = 'dynamic-fase-styles';
+
+        let css = '/* ⭐ v3.3: Dynamisch gegenereerde fase kleuren — badges altijd gekleurd */\n';
+
+        this.faseConfig.forEach(fc => {
+            css += `.phase-indicator.${fc.fase} { background: ${fc.kleur}; }\n`;
+            css += `.main-tab[data-tab="${fc.fase}"].active { color: ${fc.kleur}; border-bottom-color: ${fc.kleur}; }\n`;
+            // ⭐ v3.3: Badges ALTIJD gekleurd (niet alleen bij .active)
+            css += `.main-tab[data-tab="${fc.fase}"] .badge { background: ${fc.kleur}; color: #ffffff; }\n`;
+        });
+
+        style.textContent = css;
+        document.head.appendChild(style);
+    }
+
     setSuperAdmin(isSuperAdmin) {
         this.isSuperAdmin = isSuperAdmin;
         this.updateMenuVisibility();
@@ -369,19 +433,15 @@ export class Header {
 
     /**
      * Update badges without re-rendering
+     * ⭐ v3.2: Dynamisch — querySelectorAll i.p.v. hardcoded per fase
      */
     updateBadges() {
-        const badges = {
-            'totaal': document.querySelector('[data-tab="totaal"] .badge'),
-            'acquisitie': document.querySelector('[data-tab="acquisitie"] .badge'),
-            'inschrijvingen': document.querySelector('[data-tab="inschrijvingen"] .badge'),
-            'ingediend': document.querySelector('[data-tab="ingediend"] .badge'),
-            'archief': document.querySelector('[data-tab="archief"] .badge')
-        };
-
-        Object.entries(badges).forEach(([tab, badge]) => {
-            if (badge) {
-                badge.textContent = this.tenderCounts[tab] || 0;
+        // Update alle fase tab badges dynamisch
+        document.querySelectorAll('.main-tab[data-tab] .badge').forEach(badge => {
+            const tab = badge.closest('[data-tab]');
+            if (tab) {
+                const tabName = tab.dataset.tab;
+                badge.textContent = this.tenderCounts[tabName] || 0;
             }
         });
     }
@@ -759,7 +819,9 @@ export class Header {
     }
 
     /**
-     * ⭐ v2.9: Render Tenders sub-header - ALLEEN Smart Import knop (geen + Tender)
+     * ⭐ v3.3: Render Tenders sub-header
+     * Layout: [view-toggle | separator | fase-tabs ... | search + smart-import]
+     * Badges altijd gekleurd via dynamische CSS
      */
     renderTendersSubHeader() {
         // Build results text for initial render
@@ -769,34 +831,43 @@ export class Header {
             resultsText = `<span class="filter-results-count">${this.searchResultsCount} ${resultWord}</span>`;
         }
 
+        // ⭐ v3.2: Dynamische fase tabs uit faseConfig
+        const faseTabs = this.faseConfig.map(fc => `
+                    <button class="main-tab ${this.activeTab === fc.fase ? 'active' : ''}" data-tab="${fc.fase}">
+                        <span class="tab-label">${fc.naam_display}</span>
+                        <span class="badge">${this.tenderCounts[fc.fase] || 0}</span>
+                    </button>`).join('');
+
         return `
             <div class="sub-header sub-header-tenders">
                 <div class="sub-header-left">
-                    <button class="main-tab ${this.activeTab === 'totaal' ? 'active' : ''}" data-tab="totaal">
-                        <span class="tab-icon">${Icons.dashboard ? Icons.dashboard({ size: 18 }) : ''}</span>
-                        <span class="tab-label">Overzicht</span>
-                        <span class="badge">${this.tenderCounts.totaal}</span>
-                    </button>
-                    <button class="main-tab ${this.activeTab === 'acquisitie' ? 'active' : ''}" data-tab="acquisitie">
-                        <span class="phase-indicator acquisitie"></span>
-                        <span class="tab-label">Acquisitie</span>
-                        <span class="badge">${this.tenderCounts.acquisitie}</span>
-                    </button>
-                    <button class="main-tab ${this.activeTab === 'inschrijvingen' ? 'active' : ''}" data-tab="inschrijvingen">
-                        <span class="phase-indicator inschrijvingen"></span>
-                        <span class="tab-label">Lopend</span>
-                        <span class="badge">${this.tenderCounts.inschrijvingen}</span>
-                    </button>
-                    <button class="main-tab ${this.activeTab === 'ingediend' ? 'active' : ''}" data-tab="ingediend">
-                        <span class="phase-indicator ingediend"></span>
-                        <span class="tab-label">Ingediend</span>
-                        <span class="badge">${this.tenderCounts.ingediend}</span>
-                    </button>
-                    <button class="main-tab ${this.activeTab === 'archief' ? 'active' : ''}" data-tab="archief">
-                        <span class="phase-indicator archief"></span>
-                        <span class="tab-label">Archief</span>
-                        <span class="badge">${this.tenderCounts.archief}</span>
-                    </button>
+                    <!-- ⭐ v3.3: View toggle verplaatst naar links -->
+                    <div class="view-toggle">
+                        <button class="${this.activeView === 'lijst' ? 'active' : ''}" data-view="lijst">
+                            <span class="view-icon">${Icons.listView ? Icons.listView({ size: 16 }) : ''}</span>
+                            <span>Lijst</span>
+                        </button>
+                        <button class="${this.activeView === 'planning' ? 'active' : ''}" data-view="planning">
+                            <span class="view-icon">${Icons.calendarView ? Icons.calendarView({ size: 16 }) : ''}</span>
+                            <span>Agenda</span>
+                        </button>
+                        <button class="${this.activeView === 'kanban' ? 'active' : ''}" data-view="kanban">
+                            <span class="view-icon">${Icons.grid ? Icons.grid({ size: 16 }) : ''}</span>
+                            <span>Kanban</span>
+                        </button>
+                    </div>
+
+                    <!-- ⭐ v3.3: Visuele separator -->
+                    <div class="sub-header-separator ${this.activeView === 'kanban' ? 'hidden' : ''}"></div>
+
+                    <!-- Fase tabs — verborgen in kanban view (kolommen tonen al de fases) -->
+                    <div class="fase-tabs ${this.activeView === 'kanban' ? 'hidden' : ''}">
+                        <button class="main-tab ${this.activeTab === 'totaal' ? 'active' : ''}" data-tab="totaal">
+                            <span class="tab-label">Overzicht</span>
+                            <span class="badge">${this.tenderCounts.totaal}</span>
+                        </button>
+                        ${faseTabs}
+                    </div>
                 </div>
 
                 <div class="sub-header-right">
@@ -810,21 +881,6 @@ export class Header {
                                class="tender-search-input"
                                placeholder="Zoek tender..."
                                value="">
-                    </div>
-                    
-                    <div class="view-toggle">
-                        <button class="${this.activeView === 'lijst' ? 'active' : ''}" data-view="lijst">
-                            <span class="view-icon">${Icons.listView ? Icons.listView({ size: 16 }) : ''}</span>
-                            <span>Lijst</span>
-                        </button>
-                        <button class="${this.activeView === 'planning' ? 'active' : ''}" data-view="planning">
-                            <span class="view-icon">${Icons.calendarView ? Icons.calendarView({ size: 16 }) : ''}</span>
-                            <span>Planning</span>
-                        </button>
-                        <button class="${this.activeView === 'kanban' ? 'active' : ''}" data-view="kanban">
-                            <span class="view-icon">${Icons.grid ? Icons.grid({ size: 16 }) : ''}</span>
-                            <span>Kanban</span>
-                        </button>
                     </div>
                     
                     <!-- ⭐ v2.9: Smart Import is nu de primaire create knop -->
@@ -1091,6 +1147,8 @@ export class Header {
                 btn.classList.add('active');
                 self.activeView = view;
                 if (self.onViewChange) self.onViewChange(view);
+                // ⭐ v3.3: Re-render sub-header om fase tabs te tonen/verbergen
+                self.updateSubHeader();
             });
         });
 

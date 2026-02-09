@@ -1,9 +1,7 @@
 """
 Tender API endpoints
 """
-from typing import List
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from supabase import Client
 from app.core.database import get_supabase_async

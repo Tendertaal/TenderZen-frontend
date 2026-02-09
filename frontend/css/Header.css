@@ -1,6 +1,21 @@
 /**
  * Header Component Styles
- * TenderZen v2.2 - Tender Zoekbalk toegevoegd
+ * TenderZen v2.4 - Ronde altijd-gekleurde badges + separator + layout herstructurering
+ * 
+ * DOEL-PAD: Frontend/css/Header.css
+ * 
+ * CHANGELOG v2.4:
+ * - GEWIJZIGD: Badge styling — compacte ronde cirkels (altijd gekleurd)
+ * - GEWIJZIGD: "Totaal" badge altijd indigo gekleurd
+ * - GEWIJZIGD: Fase badges altijd gekleurd via dynamische CSS (Header.js v3.3)
+ * - NIEUW: .sub-header-separator — visuele scheiding view toggle ↔ fase tabs
+ * - GEWIJZIGD: View toggle verplaatst naar links in sub-header-tenders
+ * - VERWIJDERD: Hardcoded .active .badge kleuren per fase (nu dynamisch)
+ * 
+ * CHANGELOG v2.3:
+ * - NIEUW: .phase-indicator.evaluatie (teal #14b8a6)
+ * - NIEUW: .main-tab[data-tab="evaluatie"] actieve styling (teal)
+ * - NIEUW: .main-tab[data-tab="evaluatie"].active .badge styling
  * 
  * CHANGELOG v2.2:
  * - NIEUW: Tender zoekbalk styling (.tender-search-container)
@@ -573,6 +588,30 @@
     padding: 0 var(--space-4, 16px);
 }
 
+/* ⭐ v2.4: Separator tussen view toggle en fase tabs */
+.sub-header-separator {
+    width: 1px;
+    height: 28px;
+    background: #e2e8f0;
+    margin: 0 12px 0 8px;
+    flex-shrink: 0;
+}
+
+.sub-header-separator.hidden {
+    display: none;
+}
+
+/* Fase tabs wrapper */
+.fase-tabs {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.fase-tabs.hidden {
+    display: none;
+}
+
 /* ========================================
    UNIFIED FILTER BAR (Voorstel 1)
    Professionele filter styling voor alle context pagina's
@@ -682,10 +721,11 @@
 
 /* ========================================
    TENDERS SUB HEADER (Tabs)
+   ⭐ v2.4: View toggle nu links naast fase tabs
    ======================================== */
 
 .sub-header-tenders .sub-header-left {
-    gap: var(--space-1, 4px);
+    gap: 0;
 }
 
 .main-tab {
@@ -711,7 +751,7 @@
     background: var(--bg-hover, #f8fafc);
 }
 
-/* Fase-specifieke tab kleuren */
+/* Fase-specifieke tab kleuren (active state) */
 .main-tab[data-tab="totaal"].active {
     color: #4f46e5;
     border-bottom-color: #6366f1;
@@ -732,7 +772,11 @@
     border-bottom-color: #10b981;
 }
 
-/* Archief tab styling */
+.main-tab[data-tab="evaluatie"].active {
+    color: #0d9488;
+    border-bottom-color: #14b8a6;
+}
+
 .main-tab[data-tab="archief"].active {
     color: #475569;
     border-bottom-color: #64748b;
@@ -762,47 +806,51 @@
     background: #10b981;
 }
 
-/* Archief phase indicator */
+.phase-indicator.evaluatie {
+    background: #14b8a6;
+}
+
 .phase-indicator.archief {
     background: #64748b;
 }
 
-/* Tab Badge - Base */
+/* ========================================
+   TAB BADGE — ⭐ v2.4: Compacte ronde cirkels
+   Altijd gekleurd (niet alleen bij .active)
+   Fase-kleuren komen via dynamische CSS uit Header.js
+   ======================================== */
+
 .main-tab .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: var(--font-weight-bold, 700);
+    line-height: 1;
+    /* Fallback kleur — wordt overschreven door dynamische CSS */
     background: var(--bg-tertiary, #e2e8f0);
     color: var(--text-tertiary, #64748b);
-    padding: 2px 8px;
-    border-radius: var(--radius-full, 50px);
-    font-size: var(--font-size-xs, 12px);
-    font-weight: var(--font-weight-semibold, 600);
 }
 
-/* Tab Badge - Fase-specifieke kleuren */
-.main-tab[data-tab="totaal"].active .badge {
+/* ⭐ v2.4: Totaal badge altijd indigo gekleurd */
+.main-tab[data-tab="totaal"] .badge {
     background: #6366f1;
-    color: white;
+    color: #ffffff;
 }
 
-.main-tab[data-tab="acquisitie"].active .badge {
-    background: #f59e0b;
-    color: white;
-}
-
-.main-tab[data-tab="inschrijvingen"].active .badge {
-    background: #8b5cf6;
-    color: white;
-}
-
-.main-tab[data-tab="ingediend"].active .badge {
-    background: #10b981;
-    color: white;
-}
-
-/* Archief badge styling */
-.main-tab[data-tab="archief"].active .badge {
-    background: #64748b;
-    color: white;
-}
+/*
+ * Overige fase badges worden gekleurd door dynamische CSS
+ * gegenereerd in Header.js _injectDynamicFaseStyles()
+ * 
+ * Voorbeeld gegenereerd:
+ *   .main-tab[data-tab="acquisitie"] .badge { background: #f59e0b; color: #ffffff; }
+ *   .main-tab[data-tab="inschrijvingen"] .badge { background: #8b5cf6; color: #ffffff; }
+ *   etc.
+ */
 
 /* ========================================
    CREATE BUTTON
@@ -1283,6 +1331,12 @@
     .settings-tab span {
         display: none;
     }
+
+    /* ⭐ v2.4: Separator smaller on mobile */
+    .sub-header-separator {
+        margin: 0 6px;
+        height: 24px;
+    }
 }
 
 @media (max-width: 600px) {
@@ -1320,15 +1374,15 @@
     .btn-icon-compact {
         align-self: flex-end;
     }
+
+    /* ⭐ v2.4: Verberg separator op mobile */
+    .sub-header-separator {
+        display: none;
+    }
 }
 
 /* ============================================
    FILTER CHIPS BAR
-   TenderZen v2.6 - Toe te voegen aan header.css
-   ============================================ */
-
-/* ============================================
-   FILTER CHIPS BAR CONTAINER
    ============================================ */
 
 .filter-chips-bar {
@@ -1377,6 +1431,7 @@
     font-weight: 500;
     box-shadow: 0 1px 2px rgba(99, 102, 241, 0.08);
     transition: all 0.15s ease;
+    animation: chipEnter 0.2s ease-out;
 }
 
 .filter-chip:hover {
@@ -1435,14 +1490,6 @@
 
 .filter-chip-remove:hover svg {
     stroke: #4338ca;
-}
-
-/* ============================================
-   MULTIPLE CHIPS SUPPORT (voor toekomstige uitbreiding)
-   ============================================ */
-
-.filter-chips-content .filter-chip + .filter-chip {
-    margin-left: 0; /* gap handled by flex */
 }
 
 /* Status filter chip variant */
@@ -1475,10 +1522,7 @@
     background: #fcd34d;
 }
 
-/* ============================================
-   CLEAR ALL BUTTON (voor toekomstige uitbreiding)
-   ============================================ */
-
+/* Clear all button */
 .filter-chips-clear-all {
     display: inline-flex;
     align-items: center;
@@ -1500,7 +1544,45 @@
 }
 
 /* ============================================
-   RESPONSIVE
+   RESULTATEN COUNT
+   ============================================ */
+
+.filter-results-count {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+    padding-left: 8px;
+    border-left: 1px solid #e2e8f0;
+    margin-left: 4px;
+}
+
+.filter-results-count--badge {
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: none;
+    margin-left: 8px;
+}
+
+/* ============================================
+   ANIMATION
+   ============================================ */
+
+@keyframes chipEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.8) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* ============================================
+   FILTER CHIPS RESPONSIVE
    ============================================ */
 
 @media (max-width: 900px) {
@@ -1520,215 +1602,6 @@
     .filter-chip-text {
         max-width: 150px;
     }
-}
-
-@media (max-width: 600px) {
-    .filter-chip-text {
-        max-width: 100px;
-    }
-    
-    .filter-chips-content {
-        gap: 8px;
-    }
-}
-
-/* ============================================
-   ANIMATION
-   ============================================ */
-
-@keyframes chipEnter {
-    from {
-        opacity: 0;
-        transform: scale(0.8) translateY(-4px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-.filter-chip {
-    animation: chipEnter 0.2s ease-out;
-}
-
-/* ============================================
-   TOOLTIP HINT (optioneel)
-   ============================================ */
-
-.filter-chip-text::after {
-    content: '';
-    position: absolute;
-    bottom: -24px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1e293b;
-    color: white;
-    font-size: 11px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
-}
-
-.filter-chip-text:hover::after {
-    /* Uncomment to enable tooltip: */
-    /* content: 'Klik om te bewerken';
-    opacity: 1; */
-}
-
-/* ============================================
-   FILTER CHIPS BAR
-   TenderZen v2.7 - Met resultaten count
-   Toevoegen aan header.css
-   ============================================ */
-
-/* ============================================
-   FILTER CHIPS BAR CONTAINER
-   ============================================ */
-
-.filter-chips-bar {
-    display: none;
-    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-    border-bottom: 1px solid #e2e8f0;
-    padding: 0;
-    min-height: 0;
-    overflow: hidden;
-    transition: all 0.2s ease;
-}
-
-.filter-chips-bar.has-chips {
-    display: block;
-    padding: 10px 24px;
-    min-height: 44px;
-}
-
-.filter-chips-content {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-/* ============================================
-   FILTER CHIP
-   ============================================ */
-
-.filter-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: white;
-    border: 1px solid #c7d2fe;
-    border-radius: 20px;
-    padding: 6px 8px 6px 12px;
-    font-size: 13px;
-    color: #4338ca;
-    font-weight: 500;
-    box-shadow: 0 1px 2px rgba(99, 102, 241, 0.08);
-    transition: all 0.15s ease;
-}
-
-.filter-chip:hover {
-    border-color: #a5b4fc;
-    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15);
-}
-
-.filter-chip--search {
-    background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%);
-}
-
-/* Chip icon */
-.filter-chip-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-/* Chip text - clickable for editing */
-.filter-chip-text {
-    cursor: pointer;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: background 0.15s ease;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.filter-chip-text:hover {
-    background: rgba(99, 102, 241, 0.1);
-}
-
-/* Chip remove button */
-.filter-chip-remove {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border: none;
-    background: #e0e7ff;
-    border-radius: 50%;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: all 0.15s ease;
-    padding: 0;
-}
-
-.filter-chip-remove:hover {
-    background: #c7d2fe;
-    transform: scale(1.1);
-}
-
-.filter-chip-remove:hover svg {
-    stroke: #4338ca;
-}
-
-/* ============================================
-   ⭐ v2.7: RESULTATEN COUNT
-   ============================================ */
-
-.filter-results-count {
-    display: inline-flex;
-    align-items: center;
-    font-size: 13px;
-    color: #64748b;
-    font-weight: 500;
-    padding-left: 8px;
-    border-left: 1px solid #e2e8f0;
-    margin-left: 4px;
-}
-
-/* Alternatieve styling met achtergrond */
-.filter-results-count--badge {
-    background: #f1f5f9;
-    padding: 4px 10px;
-    border-radius: 12px;
-    border: none;
-    margin-left: 8px;
-}
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-
-@media (max-width: 900px) {
-    .filter-chips-bar.has-chips {
-        padding: 8px 16px;
-    }
-    
-    .filter-chip {
-        font-size: 12px;
-        padding: 5px 6px 5px 10px;
-    }
-    
-    .filter-chip-text {
-        max-width: 150px;
-    }
     
     .filter-results-count {
         font-size: 12px;
@@ -1745,41 +1618,11 @@
     }
     
     .filter-results-count {
-        display: none; /* Verberg op kleine schermen */
+        display: none;
     }
 }
 
-/* ============================================
-   ANIMATION
-   ============================================ */
-
-@keyframes chipEnter {
-    from {
-        opacity: 0;
-        transform: scale(0.8) translateY(-4px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
-}
-
-.filter-chip {
-    animation: chipEnter 0.2s ease-out;
-}
-
-/* ============================================
-   VERBERG OUDE SEARCH RESULTS INFO
-   (in tender-cards.css of search-results.css)
-   ============================================ */
-
-/* 
-   De .search-results-info balk in TenderListView 
-   is nu verwijderd. Deze CSS kan eventueel nog
-   behouden worden voor backward compatibility,
-   maar wordt niet meer gebruikt.
-*/
-
+/* Verberg oude search results info */
 .search-results-info {
-    display: none !important; /* Forceer verbergen */
+    display: none !important;
 }

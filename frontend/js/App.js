@@ -1,8 +1,12 @@
 /**
  * TenderPlanner App Controller
- * TenderZen v3.0 - KanbanView integratie
+ * TenderZen v3.1 - Dynamische fase configuratie
+ * 
+ * DOEL-PAD: Frontend/js/App.js
  * 
  * CHANGELOG:
+ * - v3.1: DYNAMISCHE FASES — counts, tabs en kolommen worden opgebouwd uit fase_config DB tabel
+ *         Geen hardcoded fases meer in updateHeaderCounts(), Header of KanbanView
  * - v3.0: KanbanView geïntegreerd via view toggle (drag & drop fase wijziging)
  * - v2.9: AgendaView (Planning view) geïntegreerd via view toggle
  * - v2.8: Explicit bureau context bij loadBedrijven (loadAll voor super-admin)
@@ -22,7 +26,7 @@ import { SmartImportWizard } from './components/SmartImportWizard.js';
 import { TenderAanmaken } from './components/TenderAanmaken.js';
 import { BedrijfModal } from './components/BedrijfModal.js';
 import { TeamlidModal } from './components/TeamlidModal.js';
-import { PlanningModal } from './modals/PlanningModal.js';       // ⭐ v2.6
+import { PlanningModal } from './modals/PlanningModal.js';
 import { apiService } from './services/ApiService.js';
 import { faseService } from './services/FaseService.js';
 import { bedrijvenService } from './services/Bedrijvenservice.js';
@@ -46,9 +50,10 @@ import { TenderbureausView } from './views/TenderbureausView.js';
 import { TeamledenView } from './views/TeamledenView.js';
 import { ArchiefView } from './views/ArchiefView.js';
 import { ZoekresultatenView } from './views/ZoekresultatenView.js';
-import { AgendaView } from './views/AgendaView.js';              // ⭐ v2.9
-import { KanbanView } from './views/KanbanView.js';              // ⭐ v3.0
+import { AgendaView } from './views/AgendaView.js';
+import { KanbanView } from './views/KanbanView.js';
 import { teamService } from './services/TeamService.js';
+import { TemplateBeheerView } from './views/TemplateBeheerView.js';
 
 export class App {
     constructor() {
@@ -57,7 +62,7 @@ export class App {
         this.tenderAanmaken = null;
         this.bedrijfModal = null;
         this.teamlidModal = null;
-        this.planningModal = null;      // ⭐ v2.6
+        this.planningModal = null;
         this.smartImportWizard = null;
 
         // Views
@@ -67,21 +72,21 @@ export class App {
             inschrijvingen: null,
             ingediend: null,
             archief: null,
-            zoekresultaten: null,  // ⭐ v2.5: Globale zoekresultaten view
+            zoekresultaten: null,
             bedrijven: null,
             tenderbureaus: null,
             team: null
         };
 
-        // ⭐ v2.9: AgendaView (apart beheerd, niet in views object)
+        // AgendaView (apart beheerd)
         this.agendaView = null;
 
-        // ⭐ v3.0: KanbanView (apart beheerd, niet in views object)
+        // KanbanView (apart beheerd)
         this.kanbanView = null;
 
         // State
         this.currentView = 'totaal';
-        this.previousView = 'totaal';  // ⭐ v2.5: Voor terug navigatie na zoeken
+        this.previousView = 'totaal';
         this.currentViewType = 'lijst'; // lijst, planning, kanban
         this.tenders = []; // Master data - all tenders
         this.isSuperAdmin = false;
@@ -187,7 +192,7 @@ export class App {
             this.initTenderAanmaken();
             this.initBedrijfModal();
             this.initTeamlidModal();
-            this.initPlanningModal();   // ⭐ v2.6
+            this.initPlanningModal();
             this.initViews();
 
             // 7. Load data (nu bureau-specifiek)
@@ -285,16 +290,13 @@ export class App {
 
     /**
      * Refresh de huidige view na bureau wissel
-     * ⭐ v3.0: Kanban support
      */
     async refreshCurrentView() {
-        // ⭐ v2.9: Als agenda actief is, herlaad die
         if (this.currentViewType === 'planning' && this.agendaView) {
             this.agendaView.loadData();
             return;
         }
 
-        // ⭐ v3.0: Als kanban actief is, herlaad die
         if (this.currentViewType === 'kanban' && this.kanbanView) {
             this.kanbanView.setTenders(this.tenders);
             return;
@@ -456,11 +458,15 @@ export class App {
 
     /**
      * Initialize header
+     * ⭐ v3.1: Geeft fase configuratie door aan Header
      */
     initHeader() {
         console.log('📊 Initializing header...');
 
         this.header = new Header();
+
+        // ⭐ v3.1: Stel dynamische fase config in vanuit faseService
+        this.header.setFaseConfig(faseService.fases || []);
 
         // Set super-admin status
         this.header.setSuperAdmin(this.isSuperAdmin);
@@ -487,7 +493,7 @@ export class App {
         this.header.onMenuAction = (action) => this.handleMenuAction(action);
         this.header.onContextAction = (action, data) => this.handleContextAction(action, data);
 
-        // ⭐ v2.5: Zoekfunctie callbacks
+        // Zoekfunctie callbacks
         this.header.onSearch = (query) => this.handleTenderSearch(query);
         this.header.onSearchClear = () => this.handleSearchClear();
     }
@@ -568,7 +574,7 @@ export class App {
     }
 
     /**
-     * ⭐ v2.6: Initialize planning modal
+     * Initialize planning modal
      */
     initPlanningModal() {
         console.log('📋 Initializing planning modal...');
@@ -583,7 +589,6 @@ export class App {
 
     /**
      * Initialize all views
-     * ⭐ v3.0: KanbanView met onTenderClick, onFaseChange, onCreateTender callbacks
      */
     initViews() {
         console.log('👁️ Initializing views...');
@@ -597,31 +602,32 @@ export class App {
             zoekresultaten: new ZoekresultatenView(),
             bedrijven: new BedrijvenView(),
             tenderbureaus: new TenderbureausView(),
-            team: new TeamledenView()
+            team: new TeamledenView(),
+            templatebeheer: new TemplateBeheerView()
         };
 
-        // ⭐ v2.9: Initialize AgendaView
+        // Initialize AgendaView
         this.agendaView = new AgendaView();
         this.agendaView.onOpenPlanningModal = (tenderId, openType) => {
             this.handleOpenPlanningModal(tenderId, openType || 'planning');
         };
 
-        // ⭐ v3.0: Initialize KanbanView
-        this.kanbanView = new KanbanView({ fase: null });
+        // ⭐ v3.1: Initialize KanbanView met dynamische fase config
+        this.kanbanView = new KanbanView({
+            faseConfig: faseService.fases || [],
+            allFaseStatussen: faseService.statussen || {}
+        });
         this.kanbanView.onTenderClick = (tenderId) => {
             this.handleTenderClick(tenderId);
         };
         this.kanbanView.onFaseChange = async (tenderId, newFase) => {
             console.log(`⊞ Kanban fase change: ${tenderId} → ${newFase}`);
             try {
-                // Haal eerste status van de nieuwe fase op
                 const eersteStatus = await faseService.getDefaultStatus(newFase);
                 console.log(`🔄 Fase status wordt: ${eersteStatus}`);
 
-                // Stuur zowel fase als fase_status naar backend
                 await apiService.updateTender(tenderId, { fase: newFase, fase_status: eersteStatus });
 
-                // Update lokale data
                 const tender = this.tenders.find(t => t.id === tenderId);
                 if (tender) {
                     tender.fase = newFase;
@@ -633,7 +639,6 @@ export class App {
             } catch (error) {
                 console.error('❌ Fase wijziging mislukt:', error);
                 alert('Fase wijzigen mislukt. Probeer opnieuw.');
-                // Herlaad data om consistentie te herstellen
                 await this.loadData();
                 if (this.kanbanView) {
                     this.kanbanView.setTenders(this.tenders);
@@ -645,7 +650,7 @@ export class App {
             this.handleCreateTender();
         };
 
-        // Set callbacks for tender views (inclusief zoekresultaten)
+        // Set callbacks for tender views
         const self = this;
         const tenderViewKeys = ['totaal', 'acquisitie', 'inschrijvingen', 'ingediend', 'archief', 'zoekresultaten'];
 
@@ -653,14 +658,9 @@ export class App {
             if (tenderViewKeys.includes(key)) {
                 view.onStatusChange = (tenderId, status, fase) => this.handleStatusChange(tenderId, status, fase);
                 view.onTenderClick = (tenderId) => this.handleTenderClick(tenderId);
-
-                // ⭐ v2.6: Team bewerken via + knop op tender card
                 view.onAddTeamMember = (tenderId) => this.handleAddTeamMember(tenderId);
-
-                // ⭐ v2.6: Planning/Checklist shortcut knoppen op tender card
                 view.onOpenPlanningModal = (tenderId, openType) => this.handleOpenPlanningModal(tenderId, openType);
 
-                // Search results count callback voor Header integratie
                 view.onSearchResultsCount = (count) => {
                     if (self.currentView === key && self.header && self.header.setSearchResultsCount) {
                         self.header.setSearchResultsCount(count);
@@ -779,31 +779,39 @@ export class App {
             }
         });
 
-        // ⭐ v3.0: Update kanban als die actief is
         if (this.currentViewType === 'kanban' && this.kanbanView) {
             this.kanbanView.setTenders(this.tenders);
         }
     }
 
     /**
-     * Update header badge counts
+     * ⭐ v3.1: DYNAMISCHE header badge counts
+     * Berekent counts op basis van faseService.fases i.p.v. hardcoded lijst.
+     * 
+     * Logica:
+     * - "totaal" = alle tenders BEHALVE archief
+     * - Per fase = simpele filter op tender.fase
      */
     updateHeaderCounts() {
-        const counts = {
-            totaal:
-                this.tenders.filter(t => t.fase === 'acquisitie').length +
-                this.tenders.filter(t => t.fase === 'inschrijvingen').length +
-                this.tenders.filter(t => t.fase === 'ingediend').length,
-            acquisitie: this.tenders.filter(t => t.fase === 'acquisitie').length,
-            inschrijvingen: this.tenders.filter(t => t.fase === 'inschrijvingen').length,
-            ingediend: this.tenders.filter(t => t.fase === 'ingediend').length,
-            archief: this.tenders.filter(t => t.fase === 'archief').length
-        };
+        const allFases = faseService.fases || [];
+        const counts = {};
+
+        // Per fase dynamisch tellen
+        allFases.forEach(faseConfig => {
+            const faseKey = faseConfig.fase;
+            counts[faseKey] = this.tenders.filter(t => t.fase === faseKey).length;
+        });
+
+        // "totaal" = alles behalve archief
+        // (archief is conceptueel het eindstation, niet "actief")
+        counts.totaal = this.tenders.filter(t => t.fase !== 'archief').length;
 
         this.header.updateCounts(counts);
 
         const teamMembers = this.getUniqueTeamMembers();
         this.header.updateTeamOptions(teamMembers);
+
+        console.log('📊 Dynamic counts:', counts);
     }
 
     /**
@@ -867,20 +875,19 @@ export class App {
 
     /**
      * Show a specific view
-     * ⭐ v3.0: Unmount kanban bij tab wissel
      */
     async showView(viewName) {
         this.closeAllModals();
         console.log(`👁️ Showing view: ${viewName}`);
 
-        // ⭐ v2.9: Unmount agenda als die actief was
+        // Unmount agenda als die actief was
         if (this.currentViewType === 'planning' && this.agendaView) {
             this.agendaView.unmount();
             this.currentViewType = 'lijst';
             this.header.setActiveView('lijst');
         }
 
-        // ⭐ v3.0: Unmount kanban als die actief was
+        // Unmount kanban als die actief was
         if (this.currentViewType === 'kanban' && this.kanbanView) {
             this.kanbanView.unmount();
             this.currentViewType = 'lijst';
@@ -901,7 +908,7 @@ export class App {
                 this.header.setContext('tenders');
                 this.header.setActiveTab(null);
             }
-            else if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend', 'archief'].includes(viewName)) {
+            else if (['totaal', 'acquisitie', 'inschrijvingen', 'ingediend', 'evaluatie', 'archief'].includes(viewName)) {
                 this.header.setContext('tenders');
                 this.header.setActiveTab(viewName);
 
@@ -928,6 +935,10 @@ export class App {
                 const members = await teamService.getAllTeamMembers();
                 await view.setTeamMembers(members);
             }
+            else if (viewName === 'templatebeheer') {
+                this.header.setContext('tenders');
+                this.header.setActiveTab(null);
+            }
 
         } else {
             console.error(`View not found: ${viewName}`);
@@ -944,7 +955,6 @@ export class App {
 
     /**
      * Handle view type change (lijst/planning/kanban)
-     * ⭐ v3.0: Kanban view volledig geïmplementeerd
      */
     handleViewTypeChange(viewType) {
         console.log(`🔄 View type change: ${viewType}`);
@@ -953,35 +963,27 @@ export class App {
         this.currentViewType = viewType;
 
         if (viewType === 'planning') {
-            // --- MOUNT AGENDA VIEW ---
-            // Unmount huidige view (lijst of kanban)
             if (previousViewType === 'kanban' && this.kanbanView) {
                 this.kanbanView.unmount();
             } else if (this.views[this.currentView]) {
                 this.views[this.currentView].unmount();
             }
 
-            // Mount AgendaView
             this.agendaView.mount(this.contentContainer);
             console.log('📅 AgendaView gemount');
 
         } else if (viewType === 'kanban') {
-            // --- MOUNT KANBAN VIEW ---  ⭐ v3.0
-            // Unmount huidige view (lijst of agenda)
             if (previousViewType === 'planning' && this.agendaView) {
                 this.agendaView.unmount();
             } else if (this.views[this.currentView]) {
                 this.views[this.currentView].unmount();
             }
 
-            // Mount KanbanView met huidige data
             this.kanbanView.mount(this.contentContainer);
             this.kanbanView.setTenders(this.tenders);
             console.log('⊞ KanbanView gemount');
 
         } else if (viewType === 'lijst') {
-            // --- TERUG NAAR LIJST ---
-            // Unmount agenda of kanban als die actief was
             if (previousViewType === 'planning' && this.agendaView) {
                 this.agendaView.unmount();
             }
@@ -989,7 +991,6 @@ export class App {
                 this.kanbanView.unmount();
             }
 
-            // Remount de huidige tender tab view
             const currentTenderView = this.views[this.currentView];
             if (currentTenderView) {
                 currentTenderView.mount(this.contentContainer);
@@ -1042,7 +1043,7 @@ export class App {
     }
 
     /**
-     * Handle search clear - terug naar vorige view
+     * Handle search clear
      */
     handleSearchClear() {
         console.log(`🔍 Zoekfilter verwijderd, terug naar: ${this.previousView}`);
@@ -1061,46 +1062,26 @@ export class App {
         }
     }
 
-    /**
-     * Handle team filter
-     */
     handleTeamFilter(team) {
         console.log(`👥 Team filter: ${team}`);
-
         const view = this.views[this.currentView];
-        if (view && view.setTeamFilter) {
-            view.setTeamFilter(team);
-        }
+        if (view && view.setTeamFilter) view.setTeamFilter(team);
     }
 
-    /**
-     * Handle status filter
-     */
     handleStatusFilter(status) {
         console.log(`🎯 Status filter: ${status}`);
-
         const view = this.views[this.currentView];
-        if (view && view.setStatusFilter) {
-            view.setStatusFilter(status);
-        }
+        if (view && view.setStatusFilter) view.setStatusFilter(status);
     }
 
-    /**
-     * Handle create tender
-     */
     handleCreateTender() {
         console.log('➕ Create tender');
         this.tenderAanmaken.open();
     }
 
-    /**
-     * Handle tender click - Open tender in edit modal
-     */
     handleTenderClick(tenderId) {
         console.log(`📋 Tender clicked: ${tenderId}`);
-
         const tender = this.tenders.find(t => t.id === tenderId);
-
         if (tender) {
             this.tenderAanmaken.open(tender);
         } else {
@@ -1108,14 +1089,9 @@ export class App {
         }
     }
 
-    /**
-     * Handle add team member
-     */
     handleAddTeamMember(tenderId) {
         console.log(`👥 Add team member for tender: ${tenderId}`);
-
         const tender = this.tenders.find(t => t.id === tenderId);
-
         if (tender) {
             this.tenderAanmaken.open(tender, { scrollToSection: 'team' });
         } else {
@@ -1123,11 +1099,7 @@ export class App {
         }
     }
 
-    /**
-     * Handle open planning modal
-     */
     async handleOpenPlanningModal(tenderId, openType) {
-        // ⭐ v2.9: AgendaView kan een tender object meegeven i.p.v. een ID
         let tender;
         if (typeof tenderId === 'object' && tenderId !== null) {
             const tenderObj = tenderId;
@@ -1155,32 +1127,23 @@ export class App {
         }
     }
 
-    /**
-     * Handle status change
-     */
     async handleStatusChange(tenderId, newStatus, newFase = null) {
         console.log(`🔄 Status change: ${tenderId} → ${newStatus}`, newFase ? `(fase: ${newFase})` : '');
 
         try {
             const updateData = { fase_status: newStatus };
-
-            if (newFase) {
-                updateData.fase = newFase;
-            }
+            if (newFase) updateData.fase = newFase;
 
             await apiService.updateTender(tenderId, updateData);
 
             const tender = this.tenders.find(t => t.id === tenderId);
             if (tender) {
                 tender.fase_status = newStatus;
-                if (newFase) {
-                    tender.fase = newFase;
-                }
+                if (newFase) tender.fase = newFase;
             }
 
             this.updateViews();
             this.updateHeaderCounts();
-
             console.log('✅ Status updated');
         } catch (error) {
             console.error('❌ Status update error:', error);
@@ -1189,9 +1152,6 @@ export class App {
         }
     }
 
-    /**
-     * Handle context action (from dynamic header)
-     */
     handleContextAction(action, data) {
         console.log(`🎯 Context action: ${action}`, data);
 
@@ -1209,9 +1169,6 @@ export class App {
         }
     }
 
-    /**
-     * Handle menu action
-     */
     handleMenuAction(action) {
         console.log(`📋 Menu action: ${action}`);
 
@@ -1219,11 +1176,9 @@ export class App {
             case 'tenders':
                 this.showView('totaal');
                 break;
-
             case 'bedrijven':
                 this.showView('bedrijven');
                 break;
-
             case 'tenderbureaus':
                 if (this.isSuperAdmin) {
                     this.showView('tenderbureaus');
@@ -1231,15 +1186,12 @@ export class App {
                     alert('Je hebt geen toegang tot tenderbureaus beheer.');
                 }
                 break;
-
             case 'logout':
                 this.logout();
                 break;
-
             case 'export':
                 this.exportData();
                 break;
-
             case 'profile':
                 alert('Profiel bewerken - komt binnenkort!');
                 break;
@@ -1249,27 +1201,23 @@ export class App {
             case 'notifications':
                 alert('Notificatie instellingen - komt binnenkort!');
                 break;
-
             case 'team':
                 this.showView('team');
                 break;
-
             case 'templates':
+                this.showView('templatebeheer');
+                break;
             case 'reports':
             case 'import':
             case 'settings':
             case 'preferences':
                 alert(`${action} - Komt binnenkort!`);
                 break;
-
             default:
                 console.warn('Unknown menu action:', action);
         }
     }
 
-    /**
-     * Logout with custom confirmation modal
-     */
     async logout() {
         const confirmed = await confirmLogout();
 
@@ -1285,9 +1233,6 @@ export class App {
         }
     }
 
-    /**
-     * Export data
-     */
     async exportData() {
         try {
             const json = JSON.stringify(this.tenders, null, 2);
@@ -1304,20 +1249,12 @@ export class App {
         }
     }
 
-    /**
-     * Hide loading screen
-     */
     hideLoading() {
         const loading = document.querySelector('.loading-screen');
-        if (loading) {
-            loading.style.display = 'none';
-        }
+        if (loading) loading.style.display = 'none';
         document.getElementById('app')?.classList.add('loaded');
     }
 
-    /**
-     * Show error
-     */
     showError(message) {
         this.hideLoading();
         if (this.contentContainer) {

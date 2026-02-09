@@ -6,7 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.api.v1 import tenders, users, ai_documents, smart_import
 from app.api.v1.password_history import router as password_router
-from app.api.v1.planning import router as planning_router  # Planning & Checklist
+from app.api.v1.planning import router as planning_crud_router      # Bestaande CRUD endpoints
+from app.routers.planning_router import router as planning_router    # Nieuwe v4 endpoints
+from app.routers.document_router import router as document_router
+from app.routers.finalize_router import router as finalize_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -33,7 +36,10 @@ app.include_router(tenders.router, prefix="/api/v1")
 app.include_router(password_router, prefix="/api/v1")
 app.include_router(ai_documents.router, prefix="/api/v1")
 app.include_router(smart_import.router, prefix="/api/v1")
-app.include_router(planning_router, prefix="/api/v1")  # Planning & Checklist
+app.include_router(planning_crud_router, prefix="/api/v1")   # Bestaande: planning CRUD, agenda, populate
+app.include_router(planning_router, prefix="/api/v1")         # Nieuw: backplanning, templates, counts
+app.include_router(document_router, prefix="/api/v1")
+app.include_router(finalize_router, prefix="/api/v1")
 
 
 @app.get("/")

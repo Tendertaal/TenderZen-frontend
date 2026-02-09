@@ -2,17 +2,20 @@
 Tender data models - Updated to match extended Supabase schema
 Met dynamische fase validatie uit database
 
-v2.1: bedrijf_id toegevoegd voor bedrijf koppeling
-v2.2: Status pattern verwijderd - nu dynamisch via fase_statussen tabel
-v2.3: Smart Import koppeling
-v2.4: date → datetime voor timestamp velden (tijd ondersteuning)
-v2.7: tenderbureau_naam in TenderResponse voor kaart weergave
+DOEL-PAD: Backend/app/models/tender.py
+
+CHANGELOG:
+- v2.3: FaseValidator haalt zelf Supabase client op — geen parameter meer nodig
+        Fallback nu inclusief 'evaluatie'
+        init_fase_validator() aangepast voor startup
+- v2.2: Status dynamisch via fase_statussen tabel
+- v2.1: Bedrijf koppeling via ID
+- v2.0: Dynamische fase validatie uit database
 """
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Set
 from pydantic import BaseModel, Field, field_validator
 from decimal import Decimal
-import functools
 import time
 
 
@@ -24,16 +27,51 @@ class FaseValidator:
     """
     Cache voor geldige fases uit de database.
     Haalt fases op uit fase_config tabel en cached ze.
+    
+    v2.3: Haalt zelf de Supabase admin client op — geen parameter meer nodig.
     """
     _cache: Set[str] = set()
     _cache_time: float = 0
     _cache_ttl: int = 300  # 5 minuten cache
     
     @classmethod
-    def get_valid_fases(cls, supabase_client=None) -> Set[str]:
+    def _get_client(cls):
+        """
+        Haal Supabase admin client op via de bestaande database helper.
+        Probeert meerdere import paden (voor flexibiliteit).
+        """
+        try:
+            from app.core.database import get_supabase_admin
+            return get_supabase_admin()
+        except ImportError:
+            pass
+        
+        try:
+            from app.core.database import get_supabase_client
+            return get_supabase_client()
+        except ImportError:
+            pass
+        
+        try:
+            # Directe Supabase import als fallback
+            import os
+            from supabase import create_client
+            url = os.getenv("SUPABASE_URL")
+            key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY")
+            if url and key:
+                return create_client(url, key)
+        except Exception:
+            pass
+        
+        return None
+    
+    @classmethod
+    def get_valid_fases(cls) -> Set[str]:
         """
         Haal geldige fases op uit database met caching.
-        Fallback naar hardcoded waarden als database niet beschikbaar is.
+        Fallback naar bekende waarden als database niet beschikbaar is.
+        
+        v2.3: Geen supabase_client parameter meer nodig.
         """
         current_time = time.time()
         
@@ -42,27 +80,29 @@ class FaseValidator:
             return cls._cache
         
         # Probeer uit database te laden
-        if supabase_client:
-            try:
-                response = supabase_client.table('fase_config').select('fase').execute()
+        try:
+            client = cls._get_client()
+            if client:
+                response = client.table('fase_config').select('fase').execute()
                 if response.data:
                     cls._cache = {row['fase'] for row in response.data}
                     cls._cache_time = current_time
+                    print(f"✅ FaseValidator: {len(cls._cache)} fases geladen uit database: {sorted(cls._cache)}")
                     return cls._cache
-            except Exception as e:
-                print(f"⚠️ Kon fases niet laden uit database: {e}")
+        except Exception as e:
+            print(f"⚠️ FaseValidator: Kon fases niet laden uit database: {e}")
         
-        # Fallback naar defaults (inclusief archief!)
+        # Fallback naar defaults (inclusief evaluatie!)
         if not cls._cache:
-            cls._cache = {'acquisitie', 'inschrijvingen', 'ingediend', 'archief'}
+            cls._cache = {'acquisitie', 'inschrijvingen', 'ingediend', 'evaluatie', 'archief'}
+            print(f"⚠️ FaseValidator: Fallback naar defaults: {sorted(cls._cache)}")
         
         return cls._cache
     
     @classmethod
-    def is_valid_fase(cls, fase: str, supabase_client=None) -> bool:
+    def is_valid_fase(cls, fase: str) -> bool:
         """Check of een fase geldig is."""
-        valid_fases = cls.get_valid_fases(supabase_client)
-        return fase in valid_fases
+        return fase in cls.get_valid_fases()
     
     @classmethod
     def clear_cache(cls):
@@ -71,10 +111,10 @@ class FaseValidator:
         cls._cache_time = 0
     
     @classmethod
-    def refresh_cache(cls, supabase_client):
+    def refresh_cache(cls):
         """Forceer een refresh van de cache."""
         cls.clear_cache()
-        return cls.get_valid_fases(supabase_client)
+        return cls.get_valid_fases()
 
 
 # Global validator instance
@@ -93,10 +133,10 @@ class TenderBase(BaseModel):
     fase: str = Field(default="acquisitie")
     fase_status: Optional[str] = None
     
-    # ⭐ NIEUW: Tenderbureau koppeling
+    # Tenderbureau koppeling
     tenderbureau_id: Optional[str] = None
     
-    # ⭐ v2.1: Bedrijf koppeling via ID
+    # Bedrijf koppeling via ID
     bedrijf_id: Optional[str] = None
     
     # Bedrijfsgegevens (inschrijvende partij) - DEPRECATED
@@ -129,7 +169,7 @@ class TenderBase(BaseModel):
     opdracht_duur: Optional[int] = None
     opdracht_duur_eenheid: Optional[str] = "maanden"
     
-    # ⭐ v2.2: Status - GEEN pattern meer, dynamisch via fase_statussen tabel
+    # Status - dynamisch via fase_statussen tabel
     status: Optional[str] = None
     go_nogo_opmerkingen: Optional[str] = None
     
@@ -142,47 +182,39 @@ class TenderBase(BaseModel):
     # Team assignments (voor team builder)
     team_assignments: Optional[List[dict]] = None
     
-    # ⭐ v2.4: Timeline velden - nu datetime voor tijd ondersteuning
+    # Timeline velden - datetime voor tijd ondersteuning
     publicatie_datum: Optional[datetime] = None
     deadline_indiening: Optional[datetime] = None
     interne_deadline: Optional[datetime] = None
     
     # Timeline velden - extra
     schouw_datum: Optional[datetime] = None
-    nvi1_datum: Optional[datetime] = None
-    nvi2_datum: Optional[datetime] = None
-    presentatie_datum: Optional[datetime] = None
-    voorlopige_gunning: Optional[datetime] = None
-    definitieve_gunning: Optional[datetime] = None
-    start_uitvoering: Optional[datetime] = None
+    nota_inlichtingen_datum: Optional[datetime] = None
+    gunning_datum: Optional[datetime] = None
+    contract_start: Optional[date] = None
+    contract_einde: Optional[date] = None
     
-    # Documenten & Links
-    tenderned_url: Optional[str] = None
-    platform_naam: Optional[str] = None
-    documenten_link: Optional[str] = None
-    interne_map_link: Optional[str] = None
+    # AI pitstop
+    ai_pitstop_status: Optional[str] = None
     
-    # Inschrijvingseisen
-    certificeringen_vereist: Optional[List[str]] = None
-    minimale_omzet: Optional[Decimal] = None
-    referenties_verplicht: Optional[bool] = False
-    aantal_referenties_vereist: Optional[int] = None
-    eisen_notities: Optional[str] = None
-    
-    # Risico & Strategie
-    risicos: Optional[dict] = None
-    concurrentie_analyse: Optional[str] = None
-    usps: Optional[str] = None
-    strategie_notities: Optional[str] = None
+    # Notities
+    notities: Optional[str] = None
+    interne_notities: Optional[str] = None
     
     # Metadata
-    is_concept: Optional[bool] = False
+    bron: Optional[str] = None
+    bron_url: Optional[str] = None
+    referentie_nummer: Optional[str] = None
     
-    # ⭐ Dynamische fase validatie
     @field_validator('fase')
     @classmethod
-    def validate_fase(cls, v: str) -> str:
-        """Valideer fase tegen database waarden."""
+    def validate_fase(cls, v):
+        """
+        Valideer fase tegen dynamische lijst uit database.
+        v2.3: Haalt automatisch Supabase client op (geen parameter nodig).
+        """
+        if v is None:
+            return v
         valid_fases = fase_validator.get_valid_fases()
         if v not in valid_fases:
             raise ValueError(f"Fase '{v}' is niet geldig. Geldige fases: {', '.join(sorted(valid_fases))}")
@@ -202,10 +234,10 @@ class TenderUpdate(BaseModel):
     fase: Optional[str] = None
     fase_status: Optional[str] = None
     
-    # ⭐ NIEUW: Tenderbureau koppeling
+    # Tenderbureau koppeling
     tenderbureau_id: Optional[str] = None
     
-    # ⭐ v2.1: Bedrijf koppeling via ID (vervangt losse bedrijfsvelden)
+    # Bedrijf koppeling via ID
     bedrijf_id: Optional[str] = None
     
     # Bedrijfsgegevens (DEPRECATED - voor backwards compatibility)
@@ -238,7 +270,7 @@ class TenderUpdate(BaseModel):
     opdracht_duur: Optional[int] = None
     opdracht_duur_eenheid: Optional[str] = None
     
-    # ⭐ v2.2: Status - GEEN pattern meer, dynamisch via fase_statussen tabel
+    # Status - dynamisch via fase_statussen tabel
     status: Optional[str] = None
     go_nogo_opmerkingen: Optional[str] = None
     
@@ -251,47 +283,37 @@ class TenderUpdate(BaseModel):
     # Team assignments (voor team builder)
     team_assignments: Optional[List[dict]] = None
     
-    # ⭐ v2.4: Timeline velden - nu datetime voor tijd ondersteuning
+    # Timeline velden - datetime voor tijd ondersteuning
     publicatie_datum: Optional[datetime] = None
     deadline_indiening: Optional[datetime] = None
     interne_deadline: Optional[datetime] = None
     
     # Timeline velden - extra
     schouw_datum: Optional[datetime] = None
-    nvi1_datum: Optional[datetime] = None
-    nvi2_datum: Optional[datetime] = None
-    presentatie_datum: Optional[datetime] = None
-    voorlopige_gunning: Optional[datetime] = None
-    definitieve_gunning: Optional[datetime] = None
-    start_uitvoering: Optional[datetime] = None
+    nota_inlichtingen_datum: Optional[datetime] = None
+    gunning_datum: Optional[datetime] = None
+    contract_start: Optional[date] = None
+    contract_einde: Optional[date] = None
     
-    # Documenten & Links
-    tenderned_url: Optional[str] = None
-    platform_naam: Optional[str] = None
-    documenten_link: Optional[str] = None
-    interne_map_link: Optional[str] = None
+    # AI pitstop
+    ai_pitstop_status: Optional[str] = None
     
-    # Inschrijvingseisen
-    certificeringen_vereist: Optional[List[str]] = None
-    minimale_omzet: Optional[Decimal] = None
-    referenties_verplicht: Optional[bool] = None
-    aantal_referenties_vereist: Optional[int] = None
-    eisen_notities: Optional[str] = None
-    
-    # Risico & Strategie
-    risicos: Optional[dict] = None
-    concurrentie_analyse: Optional[str] = None
-    usps: Optional[str] = None
-    strategie_notities: Optional[str] = None
+    # Notities
+    notities: Optional[str] = None
+    interne_notities: Optional[str] = None
     
     # Metadata
-    is_concept: Optional[bool] = None
+    bron: Optional[str] = None
+    bron_url: Optional[str] = None
+    referentie_nummer: Optional[str] = None
     
-    # ⭐ Dynamische fase validatie
     @field_validator('fase')
     @classmethod
-    def validate_fase(cls, v: Optional[str]) -> Optional[str]:
-        """Valideer fase tegen database waarden."""
+    def validate_fase(cls, v):
+        """
+        Valideer fase tegen dynamische lijst uit database.
+        v2.3: Haalt automatisch Supabase client op (geen parameter nodig).
+        """
         if v is None:
             return v
         valid_fases = fase_validator.get_valid_fases()
@@ -300,38 +322,106 @@ class TenderUpdate(BaseModel):
         return v
 
 
-class TenderResponse(TenderBase):
-    """Model for tender response - includes database generated fields"""
+class TenderResponse(BaseModel):
+    """Model for API responses"""
     id: str
-    tenderbureau_id: Optional[str] = None  # ⭐ NIEUW: Expliciet in response
-    company_id: Optional[str] = None
-    created_by: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-    # ⭐ v2.3: Smart Import koppeling
-    smart_import_id: Optional[str] = None
-    ai_model_used: Optional[str] = None
-    # ⭐ v2.7: Tenderbureau naam (geflatened uit join)
-    tenderbureau_naam: Optional[str] = None
+    naam: str
+    tender_nummer: Optional[str] = None
+    fase: str
+    fase_status: Optional[str] = None
+    
+    # Tenderbureau koppeling
+    tenderbureau_id: Optional[str] = None
+    
+    # Bedrijf koppeling via ID
+    bedrijf_id: Optional[str] = None
+    
+    # Bedrijfsgegevens (DEPRECATED)
+    bedrijfsnaam: Optional[str] = None
+    kvk_nummer: Optional[str] = None
+    btw_nummer: Optional[str] = None
+    contactpersoon: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_telefoon: Optional[str] = None
+    bedrijfs_adres: Optional[str] = None
+    bedrijfs_postcode: Optional[str] = None
+    bedrijfs_plaats: Optional[str] = None
+    
+    # Aanbesteding
+    aanbestedende_dienst: Optional[str] = None
+    opdrachtgever: Optional[str] = None
+    locatie: Optional[str] = None
+    type: Optional[str] = None
+    aanbestedingsprocedure: Optional[str] = None
+    cpv_codes: Optional[List[str]] = None
+    
+    # Financieel
+    tender_waarde: Optional[Decimal] = None
+    geraamde_waarde: Optional[Decimal] = None
+    minimum_bedrag: Optional[Decimal] = None
+    maximum_bedrag: Optional[Decimal] = None
+    waarborgsom: Optional[Decimal] = None
+    win_kans: Optional[int] = None
+    geschatte_winkans: Optional[int] = None
+    opdracht_duur: Optional[int] = None
+    opdracht_duur_eenheid: Optional[str] = None
+    
+    # Status
+    status: Optional[str] = None
+    go_nogo_opmerkingen: Optional[str] = None
+    
+    # Basis
+    omschrijving: Optional[str] = None
+    geschatte_workload: Optional[int] = None
+    manager: Optional[str] = None
+    schrijver: Optional[str] = None
+    
+    # Team
+    team_assignments: Optional[List[dict]] = None
+    
+    # Timeline
+    publicatie_datum: Optional[datetime] = None
+    deadline_indiening: Optional[datetime] = None
+    interne_deadline: Optional[datetime] = None
+    schouw_datum: Optional[datetime] = None
+    nota_inlichtingen_datum: Optional[datetime] = None
+    gunning_datum: Optional[datetime] = None
+    contract_start: Optional[date] = None
+    contract_einde: Optional[date] = None
+    
+    # AI pitstop
+    ai_pitstop_status: Optional[str] = None
+    
+    # Notities
+    notities: Optional[str] = None
+    interne_notities: Optional[str] = None
+    
+    # Metadata
+    bron: Optional[str] = None
+    bron_url: Optional[str] = None
+    referentie_nummer: Optional[str] = None
+    
+    # Timestamps
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     
     class Config:
         from_attributes = True
-        json_encoders = {
-            Decimal: lambda v: float(v) if v else None
-        }
 
 
 # ============================================
 # HELPER FUNCTIES
 # ============================================
 
-def init_fase_validator(supabase_client):
+def init_fase_validator():
     """
-    Initialiseer de fase validator met een Supabase client.
-    Roep dit aan bij het opstarten van de applicatie.
+    Initialiseer de FaseValidator cache bij app startup.
+    Roep dit aan in main.py of app startup.
+    
+    v2.3: Geen parameter meer nodig — haalt zelf client op.
     """
-    fase_validator.refresh_cache(supabase_client)
-    print(f"✅ Fase validator geïnitialiseerd met fases: {fase_validator._cache}")
+    fases = fase_validator.refresh_cache()
+    print(f"✅ Fase validator geïnitialiseerd met fases: {sorted(fases)}")
 
 
 def get_valid_fases() -> Set[str]:

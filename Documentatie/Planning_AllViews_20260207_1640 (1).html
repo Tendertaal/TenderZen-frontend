@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TenderZen — Planning Alle Weergaven</title>
+<style>
+:root {
+    --acquisitie-start: #d97706; --acquisitie-end: #e5921a; --acquisitie-accent: #ea580c;
+    --lopend-start: #6d5ccd; --lopend-end: #7c6fe0; --lopend-accent: #7c3aed;
+    --ingediend-start: #0d9263; --ingediend-end: #10b981; --ingediend-accent: #16a34a;
+    --afronden-start: #0d9488; --afronden-end: #14b8a6; --afronden-accent: #0d9488;
+    --archief-start: #475569; --archief-end: #5a6b80; --archief-accent: #64748b;
+    --bg-app: #f1f5f9; --bg-surface: #ffffff; --bg-muted: #f8fafc;
+    --border: #e2e8f0; --border-dark: #cbd5e1;
+    --text-1: #0f172a; --text-2: #475569; --text-3: #94a3b8;
+    --accent: #667eea; --accent-bg: #eef2ff;
+    --ok: #16a34a; --ok-bg: #f0fdf4;
+    --warn: #a16207; --warn-bg: #fefce8;
+    --danger: #dc2626; --danger-bg: #fef2f2;
+    --verlopen: #991b1b; --verlopen-bg: #fee2e2;
+    --shadow-s: 0 1px 3px rgba(0,0,0,0.05);
+    --shadow-m: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-card: 0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+    --sidebar-w: 240px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; background:var(--bg-app); color:var(--text-1); line-height:1.4; overflow-x:hidden; }
+
+/* ── TOP NAV ── */
+.topnav { display:flex; align-items:center; gap:8px; padding:10px 20px; background:var(--bg-surface); border-bottom:2px solid var(--accent); position:sticky; top:0; z-index:100; }
+.fase-tab { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:6px; font-size:12.5px; font-weight:500; color:var(--text-2); cursor:pointer; border:none; background:none; font-family:inherit; transition:background .15s; }
+.fase-tab:hover { background:var(--bg-muted); }
+.fase-tab.active { background:var(--accent); color:#fff; font-weight:600; }
+.fase-dot { width:8px; height:8px; border-radius:50%; }
+.fase-count { font-size:11px; color:var(--text-3); }
+.fase-tab.active .fase-count { color:rgba(255,255,255,.8); }
+.nav-badge { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 5px; border-radius:6px; background:var(--accent); color:#fff; font-size:10px; font-weight:700; }
+.nav-spacer { flex:1; }
+.nav-search { display:flex; align-items:center; gap:6px; padding:5px 12px; border:1px solid var(--border); border-radius:6px; background:var(--bg-muted); font-size:12.5px; color:var(--text-3); width:180px; }
+.view-switch { display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.view-btn { padding:5px 14px; font-size:12.5px; font-weight:500; border:none; background:var(--bg-surface); color:var(--text-2); cursor:pointer; font-family:inherit; transition:all .15s; }
+.view-btn:not(:last-child) { border-right:1px solid var(--border); }
+.view-btn:hover { background:var(--bg-muted); }
+.view-btn.active { background:var(--text-1); color:#fff; font-weight:600; }
+.smart-btn { display:flex; align-items:center; gap:5px; padding:7px 14px; background:linear-gradient(135deg,#7c3aed,#667eea); color:#fff; border:none; border-radius:6px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+/* ── AGENDA HEADER ── */
+.agenda-header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:var(--bg-surface); border-bottom:1px solid var(--border); }
+.agenda-left { display:flex; align-items:center; gap:10px; }
+.agenda-icon { width:34px; height:34px; border-radius:8px; background:var(--accent-bg); display:flex; align-items:center; justify-content:center; color:var(--accent); font-size:16px; }
+.agenda-title { font-size:18px; font-weight:700; }
+.agenda-range { font-size:13px; color:var(--text-3); font-weight:500; }
+.agenda-right { display:flex; align-items:center; gap:10px; }
+.period-switch { display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.period-btn { padding:5px 12px; font-size:11.5px; font-weight:500; border:none; background:var(--bg-surface); color:var(--text-2); cursor:pointer; font-family:inherit; transition:all .15s; }
+.period-btn:not(:last-child) { border-right:1px solid var(--border); }
+.period-btn:hover { background:var(--bg-muted); }
+.period-btn.active { background:var(--text-1); color:#fff; font-weight:600; }
+.arrow-btn { width:30px; height:30px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:6px; background:var(--bg-surface); cursor:pointer; color:var(--text-2); font-size:15px; transition:all .15s; user-select:none; }
+.arrow-btn:hover { background:var(--bg-muted); }
+.nav-indicator { font-size:12px; font-weight:700; color:var(--text-1); min-width:100px; text-align:center; }
+.today-btn { padding:5px 12px; border:1.5px solid var(--accent); border-radius:6px; background:var(--bg-surface); color:var(--accent); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all .15s; }
+.today-btn:hover { background:var(--accent-bg); }
+
+/* ── FILTER BAR ── */
+.filterbar { display:flex; align-items:center; gap:12px; padding:10px 20px; background:var(--bg-surface); border-bottom:1px solid var(--border); }
+.filter-group { display:flex; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.filter-btn { display:flex; align-items:center; gap:5px; padding:4px 12px; font-size:11.5px; font-weight:500; border:none; background:var(--bg-surface); color:var(--text-2); cursor:pointer; font-family:inherit; transition:all .15s; }
+.filter-btn.active { background:var(--accent); color:#fff; font-weight:600; }
+.filter-sep { width:1px; height:22px; background:var(--border); }
+.team-selector { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-3); }
+.avatar-xs { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:#fff; border:2px solid #fff; cursor:pointer; }
+.avatar-xs.sel { box-shadow:0 0 0 2px var(--accent); }
+.stats { display:flex; gap:14px; font-size:11.5px; margin-left:auto; }
+.stat { display:flex; align-items:center; gap:4px; }
+.stat-dot { width:6px; height:6px; border-radius:50%; }
+
+/* ══════════════════════════════════════
+   SHARED PLANNING LAYOUT
+   ══════════════════════════════════════ */
+.planning-container { padding:16px 20px; }
+
+/* ── Sticky header — 3 rows: label, sub-labels, heatmap ── */
+.sticky-header {
+    display:grid; background:var(--bg-surface); border-radius:10px;
+    box-shadow:var(--shadow-s); border:1px solid var(--border); overflow:hidden;
+    position:sticky; top:46px; z-index:50; margin-bottom:10px;
+}
+.sh-corner { background:var(--bg-muted); border-right:1px solid var(--border); display:flex; align-items:center; padding:8px 12px; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:var(--text-3); }
+.sh-top { padding:5px 8px; text-align:center; background:var(--bg-muted); border-bottom:1px solid var(--border); font-size:13px; font-weight:800; color:var(--text-1); letter-spacing:.5px; }
+.sh-subs { display:grid; background:var(--bg-muted); border-bottom:1px solid var(--border); }
+.sh-sub { display:flex; align-items:center; justify-content:center; padding:5px 4px; border-right:1px solid var(--border); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--text-3); }
+.sh-sub:last-child { border-right:none; }
+.sh-sub.current { background:var(--accent-bg); color:var(--accent); }
+.sh-heatmap { display:grid; gap:1px; padding:2px 1px; background:var(--bg-muted); }
+.sh-heat { border-radius:2px; height:12px; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:transparent; cursor:default; transition:all .15s; }
+.sh-heat:hover { transform:scaleY(1.3); color:var(--text-1); z-index:2; }
+.sh-heat[data-tip]:hover::after { content:attr(data-tip); position:absolute; top:calc(100%+4px); left:50%; transform:translateX(-50%); padding:4px 8px; border-radius:4px; background:var(--text-1); color:#fff; font-size:10px; font-weight:500; white-space:nowrap; z-index:200; pointer-events:none; }
+.heat-0{background:#f1f5f9}.heat-1{background:#dbeafe}.heat-2{background:#93c5fd}.heat-3{background:#fbbf24}.heat-4{background:#f97316}.heat-5{background:#ef4444}
+
+/* ── Tender cards list ── */
+.tender-cards-list { display:flex; flex-direction:column; gap:10px; }
+.tender-card { background:var(--bg-surface); border-radius:10px; box-shadow:var(--shadow-card); border:1px solid var(--border); overflow:hidden; transition:box-shadow .2s; animation:cardIn .3s ease both; }
+.tender-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06); }
+@keyframes cardIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.tender-card:nth-child(1){animation-delay:0s}.tender-card:nth-child(2){animation-delay:.04s}.tender-card:nth-child(3){animation-delay:.08s}.tender-card:nth-child(4){animation-delay:.12s}.tender-card:nth-child(5){animation-delay:.16s}.tender-card:nth-child(6){animation-delay:.2s}
+
+/* ── Color bar ── */
+.tc-color-bar { display:grid; }
+.tc-bar-side { display:flex; align-items:center; gap:6px; padding:6px 10px; color:#fff; }
+.ts-fase-pill { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; background:rgba(255,255,255,.22); color:#fff; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
+.pill-arrow { font-size:7px; margin-left:2px; opacity:.7; }
+.ts-ai-badge { display:inline-flex; align-items:center; gap:3px; padding:1px 6px; border-radius:4px; background:rgba(255,255,255,.18); color:rgba(255,255,255,.85); font-size:9px; font-weight:600; }
+.ts-header-icons { margin-left:auto; display:flex; gap:4px; }
+.ts-icon-btn { width:22px; height:22px; border-radius:4px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.15); color:rgba(255,255,255,.8); border:none; cursor:pointer; font-size:11px; }
+.tc-bar-cols { display:grid; height:100%; }
+.tc-col-h { display:flex; align-items:center; justify-content:center; border-right:1px solid rgba(255,255,255,.12); font-size:8px; font-weight:700; color:rgba(255,255,255,.65); text-transform:uppercase; letter-spacing:.3px; }
+.tc-col-h:last-child { border-right:none; }
+.tc-col-h.cw,.tc-col-h.cm,.tc-col-h.cd { color:#fff; font-weight:800; background:rgba(255,255,255,.15); border-radius:2px; }
+
+/* ── Card body ── */
+.tc-body { display:grid; }
+
+/* ── Sidebar ── */
+.tender-sidebar { padding:8px 10px; background:var(--bg-surface); border-right:1px solid var(--border); display:flex; flex-direction:column; gap:4px; }
+.ts-name { font-size:12px; font-weight:600; color:var(--text-1); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.ts-org { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text-3); }
+.ts-org svg { flex-shrink:0; }
+.ts-deadline { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:5px; font-size:10px; font-weight:600; }
+.ts-deadline.ok{background:var(--ok-bg);color:var(--ok)}.ts-deadline.warn{background:var(--warn-bg);color:var(--warn)}.ts-deadline.danger{background:var(--danger-bg);color:var(--danger)}.ts-deadline.verlopen{background:var(--verlopen-bg);color:var(--verlopen)}
+.ts-footer { display:flex; align-items:center; gap:4px; margin-top:auto; }
+.ts-avatars { display:flex; }
+.ts-avatar { width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:7px; font-weight:700; color:#fff; border:2px solid #fff; margin-left:-3px; }
+.ts-avatar:first-child { margin-left:0; }
+.ts-progress { display:flex; align-items:center; gap:5px; margin-left:auto; font-size:10px; color:var(--text-3); }
+.ts-progress-bar { width:36px; height:3px; background:var(--border); border-radius:2px; overflow:hidden; }
+.ts-progress-fill { height:100%; border-radius:2px; }
+.ts-counts { display:flex; gap:5px; margin-left:auto; }
+.ts-count-badge { display:inline-flex; align-items:center; gap:3px; padding:2px 5px; border-radius:4px; font-size:9px; font-weight:600; }
+.ts-count-badge.planning{background:#dbeafe;color:#2563eb}.ts-count-badge.checklist{background:#d1fae5;color:#059669}
+
+/* ══════════════════════════════════════
+   TIMELINE CELLS — shared
+   ══════════════════════════════════════ */
+.tl-area { display:grid; position:relative; min-height:52px; }
+.tl-cell { position:relative; border-right:1px solid #f0f2f5; overflow:hidden; }
+.tl-cell:last-child { border-right:none; }
+.tl-cell.cur { background:rgba(102,126,234,.04); }
+/* Quarter/month separator stronger */
+.tl-cell.qsep { border-right:1px solid var(--border); }
+
+/* Gantt bar */
+.gbar { position:absolute; height:16px; top:50%; transform:translateY(-50%); border-radius:3px; z-index:3; cursor:pointer; transition:all .15s; }
+.gbar:hover { height:20px; box-shadow:var(--shadow-m); z-index:10; }
+/* Deadline flag */
+.dl-flag { position:absolute; top:4px; bottom:4px; width:2px; border-radius:1px; z-index:5; }
+.dl-flag::after { content:'⚑'; position:absolute; top:-3px; left:-4px; font-size:9px; color:inherit; }
+/* Today line */
+.today-line { position:absolute; top:0; bottom:0; width:2px; background:var(--accent); z-index:6; border-radius:1px; }
+.today-pip { position:absolute; top:-1px; left:50%; transform:translateX(-50%); width:6px; height:6px; border-radius:50%; background:var(--accent); }
+/* Task dots */
+.td { position:absolute; width:7px; height:7px; border-radius:50%; cursor:pointer; transition:transform .15s; z-index:4; }
+.td:hover { transform:scale(1.8); z-index:20; }
+.td.dn { opacity:.4; }
+.td[data-tip]:hover::after { content:attr(data-tip); position:absolute; bottom:calc(100%+6px); left:50%; transform:translateX(-50%); padding:4px 8px; border-radius:4px; background:var(--text-1); color:#fff; font-size:10px; font-weight:500; white-space:nowrap; z-index:200; pointer-events:none; }
+/* Task density pips (year view) */
+.task-density { position:absolute; bottom:4px; left:3px; right:3px; display:flex; gap:1px; z-index:4; }
+.td-pip { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.td-pip.dn { opacity:.35; }
+
+/* ── Week view: task cards inside day columns ── */
+.week-cell { display:grid; }
+.week-sub { border-right:1px solid #f0f2f5; position:relative; padding:3px 2px; display:flex; flex-direction:column; gap:2px; }
+.week-sub:last-child { border-right:none; }
+.week-sub.cur { background:rgba(102,126,234,.04); }
+.wt { padding:3px 5px; border-radius:4px; border-left:3px solid var(--tc,var(--text-3)); background:#fff; font-size:9.5px; font-weight:500; color:var(--text-1); line-height:1.2; cursor:pointer; transition:all .15s; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.wt:hover { box-shadow:var(--shadow-m); transform:translateY(-1px); }
+.wt.done { opacity:.5; text-decoration:line-through; color:var(--text-3); }
+.wt.urgent { border-left-color:#dc2626; background:#fef2f2; }
+
+/* ── Month view: task pills inside week columns ── */
+.mt { padding:2px 5px; border-radius:3px; border-left:2px solid var(--tc,var(--text-3)); background:#fff; font-size:9px; font-weight:500; color:var(--text-1); line-height:1.2; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.mt.done { opacity:.45; text-decoration:line-through; }
+.mt.urgent { border-left-color:#dc2626; background:#fef2f2; }
+
+/* ── LEGEND ── */
+.legend { display:flex; align-items:center; gap:16px; padding:10px 20px; font-size:11px; color:var(--text-3); flex-wrap:wrap; }
+.legend-item { display:flex; align-items:center; gap:5px; }
+
+/* ── ONGEPLAND ── */
+.ongepland { padding:18px 20px; }
+.ongepland-bar { display:flex; align-items:center; gap:8px; margin-bottom:14px; }
+.ongepland-icon { width:26px; height:26px; border-radius:6px; background:#fef3c7; display:flex; align-items:center; justify-content:center; font-size:13px; }
+.ongepland-title { font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.ongepland-badge { padding:2px 8px; border-radius:5px; background:#fef3c7; color:#92400e; font-size:10.5px; font-weight:600; }
+.ongepland-group { background:var(--bg-surface); border-radius:10px; box-shadow:var(--shadow-s); border:1px solid var(--border); overflow:hidden; }
+.ongepland-group-header { display:flex; align-items:center; gap:8px; padding:8px 12px; color:#fff; font-size:11px; font-weight:600; }
+.ongepland-group-count { margin-left:auto; font-size:10px; opacity:.7; }
+.ongepland-tasks { display:grid; grid-template-columns:repeat(auto-fill,minmax(195px,1fr)); gap:6px; padding:10px; }
+.ot { display:flex; align-items:flex-start; gap:6px; padding:8px 10px; border-radius:6px; border:1px solid var(--border); border-left:3px solid var(--tc,var(--text-3)); background:#fff; cursor:pointer; }
+.task-cb { width:13px; height:13px; border-radius:50%; flex-shrink:0; border:1.5px solid var(--border-dark); margin-top:1px; display:flex; align-items:center; justify-content:center; }
+.task-cb.done { background:var(--ok); border-color:var(--ok); }
+.task-cb.done::after { content:'✓'; color:#fff; font-size:8px; font-weight:700; }
+.task-body { flex:1; min-width:0; }
+.ot-name { font-size:11.5px; font-weight:500; color:var(--text-1); line-height:1.3; }
+.ot-name.done { text-decoration:line-through; color:var(--text-3); }
+.ot-meta { display:flex; align-items:center; gap:4px; margin-top:3px; }
+.task-type { padding:.5px 4px; border-radius:2px; font-size:8.5px; font-weight:600; text-transform:uppercase; }
+.task-type.pl{background:#dbeafe;color:#2563eb}.task-type.cl{background:#fef3c7;color:#92400e}
+.warning-banner { display:flex; align-items:center; gap:6px; padding:8px 20px; font-size:11.5px; color:var(--warn); background:var(--warn-bg); border-top:1px solid #fde68a; }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+    <button class="fase-tab active"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> Overzicht <span class="nav-badge">6</span></button>
+    <button class="fase-tab"><span class="fase-dot" style="background:#ea580c"></span> Acquisitie <span class="fase-count">0</span></button>
+    <button class="fase-tab"><span class="fase-dot" style="background:#7c3aed"></span> Lopend <span class="fase-count">3</span></button>
+    <button class="fase-tab"><span class="fase-dot" style="background:#16a34a"></span> Ingediend <span class="fase-count">3</span></button>
+    <button class="fase-tab"><span class="fase-dot" style="background:#64748b"></span> Archief <span class="fase-count">2</span></button>
+    <span class="nav-spacer"></span>
+    <div class="nav-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Zoek tender…</div>
+    <div class="view-switch">
+        <button class="view-btn">☰ Lijst</button>
+        <button class="view-btn active">📅 Planning</button>
+        <button class="view-btn">▤ Kanban</button>
+    </div>
+    <button class="smart-btn">✨ Smart Import</button>
+</nav>
+
+<!-- AGENDA HEADER -->
+<div class="agenda-header">
+    <div class="agenda-left">
+        <div class="agenda-icon">📅</div>
+        <div><div class="agenda-title">Agenda</div><div class="agenda-range" id="aRange"></div></div>
+    </div>
+    <div class="agenda-right">
+        <div class="period-switch" id="periodSwitch">
+            <button class="period-btn" data-view="week">Week</button>
+            <button class="period-btn" data-view="month">Maand</button>
+            <button class="period-btn" data-view="quarter">Kwartaal</button>
+            <button class="period-btn active" data-view="year">Jaar</button>
+        </div>
+        <button class="arrow-btn" id="prevBtn">‹</button>
+        <span class="nav-indicator" id="navInd"></span>
+        <button class="arrow-btn" id="nextBtn">›</button>
+        <button class="today-btn" id="todayBtn">Vandaag</button>
+    </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filterbar">
+    <div class="filter-group"><button class="filter-btn">👥 Alle taken</button><button class="filter-btn active">👤 Mijn taken</button></div>
+    <span class="filter-sep"></span>
+    <div class="team-selector">Bekijk als: <span class="avatar-xs sel" style="background:#16a34a">NA</span> <span class="avatar-xs" style="background:#7c3aed">RI</span></div>
+    <div class="stats">
+        <span class="stat"><span class="stat-dot" style="background:#667eea"></span> 24 totaal</span>
+        <span class="stat"><span class="stat-dot" style="background:#ea580c"></span> 16 open</span>
+        <span class="stat"><span class="stat-dot" style="background:#16a34a"></span> 8 klaar</span>
+    </div>
+</div>
+
+<!-- PLANNING CONTENT -->
+<div class="planning-container">
+    <div class="sticky-header" id="stickyHeader"></div>
+    <div class="tender-cards-list" id="tenderCards"></div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend" id="legend"></div>
+
+<!-- ONGEPLAND -->
+<div class="ongepland">
+    <div class="ongepland-bar"><span class="ongepland-icon">📋</span><span class="ongepland-title">Ongepland</span><span class="ongepland-badge">20 taken zonder datum</span></div>
+    <div class="ongepland-group">
+        <div class="ongepland-group-header" style="background:linear-gradient(135deg,var(--archief-start),var(--archief-end))">ARCHIEF · Verkoop 't Poortershuys en ontwikkeling <span class="ongepland-group-count">20 taken</span></div>
+        <div class="ongepland-tasks">
+            <div class="ot" style="--tc:var(--archief-accent)"><span class="task-cb done"></span><div class="task-body"><div class="ot-name done">kick-off meeting</div><div class="ot-meta"><span class="task-type pl">PLANNING</span></div></div></div>
+            <div class="ot" style="--tc:var(--archief-accent)"><span class="task-cb"></span><div class="task-body"><div class="ot-name">Uittreksel KvK</div><div class="ot-meta"><span class="task-type cl">CHECKLIST</span></div></div></div>
+            <div class="ot" style="--tc:var(--archief-accent)"><span class="task-cb"></span><div class="task-body"><div class="ot-name">Plan van Aanpak</div><div class="ot-meta"><span class="task-type cl">CHECKLIST</span></div></div></div>
+        </div>
+    </div>
+</div>
+<div class="warning-banner">⚠️&nbsp; <strong>21 taken zonder toewijzing</strong></div>
+
+<script>
+/* ══════════════════════════════════════
+   DATA & UTILITIES
+   ══════════════════════════════════════ */
+const FC={acquisitie:{s:'#d97706',e:'#e5921a',a:'#ea580c'},lopend:{s:'#6d5ccd',e:'#7c6fe0',a:'#7c3aed'},ingediend:{s:'#0d9263',e:'#10b981',a:'#16a34a'},afronden:{s:'#0d9488',e:'#14b8a6',a:'#0d9488'},archief:{s:'#475569',e:'#5a6b80',a:'#64748b'}};
+const TENDERS=[
+{name:'Bloemen',org:'Centraal Bureau voor de Statistiek',fase:'afronden',fl:'evalueren',ai:'✂ AI',dl:{t:'30 jan · Verlopen',c:'verlopen'},dlD:'2026-01-30',pub:'2025-11-21',av:[{c:'#7c3aed',l:'RI'},{c:'#16a34a',l:'NA'}],cnt:{p:'0/0',c:'0/0'},tasks:{}},
+{name:'Levering van bloemen en (groen)attenties',org:'Nederlandse Voedsel- en Warenautoriteit',fase:'lopend',fl:'inplannen',ai:'✦ AI Pro',dl:{t:'3 mrt · Nog 24 dagen',c:'ok'},dlD:'2026-03-03',pub:'2025-12-09',av:[{c:'#7c3aed',l:'RI'},{c:'#16a34a',l:'NA'}],cnt:{p:'0/0',c:'0/0'},tasks:{}},
+{name:'Vervanging ledverlichting universiteitsgebouwen',org:'Universiteit Leiden',fase:'ingediend',fl:'ingediend',ai:'✂ AI',dl:{t:'16 feb · Nog 9 dagen',c:'danger'},dlD:'2026-02-16',pub:'2026-01-05',av:[{c:'#7c3aed',l:'RI'},{c:'#16a34a',l:'NA'}],cnt:{p:'0/0',c:'0/0'},tasks:{'2026-02-03':[{n:'Indieningsbevestiging',d:true}],'2026-02-05':[{n:'Social Return bijlage',d:false}]}},
+{name:'Transportdiensten',org:'Stedin Groep Services B.V.',fase:'ingediend',fl:'ingediend',ai:'✂ AI',dl:{t:'5 feb · Verlopen',c:'verlopen'},dlD:'2026-02-05',pub:'2025-12-05',av:[{c:'#7c3aed',l:'RI'},{c:'#16a34a',l:'NA'}],cnt:{p:'0/0',c:'0/0'},tasks:{'2026-02-02':[{n:"CV's sleutelpersoneel",d:true}],'2026-02-04':[{n:'Referentieprojecten',d:false}],'2026-02-05':[{n:'Gantt chart',d:false}]}},
+{name:"Verkoop 't Poortershuys en ontwikkeling",org:'Gemeente Noordoostpolder',fase:'archief',fl:'gewonnen',ai:'✂ AI',dl:{t:'5 jan · Verlopen',c:'verlopen'},dlD:'2026-01-05',pub:'2025-11-01',av:[{c:'#7c3aed',l:'RI'},{c:'#16a34a',l:'NA'}],prog:'8/24',progP:33,tasks:{'2026-01-05':[{n:'Publicatie aanbesteding',d:true}],'2026-01-12':[{n:'Schouw / locatiebezoek',d:true}],'2026-01-28':[{n:'Interne review',d:true}],'2026-02-02':[{n:'UEA document',d:false},{n:'GVA',d:false}],'2026-02-04':[{n:'Feedback sessie v3',d:false}],'2026-02-06':[{n:'Concept versie 2',d:true},{n:'Feedback v2',d:true}],'2026-02-07':[{n:'Feedback sessie v2',d:true}],'2026-02-09':[{n:'Concept versie 3',d:false}],'2026-02-11':[{n:'Naar vormgever',d:false}],'2026-02-16':[{n:'Opgemaakte versie',d:false}],'2026-02-19':[{n:'INTERNE DEADLINE',d:false,u:true}],'2026-02-20':[{n:'Definitieve versie',d:false}],'2026-03-01':[{n:'Voorl. gunning',d:false}]}},
+{name:'Aanbesteding Arbeidsmarktcampagnes',org:'Lead buyer Bedrijfsvoering',fase:'lopend',fl:'inplannen',ai:'✂ AI',dl:{t:'11 mrt · Nog 32 dagen',c:'ok'},dlD:'2026-03-11',pub:'2026-01-15',av:[{c:'#16a34a',l:'NA'}],cnt:{p:'0/0',c:'0/0'},tasks:{}}
+];
+const TODAY=new Date(2026,1,7);
+const MS=['Jan','Feb','Mrt','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+const MF=['Januari','Februari','Maart','April','Mei','Juni','Juli','Augustus','September','Oktober','November','December'];
+const DN=['Ma','Di','Wo','Do','Vr','Za','Zo'];
+const SW=240; // sidebar width
+
+let curView='year', offset=0;
+
+// Utils
+function gM(d){const w=d.getDay();return new Date(d.getFullYear(),d.getMonth(),d.getDate()-w+(w===0?-6:1));}
+function aD(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
+function f(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function pD(s){const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function wN(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));return Math.ceil((((t-new Date(Date.UTC(t.getUTCFullYear(),0,1)))/864e5)+1)/7);}
+function wIM(y,m){const a=new Date(y,m,1),b=new Date(y,m+1,0),r=[];let c=gM(a);while(c<=b){r.push(new Date(c));c=aD(c,7);}return r;}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function heatLvl(v,mx){if(v===0)return 0;const r=v/Math.max(mx,1);if(r<=.15)return 1;if(r<=.35)return 2;if(r<=.55)return 3;if(r<=.8)return 4;return 5;}
+const heatNames=['Rustig','Licht','Normaal','Druk','Zeer druk','Piek'];
+
+// Count tasks in date range
+function countTasksInRange(start,end){
+    let tc=0,dc=0;
+    TENDERS.forEach(t=>{
+        Object.keys(t.tasks).forEach(ds=>{const d=pD(ds);if(d>=start&&d<=end)tc+=t.tasks[ds].length;});
+        if(t.dlD){const d=pD(t.dlD);if(d>=start&&d<=end)dc++;}
+    });
+    return {tasks:tc,deadlines:dc,activity:tc+dc*2};
+}
+
+// Sidebar HTML
+const orgSvg=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>`;
+function sidebarHTML(t,fc){
+    let h=`<div class="tender-sidebar"><div class="ts-name">${esc(t.name)}</div>`;
+    h+=`<div class="ts-org">${orgSvg} ${esc(t.org)}</div>`;
+    h+=`<span class="ts-deadline ${t.dl.c}">⏰ ${esc(t.dl.t)}</span>`;
+    h+=`<div class="ts-footer"><div class="ts-avatars">`;
+    t.av.forEach(a=>{h+=`<span class="ts-avatar" style="background:${a.c}">${a.l}</span>`;});
+    h+=`</div>`;
+    if(t.prog)h+=`<div class="ts-progress">✓ ${t.prog}<div class="ts-progress-bar"><div class="ts-progress-fill" style="width:${t.progP}%;background:${fc.a}"></div></div></div>`;
+    else if(t.cnt)h+=`<div class="ts-counts"><span class="ts-count-badge planning">📋 ${t.cnt.p}</span><span class="ts-count-badge checklist">✓ ${t.cnt.c}</span></div>`;
+    h+=`</div></div>`;return h;
+}
+function colorBarStart(fc){return `<div class="tc-color-bar" style="background:linear-gradient(135deg,${fc.s},${fc.e})"><div class="tc-bar-side"><span class="ts-fase-pill">${''}`;} // placeholder
+function barSideHTML(t,fc){
+    return `<div class="tc-bar-side"><span class="ts-fase-pill">${esc(t.fl)} <span class="pill-arrow">▾</span></span><span class="ts-ai-badge">${t.ai}</span><span class="ts-header-icons"><button class="ts-icon-btn">📄</button><button class="ts-icon-btn">⚙</button></span></div>`;
+}
+
+/* ══════════════════════════════════════
+   RENDER: YEAR VIEW
+   ══════════════════════════════════════ */
+function renderYear(){
+    const yr=TODAY.getFullYear()+offset;
+    const cm=yr===TODAY.getFullYear()?TODAY.getMonth():-1;
+    const cq=cm>=0?Math.floor(cm/3):-1;
+    document.getElementById('navInd').textContent=yr;
+    document.getElementById('aRange').textContent=`${yr} · Januari – December`;
+
+    // Heatmap data
+    const mAct=[];
+    for(let mi=0;mi<12;mi++){const s=new Date(yr,mi,1),e=new Date(yr,mi+1,0);mAct.push(countTasksInRange(s,e));}
+    const mxA=Math.max(...mAct.map(a=>a.activity),1);
+
+    // Sticky header
+    let sh=`<div class="sh-corner" style="grid-row:1/4">Tenders</div>`;
+    sh+=`<div class="sh-top">${yr}</div>`;
+    sh+=`<div class="sh-subs" style="grid-template-columns:repeat(4,1fr)">`;
+    for(let q=0;q<4;q++)sh+=`<div class="sh-sub${q===cq?' current':''}">Q${q+1}</div>`;
+    sh+=`</div><div class="sh-heatmap" style="grid-template-columns:repeat(12,1fr)">`;
+    for(let mi=0;mi<12;mi++){const a=mAct[mi],hl=heatLvl(a.activity,mxA);sh+=`<div class="sh-heat heat-${hl}" data-tip="${esc(MS[mi])}: ${a.tasks} taken, ${a.deadlines} deadlines · ${heatNames[hl]}">${a.tasks||''}</div>`;}
+    sh+=`</div>`;
+    const hdr=document.getElementById('stickyHeader');
+    hdr.style.gridTemplateColumns=`${SW}px 1fr`;hdr.style.gridTemplateRows='auto auto auto';hdr.innerHTML=sh;
+
+    // Cards
+    const yrS=new Date(yr,0,1),yrE=new Date(yr,11,31),totalD=(yrE-yrS)/864e5+1;
+    let cards='';
+    TENDERS.forEach(t=>{
+        const fc=FC[t.fase];
+        cards+=`<div class="tender-card"><div class="tc-color-bar" style="background:linear-gradient(135deg,${fc.s},${fc.e});grid-template-columns:${SW}px 1fr">`;
+        cards+=barSideHTML(t,fc);
+        cards+=`<div class="tc-bar-cols" style="grid-template-columns:repeat(12,1fr)">`;
+        for(let mi=0;mi<12;mi++)cards+=`<div class="tc-col-h${mi===cm?' cm':''}">${MS[mi]}</div>`;
+        cards+=`</div></div><div class="tc-body" style="grid-template-columns:${SW}px 1fr">`;
+        cards+=sidebarHTML(t,fc);
+        cards+=`<div class="tl-area" style="grid-template-columns:repeat(12,1fr)">`;
+        // Gantt
+        if(t.pub&&t.dlD){const pub=pD(t.pub),dl=pD(t.dlD),bS=pub<yrS?yrS:pub,bE=dl>yrE?yrE:dl;if(bS<=yrE&&bE>=yrS){const l=Math.max(0,(bS-yrS)/864e5)/totalD*100,w=Math.min(totalD,(bE-yrS)/864e5+1)/totalD*100-l;cards+=`<div class="gbar" style="left:${l}%;width:${Math.max(w,1)}%;background:${fc.a}25;border:1px solid ${fc.a}44;grid-column:1/-1"></div>`;}}
+        // Deadline
+        if(t.dlD){const dl=pD(t.dlD);if(dl>=yrS&&dl<=yrE){const p=(dl-yrS)/864e5/totalD*100;cards+=`<div class="dl-flag" style="left:${p}%;background:#dc2626;color:#dc2626;grid-column:1/-1"></div>`;}}
+        // Today
+        if(yr===TODAY.getFullYear()){const tp=(TODAY-yrS)/864e5/totalD*100;cards+=`<div class="today-line" style="left:${tp}%;grid-column:1/-1"><div class="today-pip"></div></div>`;}
+        // Month cells with density
+        for(let mi=0;mi<12;mi++){const mS=new Date(yr,mi,1),mE=new Date(yr,mi+1,0),isCM=mi===cm;
+            const mTasks=[];Object.keys(t.tasks).forEach(ds=>{const d=pD(ds);if(d.getFullYear()===yr&&d.getMonth()===mi)t.tasks[ds].forEach(tk=>mTasks.push(tk));});
+            cards+=`<div class="tl-cell${isCM?' cur':''}${mi%3===2?' qsep':''}">`;
+            if(mTasks.length){cards+=`<div class="task-density">`;mTasks.slice(0,6).forEach(tk=>{cards+=`<div class="td-pip${tk.d?' dn':''}" style="background:${tk.u?'#dc2626':fc.a}"></div>`;});if(mTasks.length>6)cards+=`<div style="font-size:7px;color:var(--text-3);line-height:5px">+${mTasks.length-6}</div>`;cards+=`</div>`;}
+            cards+=`</div>`;}
+        cards+=`</div></div></div>`;
+    });
+    document.getElementById('tenderCards').innerHTML=cards;
+    document.getElementById('legend').innerHTML=`<span class="legend-item"><span style="width:5px;height:5px;border-radius:50%;background:var(--accent)"></span> Taak open</span><span class="legend-item"><span style="width:5px;height:5px;border-radius:50%;background:var(--ok);opacity:.35"></span> Afgerond</span><span class="legend-item"><span style="width:5px;height:5px;border-radius:50%;background:#dc2626"></span> Urgent</span><span class="legend-item"><span style="width:16px;height:2px;border-radius:1px;background:var(--accent)"></span> Vandaag</span><span class="legend-item"><span style="width:24px;height:10px;border-radius:3px;background:var(--lopend-accent);opacity:.15;border:1px solid var(--lopend-accent)"></span> Looptijd</span><span class="legend-item"><span style="color:#dc2626;font-size:10px">⚑</span> Deadline</span>`;
+}
+
+/* ══════════════════════════════════════
+   RENDER: QUARTER VIEW
+   ══════════════════════════════════════ */
+function renderQuarter(){
+    const tQ=Math.floor(TODAY.getMonth()/3),tY=TODAY.getFullYear();
+    let q=tQ+offset,y=tY;while(q<0){q+=4;y--;}while(q>3){q-=4;y++;}
+    const ms=[0,1,2].map(i=>({y,m:q*3+i}));
+    const qN=q+1,tM=f(gM(TODAY));
+    document.getElementById('navInd').textContent=`Q${qN} ${y}`;
+    document.getElementById('aRange').textContent=`Q${qN} ${y} · ${MF[ms[0].m]} – ${MF[ms[2].m]}`;
+    const mW=ms.map(m=>wIM(m.y,m.m));
+
+    // Heatmap per month in quarter
+    const mAct=ms.map(m=>{const s=new Date(m.y,m.m,1),e=new Date(m.y,m.m+1,0);return countTasksInRange(s,e);});
+    const mxA=Math.max(...mAct.map(a=>a.activity),1);
+
+    let sh=`<div class="sh-corner" style="grid-row:1/4">Tenders</div>`;
+    sh+=`<div class="sh-top">${y}</div>`;
+    sh+=`<div class="sh-subs" style="grid-template-columns:1fr"><div class="sh-sub current">Q${qN} · ${MF[ms[0].m]} – ${MF[ms[2].m]}</div></div>`;
+    sh+=`<div class="sh-heatmap" style="grid-template-columns:repeat(3,1fr)">`;
+    ms.forEach((m,i)=>{const a=mAct[i],hl=heatLvl(a.activity,mxA);sh+=`<div class="sh-heat heat-${hl}" data-tip="${esc(MF[m.m])}: ${a.tasks} taken, ${a.deadlines} deadlines · ${heatNames[hl]}">${a.tasks||''}</div>`;});
+    sh+=`</div>`;
+    const hdr=document.getElementById('stickyHeader');
+    hdr.style.gridTemplateColumns=`${SW}px 1fr`;hdr.style.gridTemplateRows='auto auto auto';hdr.innerHTML=sh;
+
+    let cards='';
+    TENDERS.forEach(t=>{
+        const fc=FC[t.fase];
+        // Count total week columns
+        const totalWeeks=mW.reduce((s,w)=>s+w.length,0);
+        // Color bar with week headers
+        cards+=`<div class="tender-card"><div class="tc-color-bar" style="background:linear-gradient(135deg,${fc.s},${fc.e});grid-template-columns:${SW}px repeat(3,1fr)">`;
+        cards+=barSideHTML(t,fc);
+        ms.forEach((m,mi)=>{
+            const ws=mW[mi];
+            cards+=`<div class="tc-bar-cols" style="grid-template-columns:repeat(${ws.length},1fr);border-right:1px solid rgba(255,255,255,.2)">`;
+            ws.forEach(mon=>{const isCW=f(mon)===tM;cards+=`<div class="tc-col-h${isCW?' cw':''}">W${wN(mon)}</div>`;});
+            cards+=`</div>`;
+        });
+        cards+=`</div><div class="tc-body" style="grid-template-columns:${SW}px repeat(3,1fr)">`;
+        cards+=sidebarHTML(t,fc);
+        // Timeline per month
+        ms.forEach((m,mi)=>{
+            const ws=mW[mi],isCM=m.y===TODAY.getFullYear()&&m.m===TODAY.getMonth();
+            const mS=new Date(m.y,m.m,1),mE=new Date(m.y,m.m+1,0),totalD=(mE-mS)/864e5+1;
+            cards+=`<div class="tl-cell${isCM?' cur':''}" style="min-height:52px;overflow:visible"><div style="display:grid;grid-template-columns:repeat(${ws.length},1fr);height:100%;position:relative">`;
+            // Gantt
+            if(t.pub&&t.dlD){const pub=pD(t.pub),dl=pD(t.dlD),bS=pub<mS?mS:pub,bE=dl>mE?mE:dl;if(bS<=mE&&bE>=mS){const l=Math.max(0,(bS-mS)/864e5)/totalD*100,w=Math.min(totalD,(bE-mS)/864e5+1)/totalD*100-l;cards+=`<div class="gbar" style="left:${l}%;width:${Math.max(w,2)}%;background:${fc.a}25;border:1px solid ${fc.a}44;grid-column:1/-1"></div>`;}}
+            // Deadline
+            if(t.dlD){const dl=pD(t.dlD);if(dl>=mS&&dl<=mE){const p=(dl-mS)/864e5/totalD*100;cards+=`<div class="dl-flag" style="left:${p}%;background:#dc2626;color:#dc2626;grid-column:1/-1"></div>`;}}
+            // Week cells + dots
+            ws.forEach(mon=>{
+                const isCW=f(mon)===tM;
+                cards+=`<div style="border-right:1px solid #f0f2f5;position:relative${isCW?';background:rgba(102,126,234,.04)':''}">`;
+                if(isCW){const dow=(TODAY.getDay()+6)%7,pct=(dow+.5)/7*100;cards+=`<div class="today-line" style="left:${pct}%"><div class="today-pip"></div></div>`;}
+                let dotI=0;for(let d=0;d<7;d++){const day=aD(mon,d),key=f(day),dT=t.tasks[key]||[];dT.forEach(tk=>{const lp=(d+.5)/7*100,bp=6+dotI*11;cards+=`<div class="td${tk.d?' dn':''}" data-tip="${esc(tk.n)}" style="left:calc(${lp}% - 3.5px);bottom:${bp}px;background:${tk.u?'#dc2626':fc.a}"></div>`;dotI++;});}
+                cards+=`</div>`;
+            });
+            cards+=`</div></div>`;
+        });
+        cards+=`</div></div>`;
+    });
+    document.getElementById('tenderCards').innerHTML=cards;
+    document.getElementById('legend').innerHTML=`<span class="legend-item"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span> Taak open</span><span class="legend-item"><span style="width:7px;height:7px;border-radius:50%;background:var(--ok);opacity:.4"></span> Afgerond</span><span class="legend-item"><span style="width:7px;height:7px;border-radius:50%;background:#dc2626"></span> Urgent</span><span class="legend-item"><span style="width:16px;height:2px;border-radius:1px;background:var(--accent)"></span> Vandaag</span><span class="legend-item"><span style="width:24px;height:10px;border-radius:3px;background:var(--lopend-accent);opacity:.15;border:1px solid var(--lopend-accent)"></span> Looptijd</span><span class="legend-item"><span style="color:#dc2626;font-size:10px">⚑</span> Deadline</span>`;
+}
+
+/* ══════════════════════════════════════
+   RENDER: MONTH VIEW
+   ══════════════════════════════════════ */
+function renderMonth(){
+    const base=new Date(TODAY.getFullYear(),TODAY.getMonth()+offset,1);
+    const yr=base.getFullYear(),mo=base.getMonth();
+    const weeks=wIM(yr,mo);
+    const tM=f(gM(TODAY));
+    document.getElementById('navInd').textContent=`${MF[mo]} ${yr}`;
+    document.getElementById('aRange').textContent=`${MF[mo]} ${yr} · ${weeks.length} weken`;
+
+    // Heatmap per week
+    const wAct=weeks.map(mon=>{const s=mon,e=aD(mon,6);return countTasksInRange(s,e);});
+    const mxA=Math.max(...wAct.map(a=>a.activity),1);
+
+    let sh=`<div class="sh-corner" style="grid-row:1/4">Tenders</div>`;
+    sh+=`<div class="sh-top">${yr}</div>`;
+    sh+=`<div class="sh-subs" style="grid-template-columns:1fr"><div class="sh-sub current">${MF[mo]}</div></div>`;
+    sh+=`<div class="sh-heatmap" style="grid-template-columns:repeat(${weeks.length},1fr)">`;
+    weeks.forEach((mon,i)=>{const a=wAct[i],hl=heatLvl(a.activity,mxA);sh+=`<div class="sh-heat heat-${hl}" data-tip="W${wN(mon)}: ${a.tasks} taken, ${a.deadlines} deadlines · ${heatNames[hl]}">${a.tasks||''}</div>`;});
+    sh+=`</div>`;
+    const hdr=document.getElementById('stickyHeader');
+    hdr.style.gridTemplateColumns=`${SW}px 1fr`;hdr.style.gridTemplateRows='auto auto auto';hdr.innerHTML=sh;
+
+    let cards='';
+    TENDERS.forEach(t=>{
+        const fc=FC[t.fase];
+        cards+=`<div class="tender-card"><div class="tc-color-bar" style="background:linear-gradient(135deg,${fc.s},${fc.e});grid-template-columns:${SW}px 1fr">`;
+        cards+=barSideHTML(t,fc);
+        cards+=`<div class="tc-bar-cols" style="grid-template-columns:repeat(${weeks.length},1fr)">`;
+        weeks.forEach(mon=>{const isCW=f(mon)===tM;cards+=`<div class="tc-col-h${isCW?' cw':''}">W${wN(mon)}</div>`;});
+        cards+=`</div></div><div class="tc-body" style="grid-template-columns:${SW}px 1fr">`;
+        cards+=sidebarHTML(t,fc);
+        // Timeline weeks
+        cards+=`<div class="tl-area" style="grid-template-columns:repeat(${weeks.length},1fr)">`;
+        // Gantt across weeks
+        const mS=new Date(yr,mo,1),mE=new Date(yr,mo+1,0),totalD=(mE-mS)/864e5+1;
+        if(t.pub&&t.dlD){const pub=pD(t.pub),dl=pD(t.dlD),bS=pub<mS?mS:pub,bE=dl>mE?mE:dl;if(bS<=mE&&bE>=mS){const l=Math.max(0,(bS-mS)/864e5)/totalD*100,w=Math.min(totalD,(bE-mS)/864e5+1)/totalD*100-l;cards+=`<div class="gbar" style="left:${l}%;width:${Math.max(w,2)}%;background:${fc.a}25;border:1px solid ${fc.a}44;grid-column:1/-1"></div>`;}}
+        if(t.dlD){const dl=pD(t.dlD);if(dl>=mS&&dl<=mE){const p=(dl-mS)/864e5/totalD*100;cards+=`<div class="dl-flag" style="left:${p}%;background:#dc2626;color:#dc2626;grid-column:1/-1"></div>`;}}
+        weeks.forEach(mon=>{
+            const isCW=f(mon)===tM;
+            cards+=`<div class="tl-cell${isCW?' cur':''}" style="padding:3px 2px;display:flex;flex-direction:column;gap:2px">`;
+            if(isCW){const dow=(TODAY.getDay()+6)%7,pct=(dow+.5)/7*100;cards+=`<div class="today-line" style="left:${pct}%"><div class="today-pip"></div></div>`;}
+            // Task pills for this week
+            for(let d=0;d<7;d++){const day=aD(mon,d),key=f(day),dT=t.tasks[key]||[];dT.forEach(tk=>{cards+=`<div class="mt${tk.d?' done':''}${tk.u?' urgent':''}" style="--tc:${fc.a}" title="${esc(tk.n)}">${esc(tk.n)}</div>`;});}
+            cards+=`</div>`;
+        });
+        cards+=`</div></div></div>`;
+    });
+    document.getElementById('tenderCards').innerHTML=cards;
+    document.getElementById('legend').innerHTML=`<span class="legend-item"><span style="width:16px;height:8px;border-radius:3px;border-left:2px solid var(--accent);background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.1)"></span> Taak open</span><span class="legend-item"><span style="width:16px;height:8px;border-radius:3px;border-left:2px solid var(--ok);background:#fff;opacity:.45"></span> Afgerond</span><span class="legend-item"><span style="width:16px;height:8px;border-radius:3px;border-left:2px solid #dc2626;background:#fef2f2"></span> Urgent</span><span class="legend-item"><span style="width:16px;height:2px;border-radius:1px;background:var(--accent)"></span> Vandaag</span><span class="legend-item"><span style="color:#dc2626;font-size:10px">⚑</span> Deadline</span>`;
+}
+
+/* ══════════════════════════════════════
+   RENDER: WEEK VIEW
+   ══════════════════════════════════════ */
+function renderWeek(){
+    const weekStart=aD(gM(TODAY),offset*7);
+    const days=[];for(let i=0;i<7;i++)days.push(aD(weekStart,i));
+    const yr=weekStart.getFullYear();
+    const wk=wN(weekStart);
+    document.getElementById('navInd').textContent=`Week ${wk}`;
+    document.getElementById('aRange').textContent=`Week ${wk} · ${days[0].getDate()} ${MS[days[0].getMonth()]} – ${days[6].getDate()} ${MS[days[6].getMonth()]} ${yr}`;
+
+    // Heatmap per day
+    const dAct=days.map(d=>countTasksInRange(d,d));
+    const mxA=Math.max(...dAct.map(a=>a.activity),1);
+
+    let sh=`<div class="sh-corner" style="grid-row:1/4">Tenders</div>`;
+    sh+=`<div class="sh-top">${yr}</div>`;
+    sh+=`<div class="sh-subs" style="grid-template-columns:1fr"><div class="sh-sub current">Week ${wk} · ${MF[weekStart.getMonth()]}</div></div>`;
+    sh+=`<div class="sh-heatmap" style="grid-template-columns:repeat(7,1fr)">`;
+    days.forEach((d,i)=>{const a=dAct[i],hl=heatLvl(a.activity,mxA);sh+=`<div class="sh-heat heat-${hl}" data-tip="${DN[i]} ${d.getDate()} ${MS[d.getMonth()]}: ${a.tasks} taken · ${heatNames[hl]}">${a.tasks||''}</div>`;});
+    sh+=`</div>`;
+    const hdr=document.getElementById('stickyHeader');
+    hdr.style.gridTemplateColumns=`${SW}px 1fr`;hdr.style.gridTemplateRows='auto auto auto';hdr.innerHTML=sh;
+
+    const todayStr=f(TODAY);
+    let cards='';
+    TENDERS.forEach(t=>{
+        const fc=FC[t.fase];
+        cards+=`<div class="tender-card"><div class="tc-color-bar" style="background:linear-gradient(135deg,${fc.s},${fc.e});grid-template-columns:${SW}px 1fr">`;
+        cards+=barSideHTML(t,fc);
+        cards+=`<div class="tc-bar-cols" style="grid-template-columns:repeat(7,1fr)">`;
+        days.forEach((d,i)=>{const isToday=f(d)===todayStr;cards+=`<div class="tc-col-h${isToday?' cd':''}">${DN[i]} ${d.getDate()}</div>`;});
+        cards+=`</div></div><div class="tc-body" style="grid-template-columns:${SW}px 1fr">`;
+        cards+=sidebarHTML(t,fc);
+        // Day columns with task cards
+        cards+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);min-height:52px">`;
+        days.forEach((d,i)=>{
+            const key=f(d),isToday=key===todayStr,dT=t.tasks[key]||[];
+            cards+=`<div class="week-sub${isToday?' cur':''}">`;
+            if(isToday)cards+=`<div class="today-line" style="left:50%"><div class="today-pip"></div></div>`;
+            // Deadline marker
+            if(t.dlD&&f(pD(t.dlD))===key)cards+=`<div class="dl-flag" style="left:50%;background:#dc2626;color:#dc2626"></div>`;
+            dT.forEach(tk=>{cards+=`<div class="wt${tk.d?' done':''}${tk.u?' urgent':''}" style="--tc:${fc.a}">${esc(tk.n)}</div>`;});
+            cards+=`</div>`;
+        });
+        cards+=`</div></div></div>`;
+    });
+    document.getElementById('tenderCards').innerHTML=cards;
+    document.getElementById('legend').innerHTML=`<span class="legend-item"><span style="width:20px;height:12px;border-radius:4px;border-left:3px solid var(--accent);background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.1)"></span> Taak open</span><span class="legend-item"><span style="width:20px;height:12px;border-radius:4px;border-left:3px solid var(--ok);background:#fff;opacity:.5"></span> Afgerond</span><span class="legend-item"><span style="width:20px;height:12px;border-radius:4px;border-left:3px solid #dc2626;background:#fef2f2"></span> Urgent</span><span class="legend-item"><span style="width:16px;height:2px;border-radius:1px;background:var(--accent)"></span> Vandaag</span><span class="legend-item"><span style="color:#dc2626;font-size:10px">⚑</span> Deadline</span>`;
+}
+
+/* ══════════════════════════════════════
+   ROUTER
+   ══════════════════════════════════════ */
+function render(){
+    if(curView==='year')renderYear();
+    else if(curView==='quarter')renderQuarter();
+    else if(curView==='month')renderMonth();
+    else renderWeek();
+}
+
+// Navigation
+document.getElementById('prevBtn').addEventListener('click',()=>{offset--;render();});
+document.getElementById('nextBtn').addEventListener('click',()=>{offset++;render();});
+document.getElementById('todayBtn').addEventListener('click',()=>{offset=0;render();});
+document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'){offset--;render();}if(e.key==='ArrowRight'){offset++;render();}});
+
+// Period switch
+document.getElementById('periodSwitch').addEventListener('click',e=>{
+    const btn=e.target.closest('.period-btn');
+    if(!btn)return;
+    document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    curView=btn.dataset.view;
+    offset=0;
+    render();
+});
+
+render();
+</script>
+</body>
+</html>
