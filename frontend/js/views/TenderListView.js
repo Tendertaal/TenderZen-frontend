@@ -26,16 +26,16 @@ export class TenderListView extends BaseView {
         super(options);
         this.fase = options.fase;
         this.filteredTenders = [];
-        
+
         this.searchQuery = '';
         this.onSearchResultsCount = null;
 
         this.allFaseStatussen = {};
         this.faseConfig = {};
-        
+
         this.smartImportPanel = null;
         this.smartImportWizard = null;
-        
+
         this.initSmartImport();
     }
 
@@ -53,7 +53,7 @@ export class TenderListView extends BaseView {
         });
         this.injectSmartImportStyles();
     }
-    
+
     injectSmartImportStyles() {
         if (document.getElementById('smart-import-inline-styles')) return;
         const styleSheet = document.createElement('style');
@@ -135,7 +135,7 @@ export class TenderListView extends BaseView {
             console.warn('⚠️ Planning counts niet geladen:', e.message);
         }
     }
-    
+
     setSearchQuery(query) {
         this.searchQuery = query?.toLowerCase()?.trim() || '';
         this.filteredTenders = this.filterTenders(this.tenders);
@@ -191,7 +191,7 @@ export class TenderListView extends BaseView {
             const query = this.searchQuery;
             filtered = filtered.filter(tender => {
                 return [tender.naam, tender.opdrachtgever, tender.aanbestedende_dienst,
-                        tender.locatie, tender.tender_nummer, tender.bedrijfsnaam, tender.beschrijving]
+                tender.locatie, tender.tender_nummer, tender.bedrijfsnaam, tender.beschrijving]
                     .some(field => field && field.toLowerCase().includes(query));
             });
         }
@@ -273,7 +273,7 @@ export class TenderListView extends BaseView {
             this.smartImportWizard.openAsModal(tenderId, tenderNaam);
         }
     }
-    
+
     ensureWizardExists(tenderId) {
         if (!this.smartImportWizard) {
             let wc = document.getElementById('smart-import-wizard-container');
@@ -306,7 +306,7 @@ export class TenderListView extends BaseView {
     getDaysUntil(dateString) {
         if (!dateString) return null;
         const t = new Date(dateString), today = new Date();
-        today.setHours(0,0,0,0); t.setHours(0,0,0,0);
+        today.setHours(0, 0, 0, 0); t.setHours(0, 0, 0, 0);
         return Math.ceil((t - today) / 86400000);
     }
 
@@ -314,7 +314,7 @@ export class TenderListView extends BaseView {
         if (!dateString) return false;
         const m = dateString.match(/T(\d{2}):(\d{2})/);
         if (!m) return false;
-        return parseInt(m[1],10) !== 0 || parseInt(m[2],10) !== 0;
+        return parseInt(m[1], 10) !== 0 || parseInt(m[2], 10) !== 0;
     }
 
     // =========================================================================
@@ -370,9 +370,14 @@ export class TenderListView extends BaseView {
             }
         });
 
-        // AI Docs button
+        // AI Docs button (header) → Tender Command Center
         this.container.querySelectorAll('[data-action="open-ai-docs"]').forEach(btn => {
-            btn.addEventListener('click', async (e) => { e.stopPropagation(); const modal = new AIDocumentenModal(btn.dataset.tenderId); await modal.show(); });
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof window.openCommandCenter === 'function') {
+                    window.openCommandCenter(btn.dataset.tenderId);
+                }
+            });
         });
 
         // Settings button
@@ -384,15 +389,17 @@ export class TenderListView extends BaseView {
         this.container.querySelectorAll('[data-action="edit-team"]').forEach(btn => {
             btn.addEventListener('click', (e) => { e.stopPropagation(); if (this.onAddTeamMember) this.onAddTeamMember(btn.dataset.tenderId); });
         });
-        
-        // AI Badge
+
+        // AI Badge (body) → Tender Command Center
         this.container.querySelectorAll('.tcb-ai-badge').forEach(badge => {
-            badge.addEventListener('click', async (e) => {
+            badge.addEventListener('click', (e) => {
                 e.stopPropagation();
-                await this.handleAIBadgeClick(badge.dataset.tenderId, badge.dataset.smartImportId, badge.dataset.hasAnalysis === 'true');
+                if (typeof window.openCommandCenter === 'function') {
+                    window.openCommandCenter(badge.dataset.tenderId);
+                }
             });
         });
-        
+
         // Timeline cells
         this.container.querySelectorAll('.timeline-cell--editable').forEach(cell => {
             cell.addEventListener('click', (e) => {
@@ -401,12 +408,16 @@ export class TenderListView extends BaseView {
             });
         });
 
-        // Planning/Checklist shortcuts
+        // Planning/Checklist shortcuts → Tender Command Center
         this.container.querySelectorAll('.tcf-shortcut').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const openType = btn.dataset.action === 'open-checklist' ? 'checklist' : 'planning';
-                if (this.onOpenPlanningModal) this.onOpenPlanningModal(btn.dataset.tenderId, openType);
+                const tab = btn.dataset.action === 'open-checklist' ? 'checklist' : 'planning';
+                if (typeof window.openCommandCenter === 'function') {
+                    window.openCommandCenter(btn.dataset.tenderId, { tab });
+                } else if (this.onOpenPlanningModal) {
+                    this.onOpenPlanningModal(btn.dataset.tenderId, tab);
+                }
             });
         });
     }
@@ -414,14 +425,14 @@ export class TenderListView extends BaseView {
     // =========================================================================
     // INLINE DATE PICKER
     // =========================================================================
-    
+
     openDatePicker(cell, tenderId, fieldName, currentDate) {
         this.closeDatePicker();
         let inputValue = '';
         if (currentDate) {
             const d = new Date(currentDate);
             if (!isNaN(d.getTime())) {
-                inputValue = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+                inputValue = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}T${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
             }
         }
         const picker = document.createElement('div');
@@ -440,7 +451,7 @@ export class TenderListView extends BaseView {
                 <button class="date-picker-save">Opslaan</button>
             </div>`;
         const rect = cell.getBoundingClientRect();
-        picker.style.cssText = `position:fixed;top:${rect.bottom+4}px;left:${rect.left}px;z-index:10000`;
+        picker.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;z-index:10000`;
         document.body.appendChild(picker);
         const pr = picker.getBoundingClientRect();
         if (pr.right > window.innerWidth) picker.style.left = `${window.innerWidth - pr.width - 16}px`;
@@ -459,15 +470,15 @@ export class TenderListView extends BaseView {
         dateInput.addEventListener('keydown', kd); timeInput.addEventListener('keydown', kd);
         setTimeout(() => document.addEventListener('click', this.handleOutsideClick), 10);
     }
-    
+
     combineDateTimeInputs(dateValue, timeValue) {
         if (!dateValue) return null;
         return timeValue ? `${dateValue}T${timeValue}:00` : `${dateValue}T00:00:00`;
     }
-    
+
     handleOutsideClick = (e) => { if (this.activeDatePicker && !this.activeDatePicker.contains(e.target)) this.closeDatePicker(); }
     closeDatePicker() { if (this.activeDatePicker) { this.activeDatePicker.remove(); this.activeDatePicker = null; } document.removeEventListener('click', this.handleOutsideClick); }
-    
+
     async saveDateChange(tenderId, fieldName, newDate, cell) {
         try {
             cell.classList.add('is-saving');
@@ -481,23 +492,23 @@ export class TenderListView extends BaseView {
         } catch (error) { console.error('❌ Error saving date:', error); alert('Fout bij opslaan van datum'); }
         finally { cell.classList.remove('is-saving'); }
     }
-    
+
     updateCellDisplay(cell, date, fieldName) {
         const isDeadline = fieldName === 'deadline_indiening';
         if (!date) { cell.innerHTML = '<div class="date-display empty"><span class="date-add-icon">+</span></div>'; return; }
         const d = new Date(date), day = d.getDate(), month = d.toLocaleDateString('nl-NL', { month: 'short' });
         const isPast = d < new Date(), daysUntil = this.getDaysUntil(date);
         const hasTime = this.hasExplicitTime(date);
-        let timeStr = hasTime ? `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : null;
+        let timeStr = hasTime ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : null;
         let cls = ['filled'], bc = 'ok';
         if (isPast) cls = ['completed'];
         else if (isDeadline) { if (daysUntil <= 3) { cls = ['urgent']; bc = 'urgent'; } else if (daysUntil <= 7) { cls = ['soon']; bc = 'soon'; } else { cls = ['deadline']; } }
         const showBadge = isDeadline && !isPast && daysUntil !== null;
-        cell.innerHTML = `<div class="date-display ${cls.join(' ')} ${hasTime?'has-time':''}"><span class="date-day">${day}</span><span class="date-month">${month}</span>${hasTime?`<span class="date-time">${timeStr}</span>`:''}</div>${showBadge?`<div class="days-to-deadline ${bc}">${daysUntil===0?'Vandaag!':daysUntil===1?'Morgen':daysUntil+' dagen'}</div>`:''}`;
+        cell.innerHTML = `<div class="date-display ${cls.join(' ')} ${hasTime ? 'has-time' : ''}"><span class="date-day">${day}</span><span class="date-month">${month}</span>${hasTime ? `<span class="date-time">${timeStr}</span>` : ''}</div>${showBadge ? `<div class="days-to-deadline ${bc}">${daysUntil === 0 ? 'Vandaag!' : daysUntil === 1 ? 'Morgen' : daysUntil + ' dagen'}</div>` : ''}`;
     }
-    
+
     getFieldLabel(fieldName) {
-        return { 'publicatie_datum':'Publicatie','schouw_datum':'Schouw','nvi1_datum':'NvI 1','nvi2_datum':'NvI 2','presentatie_datum':'Presentatie','interne_deadline':'Interne deadline','deadline_indiening':'Deadline','voorlopige_gunning':'Voorlopige gunning','definitieve_gunning':'Definitieve gunning','start_uitvoering':'Start uitvoering' }[fieldName] || fieldName;
+        return { 'publicatie_datum': 'Publicatie', 'schouw_datum': 'Schouw', 'nvi1_datum': 'NvI 1', 'nvi2_datum': 'NvI 2', 'presentatie_datum': 'Presentatie', 'interne_deadline': 'Interne deadline', 'deadline_indiening': 'Deadline', 'voorlopige_gunning': 'Voorlopige gunning', 'definitieve_gunning': 'Definitieve gunning', 'start_uitvoering': 'Start uitvoering' }[fieldName] || fieldName;
     }
 
     renderEmptyState() {

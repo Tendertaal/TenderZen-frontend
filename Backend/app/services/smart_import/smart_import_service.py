@@ -1,3 +1,4 @@
+import unicodedata
 # app/services/smart_import/smart_import_service.py
 """
 Smart Import Service
@@ -74,11 +75,30 @@ class SmartImportService:
     2. Tekst extractie uit PDF/DOCX
     3. AI analyse via bestaande ClaudeAPIService
     4. Tender aanmaken met geëxtraheerde data
-    
+
     v3.5: Model keuze (Haiku standaard, Sonnet pro)
     v3.4: Robuuste JSON parsing met json-repair
     v3.3: Extra document toevoegen en aanvullende analyse
     """
+
+    @staticmethod
+    def safe_filename(filename: str) -> str:
+        """
+        Normalize and sanitize filenames for safe storage in Supabase.
+        - Removes/replace unsafe characters
+        - Normalizes unicode
+        - Prevents path traversal
+        """
+        # Normalize unicode
+        filename = unicodedata.normalize('NFKD', filename)
+        # Remove path separators
+        filename = filename.replace('..', '').replace('/', '_').replace('\\', '_')
+        # Remove unsafe characters (allow alphanum, dash, underscore, dot)
+        filename = re.sub(r'[^A-Za-z0-9._-]', '_', filename)
+        # Prevent empty filename
+        if not filename or filename.startswith('.'):
+            filename = f'file_{int(time.time())}'
+        return filename
     
     def __init__(self, db: Client):
         self.db = db
@@ -157,9 +177,10 @@ class SmartImportService:
             if total_size > MAX_TOTAL_SIZE:
                 raise ValueError(f"Totale grootte overschrijdt 50MB limiet")
             
-            # Upload naar Supabase Storage
-            storage_path = f"{import_id}/{file.filename}"
-            
+            # Sanitize filename
+            safe_name = self.safe_filename(file.filename)
+            storage_path = f"{import_id}/{safe_name}"
+
             try:
                 self.storage.from_(STORAGE_BUCKET).upload(
                     path=storage_path,
@@ -169,19 +190,19 @@ class SmartImportService:
             except Exception as e:
                 logger.exception(f"❌ Failed to upload {file.filename}: {e}")
                 raise ValueError(f"Upload mislukt voor {file.filename}")
-            
+
             # Detecteer document type
-            detected_type = self._detect_document_type(file.filename)
-            
+            detected_type = self._detect_document_type(safe_name)
+
             uploaded.append({
-                'name': file.filename,
+                'name': safe_name,
                 'size': file_size,
                 'storage_path': f"{STORAGE_BUCKET}/{storage_path}",
                 'detected_type': detected_type,
                 'mime_type': file.content_type
             })
-            
-            logger.info(f"✅ Uploaded: {file.filename} ({file_size} bytes)")
+
+            logger.info(f"✅ Uploaded: {safe_name} ({file_size} bytes)")
         
         # Update import record
         self.db.table('smart_imports').update({

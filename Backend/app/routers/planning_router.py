@@ -1,12 +1,28 @@
 # ================================================================
 # TenderZen — Planning Router
 # Backend/app/routers/planning_router.py
-# Datum: 2026-02-09 (v2 — import fix)
+# Datum: 2026-02-11 (v3.5 — RLS-compatible met user JWT)
 # ================================================================
+#
+# WIJZIGINGEN v3.5:
+# - ALLE endpoints: db = get_supabase() → db: Client = Depends(get_user_db)
+#   → auth.uid() werkt nu correct in RLS policies
+#   → Geen service_role bypass nodig
+# - team-members: is_active NULL wordt als actief behandeld
+# - team-members: drie kolom-fallbacks (tenderbureau_id/company_id/bureau_id)
+# - BackplanningService ontvangt nu user-scoped DB client
+#
+# WIJZIGINGEN v3.4:
+# - Alle current_user.get('tenderbureau_id') vervangen door resolve_bureau_id()
+# - Super-admin krijgt NOOIT automatisch een bureau
+# - Centraal bureau resolution via app/core/bureau_context.py
 #
 # FastAPI endpoints voor:
 # - POST /planning/generate-backplanning
 # - GET  /team/workload
+# - GET  /team-members
+# - GET  /planning/agenda
+# - GET  /planning-counts
 # - GET/POST/PUT/DELETE /planning-templates
 #
 # Registratie in main.py:
@@ -17,10 +33,12 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from datetime import date
+from supabase import Client
 import logging
 
 from app.core.database import get_supabase
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_user_db
+from app.core.bureau_context import resolve_bureau_id
 from app.services.backplanning_service import BackplanningService
 from app.models.planning_models import (
     BackplanningRequest,
@@ -38,100 +56,141 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Planning"])
 
 
-# ════════════════════════════════════════════════
-# DEPENDENCY: BackplanningService
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
+# DEPENDENCY: BackplanningService (nu met user DB)
+# ═══════════════════════════════════════════════════
 
-def get_backplanning_service():
-    """Dependency injection voor BackplanningService."""
-    db = get_supabase()
+def get_backplanning_service(
+    db: Client = Depends(get_user_db)
+) -> BackplanningService:
+    """Dependency injection voor BackplanningService met user-scoped DB."""
     return BackplanningService(db)
 
 
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
 # 1. TEAM MEMBERS — Teamleden ophalen per bureau
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
+# ⚠️ BEVEILIGINGSKRITISCH: Altijd filteren op bureau.
+# NOOIT team_members ophalen zonder bureau-filter.
+# team_members tabel is de bron voor tender_team_assignments.
+#
+# FIXES v3.5:
+# - RLS: auth.uid() werkt nu via get_user_db
+# - is_active: NULL wordt als actief behandeld (.neq False)
+# - Kolom: drie fallbacks (tenderbureau_id/company_id/bureau_id)
+# - Fallback: retry zonder is_active als eerste query 0 retourneert
 
 @router.get(
     "/team-members",
     summary="Haal teamleden op voor het bureau",
-    description="Retourneert alle actieve teamleden van het huidige bureau."
+    description="Retourneert alle actieve teamleden uit de team_members tabel voor het huidige bureau."
 )
 async def get_team_members(
     tenderbureau_id: Optional[str] = Query(None, description="Override bureau ID"),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
-    """Haal alle teamleden op voor het bureau van de ingelogde gebruiker."""
-    bureau_id = tenderbureau_id or current_user.get('tenderbureau_id')
-    db = get_supabase()
-
+    """Haal alle teamleden op voor het bureau van de ingelogde gebruiker.
+    
+    Bron: team_members tabel (niet user_bureau_access).
+    SECURITY: Altijd gefilterd op bureau — nooit zonder filter.
+    """
     try:
-        # Als geen bureau_id (super_admin in "Alle bureau's" modus),
-        # pak het bureau van de tender via de wizard state
-        if not bureau_id:
-            # Fallback: haal alle access records op voor deze user
-            # en gebruik het eerste bureau
-            user_id = current_user.get('id') or current_user.get('sub')
-            if user_id:
-                access_result = db.table('user_bureau_access') \
-                    .select('tenderbureau_id') \
-                    .eq('user_id', user_id) \
-                    .eq('is_active', True) \
-                    .limit(1) \
-                    .execute()
-                if access_result.data:
-                    bureau_id = access_result.data[0]['tenderbureau_id']
+        # ⭐ Centraal bureau-context resolution
+        bureau_id = await resolve_bureau_id(
+            current_user, explicit_bureau_id=tenderbureau_id, db=db
+        )
 
-        if not bureau_id:
-            return {"data": []}
+        logger.info(f"🔎 Team members ophalen voor bureau: {bureau_id}")
 
-        # Stap 1: Haal access records op
-        access_result = db.table('user_bureau_access') \
-            .select('id, user_id, role, functie_titel, avatar_kleur, capaciteit_uren_per_week') \
-            .eq('tenderbureau_id', bureau_id) \
-            .eq('is_active', True) \
-            .order('role') \
-            .execute()
+        # ────────────────────────────────────────────────────────
+        # Stap 1: Detecteer welke kolom team_members gebruikt
+        # Probeer 3 mogelijke kolomnamen voor bureau-koppeling
+        # ────────────────────────────────────────────────────────
+        BUREAU_COLUMNS = ['tenderbureau_id', 'company_id', 'bureau_id']
+        BASE_SELECT = 'id, user_id, naam, email, rol, avatar_kleur, initialen, capaciteit_uren_per_week, is_active'
 
-        access_records = access_result.data or []
-        if not access_records:
-            return {"data": []}
-
-        # Stap 2: Haal user details op
-        user_ids = [r['user_id'] for r in access_records if r.get('user_id')]
-        users_map = {}
-        if user_ids:
-            users_result = db.table('users') \
-                .select('id, email, naam, avatar_url') \
-                .in_('id', user_ids) \
-                .execute()
-            for u in (users_result.data or []):
-                users_map[u['id']] = u
-
-        # Stap 3: Combineer
         members = []
-        for item in access_records:
-            user = users_map.get(item.get('user_id'), {})
-            naam = user.get('naam') or user.get('email', '?').split('@')[0]
-            initialen = ''.join(
-                w[0].upper() for w in naam.split()[:2]
-            ) if naam else '?'
+        filter_used = None
+        errors = {}
 
-            members.append({
-                'id': item.get('user_id'),
-                'access_id': item.get('id'),
-                'naam': naam,
-                'email': user.get('email'),
-                'avatar_url': user.get('avatar_url'),
-                'avatar_kleur': item.get('avatar_kleur'),
-                'rol': item.get('role'),
-                'functie_titel': item.get('functie_titel'),
-                'capaciteit_uren_per_week': item.get('capaciteit_uren_per_week'),
-                'initialen': initialen
-            })
+        for col in BUREAU_COLUMNS:
+            try:
+                # ────────────────────────────────────────────────
+                # FIX: .neq('is_active', False) i.p.v. .eq('is_active', True)
+                # .eq(True) matcht NIET op NULL
+                # .neq(False) matcht WEL op NULL + True
+                # ────────────────────────────────────────────────
+                result = db.table('team_members') \
+                    .select(f'{BASE_SELECT}, {col}') \
+                    .eq(col, bureau_id) \
+                    .neq('is_active', False) \
+                    .order('naam') \
+                    .execute()
 
-        return {"data": members}
+                all_members = result.data or []
+                filter_used = col
 
+                logger.info(
+                    f"✅ Filter op {col}: {len(all_members)} leden gevonden"
+                )
+                members = all_members
+                break  # Kolom gevonden en query geslaagd
+
+            except Exception as e:
+                errors[col] = str(e)
+                logger.info(f"ℹ️ Kolom '{col}' niet beschikbaar: {e}")
+                continue
+
+        # ────────────────────────────────────────────────────────
+        # Stap 2: Alle kolom-pogingen mislukt?
+        # ────────────────────────────────────────────────────────
+        if filter_used is None:
+            logger.error(
+                f"⛔ Kan team_members niet filteren op bureau: {errors}"
+            )
+            return {
+                "data": [],
+                "error": "Bureau filter kolom niet gevonden",
+                "filter_attempted": BUREAU_COLUMNS,
+                "bureau_id": bureau_id
+            }
+
+        # ────────────────────────────────────────────────────────
+        # Stap 3: Fallback zonder is_active filter
+        # ────────────────────────────────────────────────────────
+        if len(members) == 0 and filter_used:
+            logger.warning(f"⚠️ 0 leden, retry zonder is_active filter")
+            try:
+                fallback = db.table('team_members') \
+                    .select(f'{BASE_SELECT}, {filter_used}') \
+                    .eq(filter_used, bureau_id) \
+                    .order('naam') \
+                    .execute()
+                fb_members = fallback.data or []
+
+                if len(fb_members) > 0:
+                    members = [
+                        m for m in fb_members
+                        if m.get('is_active') is not False
+                    ]
+                    if len(members) == 0:
+                        members = fb_members
+                    logger.warning(f"   🔄 Fallback: {len(members)} leden")
+            except Exception as e:
+                logger.error(f"   ❌ Fallback mislukt: {e}")
+
+        logger.info(f"📋 {len(members)} team_members via '{filter_used}'")
+
+        return {
+            "data": members,
+            "filter_used": filter_used,
+            "bureau_id": bureau_id,
+            "count": len(members)
+        }
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Fout bij ophalen teamleden: {e}", exc_info=True)
         raise HTTPException(
@@ -140,9 +199,9 @@ async def get_team_members(
         )
 
 
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
 # 2. AGENDA — Cross-tender overzicht (AgendaView)
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
 
 @router.get(
     "/planning/agenda",
@@ -156,11 +215,11 @@ async def get_agenda_data(
     start_date: str = Query(..., description="Start datum ISO format: 2026-02-03"),
     end_date: str = Query(..., description="Eind datum ISO format: 2026-02-09"),
     team_member_id: Optional[str] = Query(None, description="Filter op teamlid UUID"),
-    current_user: dict = Depends(get_current_user)
+    tenderbureau_id: Optional[str] = Query(None, description="Bureau filter (verplicht voor super-admin)"),
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Haal agenda data op: alle taken over alle tenders voor het bureau."""
-    db = get_supabase()
-
     try:
         # 1. Planning taken in de periode
         planning_query = db.table('planning_taken') \
@@ -192,7 +251,7 @@ async def get_agenda_data(
             taken.append(t)
         for c in checklist_items:
             c['item_type'] = 'checklist'
-            c['start_datum'] = c.get('deadline')  # Normaliseer veldnaam
+            c['start_datum'] = c.get('deadline')
             taken.append(c)
 
         # 4. Verzamel unieke tender_ids
@@ -212,11 +271,13 @@ async def get_agenda_data(
 
         # 6. Haal team members op
         team_members = []
-        tenderbureau_id = current_user.get('tenderbureau_id')
-        if tenderbureau_id:
+        resolved_bureau = await resolve_bureau_id(
+            current_user, explicit_bureau_id=tenderbureau_id, db=db, required=False
+        )
+        if resolved_bureau:
             team_result = db.table('gebruikers') \
                 .select('id, naam, email, rol, avatar_url') \
-                .eq('tenderbureau_id', tenderbureau_id) \
+                .eq('tenderbureau_id', resolved_bureau) \
                 .eq('actief', True) \
                 .execute()
             team_members = team_result.data or []
@@ -238,9 +299,9 @@ async def get_agenda_data(
         )
 
 
-# ════════════════════════════════════════════════
-# 2. BACK-PLANNING GENERATIE
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
+# 3. BACK-PLANNING GENERATIE
+# ═══════════════════════════════════════════════════
 
 @router.post(
     "/planning/generate-backplanning",
@@ -287,9 +348,9 @@ async def generate_backplanning(
         )
 
 
-# ════════════════════════════════════════════════
-# 2. WORKLOAD QUERY
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
+# 4. WORKLOAD QUERY
+# ═══════════════════════════════════════════════════
 
 @router.get(
     "/team/workload",
@@ -313,8 +374,10 @@ async def get_workload(
         ...,
         description="Einddatum (YYYY-MM-DD)"
     ),
+    tenderbureau_id: Optional[str] = Query(None, description="Bureau filter"),
     service: BackplanningService = Depends(get_backplanning_service),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Haal workload data op voor teamleden in een periode."""
     if start > end:
@@ -323,7 +386,6 @@ async def get_workload(
             detail="Startdatum mag niet na einddatum liggen"
         )
 
-    # Parse user_ids
     ids = [uid.strip() for uid in user_ids.split(',') if uid.strip()]
     if not ids:
         raise HTTPException(
@@ -331,16 +393,16 @@ async def get_workload(
             detail="Minimaal 1 user_id vereist"
         )
 
-    tenderbureau_id = current_user.get('tenderbureau_id')
-    if not tenderbureau_id:
-        raise HTTPException(status_code=403, detail="Geen bureau toegang")
+    resolved_bureau = await resolve_bureau_id(
+        current_user, explicit_bureau_id=tenderbureau_id, db=db
+    )
 
     try:
         result = await service.get_workload(
             user_ids=ids,
             start_date=start,
             end_date=end,
-            tenderbureau_id=tenderbureau_id
+            tenderbureau_id=resolved_bureau
         )
         return {"workload": result}
 
@@ -352,9 +414,9 @@ async def get_workload(
         )
 
 
-# ════════════════════════════════════════════════
-# 3. PLANNING & CHECKLIST COUNTS
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
+# 5. PLANNING & CHECKLIST COUNTS
+# ═══════════════════════════════════════════════════
 
 @router.get(
     "/planning-counts",
@@ -366,16 +428,18 @@ async def get_workload(
     )
 )
 async def get_all_planning_counts(
-    current_user: dict = Depends(get_current_user)
+    tenderbureau_id: Optional[str] = Query(None, description="Bureau filter"),
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Haal planning & checklist tellingen op voor alle tenders van het bureau."""
-    tenderbureau_id = current_user.get('tenderbureau_id')
-    db = get_supabase()
+    resolved_bureau = await resolve_bureau_id(
+        current_user, explicit_bureau_id=tenderbureau_id, db=db
+    )
 
     try:
         counts = {}
 
-        # Planning taken per tender
         planning = db.table('planning_taken') \
             .select('tender_id, status') \
             .execute()
@@ -393,7 +457,6 @@ async def get_all_planning_counts(
             if item.get('status') == 'done':
                 counts[tid]['planning_done'] += 1
 
-        # Checklist items per tender
         checklist = db.table('checklist_items') \
             .select('tender_id, status') \
             .execute()
@@ -421,9 +484,9 @@ async def get_all_planning_counts(
         )
 
 
-# ════════════════════════════════════════════════
-# 4. TEMPLATE CRUD
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
+# 6. TEMPLATE CRUD
+# ═══════════════════════════════════════════════════
 
 @router.get(
     "/planning-templates",
@@ -436,18 +499,19 @@ async def list_templates(
         pattern='^(planning|checklist)$',
         description="Filter op type"
     ),
-    current_user: dict = Depends(get_current_user)
+    tenderbureau_id: Optional[str] = Query(None, description="Bureau filter"),
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Haal alle templates op voor het huidige bureau."""
-    db = get_supabase()
-    tenderbureau_id = current_user.get('tenderbureau_id')
-    if not tenderbureau_id:
-        raise HTTPException(status_code=403, detail="Geen bureau toegang")
+    resolved_bureau = await resolve_bureau_id(
+        current_user, explicit_bureau_id=tenderbureau_id, db=db
+    )
 
     try:
         query = db.table('planning_templates') \
             .select('*, planning_template_taken(*)') \
-            .eq('tenderbureau_id', tenderbureau_id) \
+            .eq('tenderbureau_id', resolved_bureau) \
             .eq('is_actief', True) \
             .order('naam')
 
@@ -457,7 +521,6 @@ async def list_templates(
         result = query.execute()
         templates = result.data or []
 
-        # Transformeer naar response format
         response_data = []
         for tmpl in templates:
             taken = tmpl.pop('planning_template_taken', [])
@@ -483,11 +546,10 @@ async def list_templates(
 )
 async def get_template(
     template_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Haal een specifiek template op inclusief alle taken."""
-    db = get_supabase()
-
     try:
         result = db.table('planning_templates') \
             .select('*, planning_template_taken(*)') \
@@ -521,27 +583,26 @@ async def get_template(
 )
 async def create_template(
     request: TemplateCreateRequest,
-    current_user: dict = Depends(get_current_user)
+    tenderbureau_id: Optional[str] = Query(None, description="Bureau filter"),
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Maak een nieuw planning- of checklist-template aan."""
-    db = get_supabase()
-    tenderbureau_id = current_user.get('tenderbureau_id')
+    resolved_bureau = await resolve_bureau_id(
+        current_user, explicit_bureau_id=tenderbureau_id, db=db
+    )
     user_id = current_user.get('id')
 
-    if not tenderbureau_id:
-        raise HTTPException(status_code=403, detail="Geen bureau toegang")
-
     try:
-        # Als is_standaard=True, zet andere templates van dit type op false
         if request.is_standaard:
             db.table('planning_templates') \
                 .update({'is_standaard': False}) \
-                .eq('tenderbureau_id', tenderbureau_id) \
+                .eq('tenderbureau_id', resolved_bureau) \
                 .eq('type', request.type) \
                 .execute()
 
         result = db.table('planning_templates').insert({
-            'tenderbureau_id': tenderbureau_id,
+            'tenderbureau_id': resolved_bureau,
             'naam': request.naam,
             'beschrijving': request.beschrijving,
             'type': request.type,
@@ -569,14 +630,16 @@ async def create_template(
 async def update_template(
     template_id: str,
     request: TemplateUpdateRequest,
-    current_user: dict = Depends(get_current_user)
+    tenderbureau_id: Optional[str] = Query(None, description="Bureau filter"),
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Update een bestaand template."""
-    db = get_supabase()
-    tenderbureau_id = current_user.get('tenderbureau_id')
+    resolved_bureau = await resolve_bureau_id(
+        current_user, explicit_bureau_id=tenderbureau_id, db=db
+    )
 
     try:
-        # Bouw update dict (alleen meegegeven velden)
         update_data = {
             k: v for k, v in request.model_dump().items()
             if v is not None
@@ -588,9 +651,7 @@ async def update_template(
                 detail="Geen velden om te updaten"
             )
 
-        # Als is_standaard=True, zet andere templates op false
         if update_data.get('is_standaard'):
-            # Haal type op van het huidige template
             current = db.table('planning_templates') \
                 .select('type') \
                 .eq('id', template_id) \
@@ -600,7 +661,7 @@ async def update_template(
             if current.data:
                 db.table('planning_templates') \
                     .update({'is_standaard': False}) \
-                    .eq('tenderbureau_id', tenderbureau_id) \
+                    .eq('tenderbureau_id', resolved_bureau) \
                     .eq('type', current.data['type']) \
                     .neq('id', template_id) \
                     .execute()
@@ -613,7 +674,6 @@ async def update_template(
         if not result.data:
             raise HTTPException(status_code=404, detail="Template niet gevonden")
 
-        # Haal taken op voor response
         taken_result = db.table('planning_template_taken') \
             .select('*') \
             .eq('template_id', template_id) \
@@ -639,11 +699,10 @@ async def update_template(
 )
 async def delete_template(
     template_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Verwijder een template (taken worden mee-verwijderd via CASCADE)."""
-    db = get_supabase()
-
     try:
         result = db.table('planning_templates') \
             .delete() \
@@ -671,15 +730,17 @@ async def delete_template(
 )
 async def duplicate_template(
     template_id: str,
-    current_user: dict = Depends(get_current_user)
+    tenderbureau_id: Optional[str] = Query(None, description="Bureau filter"),
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """Maak een kopie van een bestaand template inclusief alle taken."""
-    db = get_supabase()
-    tenderbureau_id = current_user.get('tenderbureau_id')
+    resolved_bureau = await resolve_bureau_id(
+        current_user, explicit_bureau_id=tenderbureau_id, db=db
+    )
     user_id = current_user.get('id')
 
     try:
-        # Haal origineel op
         original = db.table('planning_templates') \
             .select('*, planning_template_taken(*)') \
             .eq('id', template_id) \
@@ -692,9 +753,8 @@ async def duplicate_template(
         orig = original.data
         taken = orig.pop('planning_template_taken', [])
 
-        # Maak kopie van template
         new_template = db.table('planning_templates').insert({
-            'tenderbureau_id': tenderbureau_id,
+            'tenderbureau_id': resolved_bureau,
             'naam': f"{orig['naam']} (kopie)",
             'beschrijving': orig.get('beschrijving'),
             'type': orig['type'],
@@ -707,7 +767,6 @@ async def duplicate_template(
 
         new_id = new_template.data[0]['id']
 
-        # Kopieer taken
         new_taken = []
         if taken:
             taken_inserts = [
@@ -721,7 +780,6 @@ async def duplicate_template(
                     'is_mijlpaal': t.get('is_mijlpaal', False),
                     'is_verplicht': t.get('is_verplicht', True),
                     'volgorde': t.get('volgorde', 0)
-                    # afhankelijk_van wordt niet gekopieerd (andere UUIDs)
                 }
                 for t in sorted(taken, key=lambda x: x.get('volgorde', 0))
             ]
@@ -745,9 +803,9 @@ async def duplicate_template(
         )
 
 
-# ════════════════════════════════════════════════
-# 4. TEMPLATE TAKEN BULK UPDATE
-# ════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════
+# 7. TEMPLATE TAKEN BULK UPDATE
+# ═══════════════════════════════════════════════════
 
 @router.put(
     "/planning-templates/{template_id}/taken",
@@ -757,16 +815,14 @@ async def duplicate_template(
 async def replace_template_taken(
     template_id: str,
     request: TemplateTakenBulkRequest,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
 ):
     """
     Vervangt alle taken in een template.
     Bestaande taken worden verwijderd en vervangen door de nieuwe lijst.
     """
-    db = get_supabase()
-
     try:
-        # Check of template bestaat
         tmpl = db.table('planning_templates') \
             .select('id, tenderbureau_id, naam, beschrijving, type, is_standaard, is_actief') \
             .eq('id', template_id) \
@@ -776,13 +832,11 @@ async def replace_template_taken(
         if not tmpl.data:
             raise HTTPException(status_code=404, detail="Template niet gevonden")
 
-        # Verwijder alle bestaande taken
         db.table('planning_template_taken') \
             .delete() \
             .eq('template_id', template_id) \
             .execute()
 
-        # Voeg nieuwe taken toe
         taken_inserts = [
             {
                 'template_id': template_id,

@@ -408,11 +408,25 @@ export class AnalyzeStep {
     _showError(message) {
         if (!this.container) return;
 
+        // Herken overload/AI-provider errors
+        const isOverload =
+            typeof message === 'string' &&
+            (message.toLowerCase().includes('overload') ||
+                message.includes('529') ||
+                message.toLowerCase().includes('overloaded_error'));
+
+        let userMessage = message;
+        if (isOverload) {
+            userMessage = `De AI-analyse is tijdelijk niet beschikbaar omdat de externe AI-dienst overbelast is.<br>
+            Dit ligt buiten onze applicatie. Probeer het later opnieuw.<br>
+            <span style='color:#991b1b;'>Excuses voor het ongemak!</span>`;
+        }
+
         this.container.innerHTML = `
             <div style="text-align: center; padding: 60px 20px;">
                 <span style="font-size: 48px;">⚠️</span>
                 <h3 style="margin: 16px 0 8px; color: #991b1b;">Analyse mislukt</h3>
-                <p style="color: #64748b; margin: 0 0 20px;">${message}</p>
+                <p style="color: #64748b; margin: 0 0 20px;">${userMessage}</p>
                 <button class="siw-btn siw-btn--secondary" id="siRetryBtn">
                     Terug naar Upload
                 </button>

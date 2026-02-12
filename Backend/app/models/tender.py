@@ -5,6 +5,7 @@ Met dynamische fase validatie uit database
 DOEL-PAD: Backend/app/models/tender.py
 
 CHANGELOG:
+- v2.4: smart_import_id en ai_model_used toegevoegd aan alle models
 - v2.3: FaseValidator haalt zelf Supabase client op — geen parameter meer nodig
         Fallback nu inclusief 'evaluatie'
         init_fase_validator() aangepast voor startup
@@ -194,6 +195,10 @@ class TenderBase(BaseModel):
     contract_start: Optional[date] = None
     contract_einde: Optional[date] = None
     
+    # Smart Import koppeling
+    smart_import_id: Optional[str] = None
+    ai_model_used: Optional[str] = None
+
     # AI pitstop
     ai_pitstop_status: Optional[str] = None
     
@@ -295,6 +300,10 @@ class TenderUpdate(BaseModel):
     contract_start: Optional[date] = None
     contract_einde: Optional[date] = None
     
+    # Smart Import koppeling
+    smart_import_id: Optional[str] = None
+    ai_model_used: Optional[str] = None
+
     # AI pitstop
     ai_pitstop_status: Optional[str] = None
     
@@ -389,6 +398,10 @@ class TenderResponse(BaseModel):
     contract_start: Optional[date] = None
     contract_einde: Optional[date] = None
     
+    # Smart Import koppeling
+    smart_import_id: Optional[str] = None
+    ai_model_used: Optional[str] = None
+
     # AI pitstop
     ai_pitstop_status: Optional[str] = None
     

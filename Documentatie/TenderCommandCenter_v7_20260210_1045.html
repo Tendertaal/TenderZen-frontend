@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TenderZen — Tender Command Center v7 (SVG Icons)</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', -apple-system, sans-serif; background: #0f172a; color: #1e293b; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+/* Icon alignment helper */
+.i { display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; flex-shrink: 0; }
+
+/* MODAL */
+.tcc-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 9000; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from{opacity:0}to{opacity:1} }
+.tcc-panel { width: 94vw; max-width: 1060px; height: 92vh; background: #fff; border-radius: 16px; box-shadow: 0 25px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.35s cubic-bezier(0.16,1,0.3,1); }
+@keyframes slideUp { from{opacity:0;transform:translateY(30px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)} }
+
+/* HEADER */
+.tcc-header { padding: 18px 28px 0; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; background: linear-gradient(135deg,#f8fafc,#f1f5f9); }
+.tcc-header-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+.tcc-header-left { display: flex; gap: 14px; align-items: flex-start; }
+.tcc-header-icon { width: 44px; height: 44px; background: linear-gradient(135deg,#6366f1,#8b5cf6); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
+.tcc-header-info h2 { font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+.tcc-header-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.tcc-meta-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.tcc-meta-tag--fase { background: #fef3c7; color: #92400e; }
+.tcc-meta-tag--model { background: #eef2ff; color: #4338ca; }
+.tcc-meta-tag--date { background: #fef2f2; color: #dc2626; }
+.tcc-close-btn { width: 34px; height: 34px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.tcc-close-btn:hover { background: #f1f5f9; color: #1e293b; }
+
+/* TABS */
+.tcc-tabs { display: flex; gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tcc-tabs::-webkit-scrollbar { height: 0; }
+.tcc-tab { padding: 10px 16px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; border: none; background: transparent; border-bottom: 2px solid transparent; transition: all 0.15s; display: flex; align-items: center; gap: 6px; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
+.tcc-tab:hover { color: #1e293b; background: rgba(0,0,0,0.02); }
+.tcc-tab.is-active { color: #4338ca; border-bottom-color: #6366f1; }
+.tcc-tab .i svg { transition: stroke 0.15s; }
+.tcc-tab.is-active .i svg { stroke: #4338ca; }
+.tcc-tab-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+.tcc-tab-badge--score { background: #f0fdf4; color: #166534; }
+.tcc-tab-badge--count { background: #eef2ff; color: #4338ca; }
+.tcc-tab-badge--warn { background: #fef3c7; color: #92400e; }
+.tcc-tab-badge--docs { background: #f1f5f9; color: #475569; }
+.tcc-tab-badge--wf { background: #fef3c7; color: #b45309; }
+
+/* BODY */
+.tcc-body { flex: 1; overflow-y: auto; padding: 20px 28px 28px; }
+.tcc-body::-webkit-scrollbar { width: 6px; }
+.tcc-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+.tcc-tab-panel { display: none; }
+.tcc-tab-panel.is-active { display: block; }
+
+/* SUB-NAV */
+.tcc-subnav { display: flex; gap: 4px; padding: 4px; background: #f1f5f9; border-radius: 10px; margin-bottom: 18px; }
+.tcc-subnav-btn { flex: 1; padding: 9px 14px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; background: transparent; color: #64748b; transition: all 0.2s; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.tcc-subnav-btn:hover { color: #1e293b; background: rgba(255,255,255,0.5); }
+.tcc-subnav-btn.is-active { background: white; color: #4338ca; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.tcc-subnav-badge { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+.tcc-subnav-badge--score { background: #f0fdf4; color: #166534; }
+.tcc-subnav-badge--ai { background: #f5f3ff; color: #7c3aed; }
+.tcc-subpanel { display: none; }
+.tcc-subpanel.is-active { display: block; }
+
+/* SECTIONS */
+.tcc-section { margin-bottom: 14px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; transition: box-shadow 0.2s; }
+.tcc-section:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+.tcc-section-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; background: #f8fafc; cursor: pointer; user-select: none; }
+.tcc-section-header:hover { background: #f1f5f9; }
+.tcc-section-header-left { display: flex; align-items: center; gap: 10px; }
+.tcc-section-icon { width: 30px; height: 30px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.tcc-section-title { font-size: 14px; font-weight: 600; color: #1e293b; }
+.tcc-section-count { font-size: 11px; color: #94a3b8; font-weight: 500; }
+.tcc-section-header-right { display: flex; align-items: center; gap: 8px; }
+.tcc-section-status { font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 4px; }
+.tcc-section-status--complete { background: #f0fdf4; color: #166534; }
+.tcc-section-status--partial { background: #fffbeb; color: #92400e; }
+.tcc-section-chevron { color: #94a3b8; transition: transform 0.2s; display: flex; }
+.tcc-section.is-open .tcc-section-chevron { transform: rotate(180deg); }
+.tcc-section-body { display: none; }
+.tcc-section.is-open .tcc-section-body { display: block; }
+
+/* DATA GRID */
+.tcc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.tcc-field { padding: 12px 18px; border-bottom: 1px solid #f1f5f9; display: flex; flex-direction: column; gap: 3px; }
+.tcc-field:nth-child(odd) { border-right: 1px solid #f1f5f9; }
+.tcc-field-label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3px; display: flex; align-items: center; gap: 5px; }
+.tcc-field-value { font-size: 14px; color: #1e293b; font-weight: 500; }
+.tcc-conf-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.tcc-conf-dot--high { background: #22c55e; }
+.tcc-conf-dot--medium { background: #f59e0b; }
+
+/* SCORE BAR */
+.tcc-score-bar { padding: 12px 18px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; background: #fafbfd; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 16px; }
+.tcc-score-item { display: flex; align-items: center; gap: 8px; }
+.tcc-score-ring { width: 42px; height: 42px; position: relative; }
+.tcc-score-ring svg { transform: rotate(-90deg); }
+.tcc-score-ring .ring-bg { fill: none; stroke: #e2e8f0; stroke-width: 4; }
+.tcc-score-ring .ring-fill { fill: none; stroke-width: 4; stroke-linecap: round; stroke: #22c55e; }
+.tcc-score-value { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #1e293b; }
+.tcc-score-label { font-size: 12px; color: #64748b; line-height: 1.3; }
+.tcc-score-label strong { display: block; font-size: 13px; color: #1e293b; }
+.tcc-score-divider { width: 1px; height: 32px; background: #e2e8f0; }
+.tcc-conf-badges { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.tcc-conf-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.tcc-conf-badge--high { background: #f0fdf4; color: #166534; }
+.tcc-conf-badge--medium { background: #fffbeb; color: #92400e; }
+
+/* TIMELINE */
+.tcc-timeline { padding: 14px 18px; }
+.tcc-timeline-item { display: flex; gap: 14px; padding: 8px 0; position: relative; }
+.tcc-timeline-item:not(:last-child)::before { content: ''; position: absolute; left: 13px; top: 34px; bottom: -8px; width: 2px; background: #e2e8f0; }
+.tcc-timeline-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; }
+.tcc-timeline-dot--past { background: #f0fdf4; border: 2px solid #22c55e; }
+.tcc-timeline-dot--filled { background: #eef2ff; border: 2px solid #6366f1; }
+.tcc-timeline-dot--urgent { background: #fef2f2; border: 2px solid #dc2626; }
+.tcc-timeline-info { flex: 1; padding-top: 3px; }
+.tcc-timeline-label { font-size: 12px; font-weight: 600; color: #1e293b; }
+.tcc-timeline-date { font-size: 13px; color: #6366f1; font-weight: 500; }
+.tcc-timeline-date--urgent { color: #dc2626; font-weight: 700; }
+
+/* CRITERIA TABLE */
+.tcc-criteria-table { width: 100%; border-collapse: collapse; }
+.tcc-criteria-table th { text-align: left; font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; padding: 10px 18px; border-bottom: 1px solid #e2e8f0; }
+.tcc-criteria-table td { padding: 10px 18px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
+.tcc-weight-bar { display: flex; align-items: center; gap: 8px; }
+.tcc-weight-track { flex: 1; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; max-width: 100px; }
+.tcc-weight-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,#6366f1,#8b5cf6); }
+.tcc-weight-pct { font-size: 12px; font-weight: 700; color: #4338ca; }
+
+/* PERCELEN */
+.tcc-percelen-list { padding: 6px 18px 14px; }
+.tcc-perceel-card { border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.tcc-perceel-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f8fafc; cursor: pointer; }
+.tcc-perceel-header-left { display: flex; align-items: center; gap: 8px; }
+.tcc-perceel-nr { width: 26px; height: 26px; border-radius: 6px; background: #eef2ff; color: #4338ca; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.tcc-perceel-name { font-size: 13px; font-weight: 600; color: #1e293b; }
+.tcc-perceel-body { padding: 10px 14px; font-size: 12px; color: #64748b; display: none; }
+.tcc-perceel-card.is-open .tcc-perceel-body { display: block; }
+.tcc-perceel-chevron { color: #94a3b8; transition: transform 0.2s; display: flex; }
+.tcc-perceel-card.is-open .tcc-perceel-chevron { transform: rotate(180deg); }
+
+/* WARNINGS */
+.tcc-warnings-list { padding: 6px 18px 14px; }
+.tcc-warning-item { display: flex; gap: 8px; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-bottom: 4px; line-height: 1.4; align-items: flex-start; }
+.tcc-warning-item .i { margin-top: 1px; }
+.tcc-warning-item--warn { background: #fffbeb; color: #92400e; }
+.tcc-warning-item--info { background: #eef2ff; color: #4338ca; }
+.tcc-warning-item--tip { background: #f0fdf4; color: #166534; }
+
+/* AI GENERATIE CARDS */
+.tcc-aidoc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tcc-aidoc-card { border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; transition: all 0.2s; background: white; }
+.tcc-aidoc-card:hover { border-color: #c7d2fe; box-shadow: 0 4px 12px rgba(99,102,241,0.08); }
+.tcc-aidoc-card-header { padding: 16px 18px; display: flex; align-items: flex-start; gap: 12px; }
+.tcc-aidoc-card-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tcc-aidoc-card-icon--gonogo { background: linear-gradient(135deg,#fef3c7,#fde68a); }
+.tcc-aidoc-card-icon--samenvatting { background: linear-gradient(135deg,#dbeafe,#bfdbfe); }
+.tcc-aidoc-card-icon--compliance { background: linear-gradient(135deg,#f3e8ff,#e9d5ff); }
+.tcc-aidoc-card-icon--risico { background: linear-gradient(135deg,#fef2f2,#fecaca); }
+.tcc-aidoc-card-info { flex: 1; }
+.tcc-aidoc-card-title { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+.tcc-aidoc-card-desc { font-size: 12px; color: #64748b; }
+.tcc-aidoc-card-body { padding: 0 18px 16px; }
+.tcc-aidoc-status { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; }
+.tcc-aidoc-status--ready { background: #f8fafc; border: 1px dashed #cbd5e1; }
+.tcc-aidoc-status--generating { background: #eef2ff; border: 1px solid #c7d2fe; }
+.tcc-aidoc-status-text { flex: 1; }
+.tcc-aidoc-status-label { font-size: 12px; font-weight: 600; color: #1e293b; }
+.tcc-aidoc-status-meta { font-size: 11px; color: #94a3b8; }
+.tcc-aidoc-actions { display: flex; gap: 6px; }
+.tcc-gonogo-verdict { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-radius: 10px; margin-bottom: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; }
+.tcc-gonogo-score { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; flex-shrink: 0; background: #22c55e; color: white; }
+.tcc-gonogo-info { flex: 1; }
+.tcc-gonogo-label { font-size: 15px; font-weight: 700; color: #166534; }
+.tcc-gonogo-sublabel { font-size: 12px; color: #64748b; }
+.tcc-gonogo-details { display: flex; gap: 8px; margin-bottom: 10px; }
+.tcc-gonogo-detail { flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
+.tcc-gonogo-detail-label { font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; gap: 4px; }
+.tcc-gonogo-detail ul { list-style: none; padding: 0; }
+.tcc-gonogo-detail li { font-size: 12px; color: #475569; padding: 2px 0; display: flex; align-items: center; gap: 4px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.tcc-spinner { width: 18px; height: 18px; border: 2px solid #c7d2fe; border-top-color: #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+/* DOCUMENTEN TAB */
+.tcc-docs-section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.tcc-docs-section-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tcc-docs-section-icon--upload { background: linear-gradient(135deg,#eef2ff,#e0e7ff); }
+.tcc-docs-section-icon--generated { background: linear-gradient(135deg,#f0fdf4,#dcfce7); }
+.tcc-docs-section-info h3 { font-size: 15px; font-weight: 700; color: #1e293b; }
+.tcc-docs-section-info p { font-size: 12px; color: #64748b; }
+.tcc-docs-section-badge { margin-left: auto; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+.tcc-docs-section-badge--upload { background: #eef2ff; color: #4338ca; }
+.tcc-docs-section-badge--generated { background: #f0fdf4; color: #166534; }
+.tcc-upload-zone { border: 2px dashed #c7d2fe; border-radius: 14px; padding: 36px 20px; text-align: center; background: linear-gradient(135deg, #fafaff 0%, #f5f3ff 100%); transition: all 0.2s; cursor: pointer; margin-bottom: 14px; }
+.tcc-upload-zone:hover { border-color: #818cf8; background: linear-gradient(135deg, #f5f3ff 0%, #eef2ff 100%); }
+.tcc-upload-zone .tcc-upload-icon-wrap { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg,#eef2ff,#e0e7ff); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+.tcc-upload-title { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+.tcc-upload-desc { font-size: 12px; color: #64748b; margin-bottom: 2px; }
+.tcc-upload-formats { font-size: 11px; color: #94a3b8; }
+.tcc-upload-tip { display: flex; gap: 8px; padding: 10px 14px; background: #fefce8; border: 1px solid #fef08a; border-radius: 8px; font-size: 12px; color: #854d0e; margin-bottom: 14px; align-items: flex-start; }
+.tcc-file-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.tcc-file-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 10px; background: white; transition: all 0.15s; }
+.tcc-file-item:hover { border-color: #cbd5e1; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+.tcc-file-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tcc-file-icon--pdf { background: #fef2f2; }
+.tcc-file-icon--xlsx { background: #f0fdf4; }
+.tcc-file-icon--ai { background: linear-gradient(135deg,#f5f3ff,#ede9fe); }
+.tcc-file-info { flex: 1; min-width: 0; }
+.tcc-file-name { font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tcc-file-meta { font-size: 11px; color: #94a3b8; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.tcc-file-tag { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; }
+.tcc-file-tag--analyzed { background: #f0fdf4; color: #166534; }
+.tcc-file-tag--source { background: #eef2ff; color: #4338ca; }
+.tcc-file-tag--ai { background: #f5f3ff; color: #7c3aed; }
+.tcc-file-tag--workflow { background: #fef3c7; color: #92400e; }
+.tcc-file-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.tcc-file-action { width: 30px; height: 30px; border-radius: 6px; border: 1px solid #e2e8f0; background: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s; }
+.tcc-file-action:hover { background: #f1f5f9; border-color: #cbd5e1; }
+.tcc-file-action--danger:hover { background: #fef2f2; border-color: #fecaca; }
+.tcc-docs-divider { height: 1px; background: #e2e8f0; margin: 24px 0; }
+.tcc-empty-hint { text-align: center; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; font-size: 12px; color: #64748b; }
+.tcc-empty-hint a { color: #4338ca; font-weight: 600; cursor: pointer; text-decoration: none; }
+
+/* WORKFLOW */
+.tcc-wf-progress { display: flex; align-items: center; gap: 4px; padding: 14px 18px; background: #fafbfd; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 20px; }
+.tcc-wf-progress-step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tcc-wf-progress-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; z-index: 1; }
+.tcc-wf-progress-dot--done { background: #22c55e; color: white; }
+.tcc-wf-progress-dot--active { background: #6366f1; color: white; box-shadow: 0 0 0 4px rgba(99,102,241,0.2); }
+.tcc-wf-progress-dot--pending { background: #f1f5f9; color: #94a3b8; border: 2px solid #e2e8f0; }
+.tcc-wf-progress-label { font-size: 10px; font-weight: 600; color: #64748b; text-align: center; line-height: 1.2; max-width: 70px; }
+.tcc-wf-progress-line { width: 100%; height: 2px; background: #e2e8f0; flex-shrink: 0; margin: 16px -2px 0; align-self: flex-start; }
+.tcc-wf-progress-line--done { background: #22c55e; }
+.tcc-wf-step { border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; margin-bottom: 14px; }
+.tcc-wf-step--done { border-left: 4px solid #22c55e; }
+.tcc-wf-step--active { border-left: 4px solid #6366f1; box-shadow: 0 4px 16px rgba(99,102,241,0.12); }
+.tcc-wf-step--pending { border-left: 4px solid #e2e8f0; opacity: 0.7; }
+.tcc-wf-step-header { display: flex; align-items: center; gap: 14px; padding: 16px 20px; cursor: pointer; }
+.tcc-wf-step-num { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+.tcc-wf-step--done .tcc-wf-step-num { background: #f0fdf4; color: #22c55e; }
+.tcc-wf-step--active .tcc-wf-step-num { background: #eef2ff; color: #6366f1; }
+.tcc-wf-step--pending .tcc-wf-step-num { background: #f8fafc; color: #94a3b8; }
+.tcc-wf-step-info { flex: 1; }
+.tcc-wf-step-title { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+.tcc-wf-step--done .tcc-wf-step-title { color: #64748b; }
+.tcc-wf-step-desc { font-size: 12px; color: #64748b; }
+.tcc-wf-step-badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.tcc-wf-step-badge--done { background: #f0fdf4; color: #166534; }
+.tcc-wf-step-badge--active { background: #eef2ff; color: #4338ca; }
+.tcc-wf-step-badge--pending { background: #f8fafc; color: #94a3b8; }
+.tcc-wf-step-chevron { color: #94a3b8; transition: transform 0.2s; display: flex; flex-shrink: 0; }
+.tcc-wf-step.is-open .tcc-wf-step-chevron { transform: rotate(180deg); }
+.tcc-wf-step-body { display: none; padding: 0 20px 20px; }
+.tcc-wf-step.is-open .tcc-wf-step-body { display: block; }
+.tcc-wf-prompt-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.tcc-wf-prompt-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.tcc-wf-prompt-icon { width: 28px; height: 28px; background: linear-gradient(135deg,#6366f1,#8b5cf6); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+.tcc-wf-prompt-title { font-size: 13px; font-weight: 600; color: #1e293b; }
+.tcc-wf-prompt-version { font-size: 10px; font-weight: 600; padding: 2px 6px; background: #eef2ff; color: #4338ca; border-radius: 4px; margin-left: auto; }
+.tcc-wf-prompt-role { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #7c3aed; color: white; }
+.tcc-wf-prompt-desc { font-size: 12px; color: #64748b; margin-bottom: 8px; }
+.tcc-wf-prompt-edit { font-size: 12px; font-weight: 600; color: #6366f1; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.tcc-wf-tip { display: flex; gap: 8px; padding: 10px 14px; background: #fefce8; border: 1px solid #fef08a; border-radius: 8px; font-size: 12px; color: #854d0e; margin-bottom: 12px; align-items: flex-start; }
+.tcc-wf-howto { padding: 14px 16px; background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; margin-bottom: 12px; }
+.tcc-wf-howto-title { font-size: 12px; font-weight: 700; color: #92400e; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.tcc-wf-howto ol { padding-left: 18px; margin: 0; }
+.tcc-wf-howto li { font-size: 12px; color: #78350f; padding: 2px 0; }
+.tcc-wf-result { padding: 12px 16px; border: 1px solid #bbf7d0; background: #f0fdf4; border-radius: 8px; margin-bottom: 12px; }
+.tcc-wf-result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.tcc-wf-result-label { font-size: 12px; font-weight: 600; color: #166534; }
+.tcc-wf-result-date { font-size: 11px; color: #64748b; margin-left: auto; }
+.tcc-wf-result-preview { font-size: 12px; color: #475569; line-height: 1.5; }
+
+/* PLANNING + CHECKLIST */
+.tcc-planning-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.tcc-planning-header-left { display: flex; align-items: center; gap: 8px; }
+.tcc-planning-header-left h3 { font-size: 15px; font-weight: 600; color: #1e293b; }
+.tcc-planning-stats { display: flex; gap: 16px; }
+.tcc-planning-stat { text-align: center; }
+.tcc-planning-stat-value { font-size: 22px; font-weight: 700; color: #1e293b; line-height: 1; }
+.tcc-planning-stat-label { font-size: 11px; color: #94a3b8; }
+.tcc-task-list { display: flex; flex-direction: column; gap: 6px; }
+.tcc-task { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 10px; background: white; }
+.tcc-task-status { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #cbd5e1; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tcc-task-status--done { background: #22c55e; border-color: #22c55e; color: white; }
+.tcc-task-status--progress { background: #eef2ff; border-color: #6366f1; color: #6366f1; }
+.tcc-task-info { flex: 1; }
+.tcc-task-name { font-size: 13px; font-weight: 600; color: #1e293b; }
+.tcc-task-name--done { text-decoration: line-through; color: #94a3b8; }
+.tcc-task-detail { font-size: 11px; color: #94a3b8; display: flex; gap: 6px; align-items: center; }
+.tcc-task-avatar { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; flex-shrink: 0; }
+.tcc-task-phase-row { padding: 8px 16px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.tcc-task-phase-label { font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 3px 10px; border-radius: 4px; }
+.tcc-task-phase-line { flex: 1; height: 1px; background: #e2e8f0; }
+.tcc-task-date { font-size: 11px; color: #64748b; padding: 2px 8px; background: #f8fafc; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
+.tcc-task-date--overdue { background: #fef2f2; color: #dc2626; }
+.tcc-checklist-progress { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 16px; }
+.tcc-progress-bar-container { flex: 1; }
+.tcc-progress-bar-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.tcc-progress-bar-label { font-size: 13px; font-weight: 600; color: #1e293b; }
+.tcc-progress-bar-pct { font-size: 13px; font-weight: 700; color: #4338ca; }
+.tcc-progress-bar { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+.tcc-progress-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg,#6366f1,#8b5cf6); }
+.tcc-check-group { margin-bottom: 14px; }
+.tcc-check-group-header { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; padding: 8px 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.tcc-check-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 4px; }
+.tcc-check-box { width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 5px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tcc-check-box--done { background: #22c55e; border-color: #22c55e; color: white; }
+.tcc-check-info { flex: 1; }
+.tcc-check-name { font-size: 13px; font-weight: 500; color: #1e293b; }
+.tcc-check-name--done { text-decoration: line-through; color: #94a3b8; }
+.tcc-check-desc { font-size: 11px; color: #94a3b8; }
+.tcc-check-action { padding: 3px 8px; border: 1px solid #e2e8f0; border-radius: 4px; font-size: 10px; font-weight: 600; background: white; color: #64748b; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; cursor: pointer; }
+.tcc-check-action--upload { color: #4338ca; border-color: #c7d2fe; }
+
+/* FOOTER */
+.tcc-footer { padding: 14px 28px; border-top: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; background: #fafbfd; flex-shrink: 0; }
+.tcc-footer-left, .tcc-footer-right { display: flex; gap: 8px; }
+.tcc-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; border: none; display: inline-flex; align-items: center; gap: 6px; font-family: inherit; }
+.tcc-btn--ghost { background: transparent; color: #64748b; border: 1px solid #e2e8f0; }
+.tcc-btn--ghost:hover { background: #f1f5f9; color: #1e293b; }
+.tcc-btn--secondary { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+.tcc-btn--secondary:hover { background: #e0e7ff; }
+.tcc-btn--primary { background: linear-gradient(135deg,#6366f1,#7c3aed); color: white; box-shadow: 0 2px 6px rgba(99,102,241,0.3); }
+.tcc-btn--primary:hover { box-shadow: 0 4px 12px rgba(99,102,241,0.4); transform: translateY(-1px); }
+.tcc-btn--success { background: #22c55e; color: white; }
+.tcc-btn--sm { padding: 6px 12px; font-size: 12px; }
+
+@media (max-width: 700px) {
+    .tcc-panel { width: 100vw; height: 100vh; border-radius: 0; }
+    .tcc-grid, .tcc-aidoc-grid { grid-template-columns: 1fr; }
+    .tcc-field:nth-child(odd) { border-right: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="tcc-overlay">
+<div class="tcc-panel">
+
+    <!-- HEADER -->
+    <div class="tcc-header">
+        <div class="tcc-header-top">
+            <div class="tcc-header-left">
+                <div class="tcc-header-icon"><span class="i" data-icon="sparkles" data-color="white" data-size="22"></span></div>
+                <div class="tcc-header-info">
+                    <h2>Onderhoud bermen en watergangen</h2>
+                    <div class="tcc-header-meta">
+                        <span class="tcc-meta-tag tcc-meta-tag--fase"><span class="i" data-icon="folderOpen" data-color="#92400e" data-size="13"></span> Inschrijvingen</span>
+                        <span class="tcc-meta-tag tcc-meta-tag--model"><span class="i" data-icon="robot" data-color="#4338ca" data-size="13"></span> Haiku</span>
+                        <span class="tcc-meta-tag tcc-meta-tag--date"><span class="i" data-icon="clock" data-color="#dc2626" data-size="13"></span> 24 feb</span>
+                    </div>
+                </div>
+            </div>
+            <button class="tcc-close-btn"><span class="i" data-icon="close" data-color="#64748b" data-size="16"></span></button>
+        </div>
+        <div class="tcc-tabs">
+            <button class="tcc-tab is-active" data-tab="ai" onclick="switchTab('ai')"><span class="i" data-icon="sparkles" data-size="16"></span> AI Analyse <span class="tcc-tab-badge tcc-tab-badge--score">14/20</span></button>
+            <button class="tcc-tab" data-tab="planning" onclick="switchTab('planning')"><span class="i" data-icon="calendar" data-size="16"></span> Planning <span class="tcc-tab-badge tcc-tab-badge--count">12</span></button>
+            <button class="tcc-tab" data-tab="checklist" onclick="switchTab('checklist')"><span class="i" data-icon="checkSquare" data-size="16"></span> Checklist <span class="tcc-tab-badge tcc-tab-badge--warn">3/8</span></button>
+            <button class="tcc-tab" data-tab="docs" onclick="switchTab('docs')"><span class="i" data-icon="fileText" data-size="16"></span> Documenten <span class="tcc-tab-badge tcc-tab-badge--docs">5</span></button>
+            <button class="tcc-tab" data-tab="workflow" onclick="switchTab('workflow')"><span class="i" data-icon="refresh" data-size="16"></span> Workflow <span class="tcc-tab-badge tcc-tab-badge--wf">2/6</span></button>
+        </div>
+    </div>
+
+    <div class="tcc-body">
+
+        <!-- ══════════ TAB 1: AI ANALYSE + GENERATIE ══════════ -->
+        <div class="tcc-tab-panel is-active" data-panel="ai">
+            <div class="tcc-subnav">
+                <button class="tcc-subnav-btn is-active" data-sub="analyse" onclick="switchSub('analyse')"><span class="i" data-icon="barChart" data-size="15"></span> Analyse Resultaten <span class="tcc-subnav-badge tcc-subnav-badge--score">14/20</span></button>
+                <button class="tcc-subnav-btn" data-sub="generatie" onclick="switchSub('generatie')"><span class="i" data-icon="zap" data-size="15"></span> AI Generatie <span class="tcc-subnav-badge tcc-subnav-badge--ai">1/4</span></button>
+            </div>
+
+            <!-- SUB: Analyse -->
+            <div class="tcc-subpanel is-active" data-sub="analyse">
+                <div class="tcc-score-bar">
+                    <div class="tcc-score-item"><div class="tcc-score-ring"><svg width="42" height="42" viewBox="0 0 42 42"><circle class="ring-bg" cx="21" cy="21" r="17"/><circle class="ring-fill" cx="21" cy="21" r="17" stroke-dasharray="106.8" stroke-dashoffset="32"/></svg><span class="tcc-score-value">70%</span></div><div class="tcc-score-label"><strong>14/20</strong>velden</div></div>
+                    <div class="tcc-score-divider"></div>
+                    <div class="tcc-conf-badges"><span class="tcc-conf-badge tcc-conf-badge--high"><span class="tcc-conf-dot tcc-conf-dot--high"></span> 13 hoog</span><span class="tcc-conf-badge tcc-conf-badge--medium"><span class="tcc-conf-dot tcc-conf-dot--medium"></span> 1 gemiddeld</span></div>
+                </div>
+
+                <div class="tcc-section is-open"><div class="tcc-section-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-section-header-left"><div class="tcc-section-icon"><span class="i" data-icon="clipboardList" data-size="16"></span></div><span class="tcc-section-title">Basisgegevens</span><span class="tcc-section-count">8/9</span></div><div class="tcc-section-header-right"><span class="tcc-section-status tcc-section-status--complete">Compleet</span><span class="tcc-section-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div></div><div class="tcc-section-body"><div class="tcc-grid"><div class="tcc-field"><div class="tcc-field-label"><span class="tcc-conf-dot tcc-conf-dot--high"></span>Tendernaam</div><div class="tcc-field-value">Onderhoud bermen en watergangen</div></div><div class="tcc-field"><div class="tcc-field-label"><span class="tcc-conf-dot tcc-conf-dot--high"></span>Opdrachtgever</div><div class="tcc-field-value">Gemeente Midden-Groningen</div></div><div class="tcc-field"><div class="tcc-field-label"><span class="tcc-conf-dot tcc-conf-dot--high"></span>Type</div><div class="tcc-field-value">Europese aanbesteding</div></div><div class="tcc-field"><div class="tcc-field-label"><span class="tcc-conf-dot tcc-conf-dot--high"></span>Geraamde waarde</div><div class="tcc-field-value">€ 750.000</div></div></div></div></div>
+
+                <div class="tcc-section"><div class="tcc-section-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-section-header-left"><div class="tcc-section-icon"><span class="i" data-icon="calendar" data-size="16"></span></div><span class="tcc-section-title">Planning & Deadlines</span><span class="tcc-section-count">8/12</span></div><div class="tcc-section-header-right"><span class="tcc-section-status tcc-section-status--partial">4 ontbreken</span><span class="tcc-section-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div></div><div class="tcc-section-body"><div class="tcc-timeline"><div class="tcc-timeline-item"><div class="tcc-timeline-dot tcc-timeline-dot--past"><span class="i" data-icon="check" data-color="#16a34a" data-size="14"></span></div><div class="tcc-timeline-info"><div class="tcc-timeline-label">Publicatiedatum</div><div class="tcc-timeline-date">27 jan 2026</div></div></div><div class="tcc-timeline-item"><div class="tcc-timeline-dot tcc-timeline-dot--urgent"><span class="i" data-icon="clock" data-color="#dc2626" data-size="14"></span></div><div class="tcc-timeline-info"><div class="tcc-timeline-label">Deadline indiening</div><div class="tcc-timeline-date tcc-timeline-date--urgent">24 feb 2026 · 12:00</div></div></div><div class="tcc-timeline-item"><div class="tcc-timeline-dot tcc-timeline-dot--filled"><span class="i" data-icon="award" data-color="#4f46e5" data-size="14"></span></div><div class="tcc-timeline-info"><div class="tcc-timeline-label">Voorlopige gunning</div><div class="tcc-timeline-date">17 mrt 2026</div></div></div></div></div></div>
+
+                <div class="tcc-section"><div class="tcc-section-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-section-header-left"><div class="tcc-section-icon"><span class="i" data-icon="fileText" data-size="16"></span></div><span class="tcc-section-title">Overeenkomst & Contract</span><span class="tcc-section-count">5/7</span></div><div class="tcc-section-header-right"><span class="tcc-section-status tcc-section-status--partial">2 ontbreken</span><span class="tcc-section-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div></div><div class="tcc-section-body"><div class="tcc-grid"><div class="tcc-field"><div class="tcc-field-label"><span class="tcc-conf-dot tcc-conf-dot--high"></span>Contracttype</div><div class="tcc-field-value">Raamovereenkomst · 4 jaar</div></div><div class="tcc-field"><div class="tcc-field-label"><span class="tcc-conf-dot tcc-conf-dot--high"></span>Verlengingen</div><div class="tcc-field-value">2x 1 jaar</div></div></div></div></div>
+
+                <div class="tcc-section"><div class="tcc-section-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-section-header-left"><div class="tcc-section-icon"><span class="i" data-icon="barChart" data-size="16"></span></div><span class="tcc-section-title">Gunningscriteria</span><span class="tcc-section-count">3</span></div><div class="tcc-section-header-right"><span class="tcc-section-status tcc-section-status--complete">Compleet</span><span class="tcc-section-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div></div><div class="tcc-section-body"><table class="tcc-criteria-table"><thead><tr><th>Criterium</th><th>Weging</th></tr></thead><tbody><tr><td><strong>Kwaliteit</strong></td><td><div class="tcc-weight-bar"><div class="tcc-weight-track"><div class="tcc-weight-fill" style="width:60%"></div></div><span class="tcc-weight-pct">60%</span></div></td></tr><tr><td><strong>Prijs</strong></td><td><div class="tcc-weight-bar"><div class="tcc-weight-track"><div class="tcc-weight-fill" style="width:30%"></div></div><span class="tcc-weight-pct">30%</span></div></td></tr><tr><td><strong>Social Return</strong></td><td><div class="tcc-weight-bar"><div class="tcc-weight-track"><div class="tcc-weight-fill" style="width:10%"></div></div><span class="tcc-weight-pct">10%</span></div></td></tr></tbody></table></div></div>
+
+                <div class="tcc-section"><div class="tcc-section-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-section-header-left"><div class="tcc-section-icon"><span class="i" data-icon="archive" data-size="16"></span></div><span class="tcc-section-title">Percelen</span><span class="tcc-section-count">2</span></div><div class="tcc-section-header-right"><span class="tcc-section-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div></div><div class="tcc-section-body"><div class="tcc-percelen-list"><div class="tcc-perceel-card"><div class="tcc-perceel-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-perceel-header-left"><div class="tcc-perceel-nr">1</div><span class="tcc-perceel-name">Bermonderhoud</span></div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:12px;color:#64748b">€ 450K</span><span class="tcc-perceel-chevron"><span class="i" data-icon="chevronDown" data-size="14"></span></span></div></div><div class="tcc-perceel-body">Regulier onderhoud bermen en groenstroken.</div></div><div class="tcc-perceel-card"><div class="tcc-perceel-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-perceel-header-left"><div class="tcc-perceel-nr">2</div><span class="tcc-perceel-name">Watergangen</span></div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:12px;color:#64748b">€ 300K</span><span class="tcc-perceel-chevron"><span class="i" data-icon="chevronDown" data-size="14"></span></span></div></div><div class="tcc-perceel-body">Onderhoud watergangen, sloten en duikers.</div></div></div></div></div>
+
+                <div class="tcc-section"><div class="tcc-section-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-section-header-left"><div class="tcc-section-icon"><span class="i" data-icon="lightbulb" data-size="16"></span></div><span class="tcc-section-title">AI Opmerkingen</span><span class="tcc-section-count">5</span></div><div class="tcc-section-header-right"><span class="tcc-section-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div></div><div class="tcc-section-body"><div class="tcc-warnings-list"><div class="tcc-warning-item tcc-warning-item--warn"><span class="i" data-icon="warning" data-size="14"></span> Schouwdatum niet gevonden.</div><div class="tcc-warning-item tcc-warning-item--info"><span class="i" data-icon="info" data-size="14"></span> Meerdere percelen — u kunt op één of beide inschrijven.</div><div class="tcc-warning-item tcc-warning-item--tip"><span class="i" data-icon="lightbulb" data-color="#16a34a" data-size="14"></span> Kwaliteit weegt 60% — investeer in sterk PvA.</div><div class="tcc-warning-item tcc-warning-item--tip"><span class="i" data-icon="lightbulb" data-color="#16a34a" data-size="14"></span> SROI 5%. Neem concreet plan op.</div><div class="tcc-warning-item tcc-warning-item--info"><span class="i" data-icon="lock" data-size="14"></span> VCA** verplicht.</div></div></div></div>
+            </div>
+
+            <!-- SUB: Generatie -->
+            <div class="tcc-subpanel" data-sub="generatie">
+                <div class="tcc-aidoc-grid">
+                    <div class="tcc-aidoc-card"><div class="tcc-aidoc-card-header"><div class="tcc-aidoc-card-icon tcc-aidoc-card-icon--gonogo"><span class="i" data-icon="statusGo" data-size="24"></span></div><div class="tcc-aidoc-card-info"><div class="tcc-aidoc-card-title">Go/No-Go Analyse</div><div class="tcc-aidoc-card-desc">Haalbaarheidsanalyse met score</div></div></div><div class="tcc-aidoc-card-body"><div class="tcc-gonogo-verdict"><div class="tcc-gonogo-score">72</div><div class="tcc-gonogo-info"><div class="tcc-gonogo-label">GO — Met kanttekeningen</div><div class="tcc-gonogo-sublabel">Winkans: gemiddeld</div></div></div><div class="tcc-gonogo-details"><div class="tcc-gonogo-detail"><div class="tcc-gonogo-detail-label"><span class="i" data-icon="checkCircle" data-size="12"></span> Sterk</div><ul><li><span class="i" data-icon="check" data-size="11"></span> Ervaring vergelijkbare opdrachten</li><li><span class="i" data-icon="check" data-size="11"></span> VCA** aanwezig</li></ul></div><div class="tcc-gonogo-detail"><div class="tcc-gonogo-detail-label"><span class="i" data-icon="warning" data-size="12"></span> Risico's</div><ul><li><span class="i" data-icon="warning" data-color="#ea580c" data-size="11"></span> Korte doorlooptijd</li><li><span class="i" data-icon="warning" data-color="#ea580c" data-size="11"></span> SROI-plan nodig</li></ul></div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="refresh" data-size="13"></span> Opnieuw</button><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="copy" data-size="13"></span> Kopieer</button><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="download" data-size="13"></span> Download</button></div></div></div>
+                    <div class="tcc-aidoc-card"><div class="tcc-aidoc-card-header"><div class="tcc-aidoc-card-icon tcc-aidoc-card-icon--samenvatting"><span class="i" data-icon="fileText" data-color="#2563eb" data-size="24"></span></div><div class="tcc-aidoc-card-info"><div class="tcc-aidoc-card-title">Samenvatting</div><div class="tcc-aidoc-card-desc">Beknopt overzicht voor team</div></div></div><div class="tcc-aidoc-card-body"><div class="tcc-aidoc-status tcc-aidoc-status--ready"><span class="i" data-icon="clipboardList" data-size="16"></span><div class="tcc-aidoc-status-text"><div class="tcc-aidoc-status-label">Nog niet gegenereerd</div></div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--primary tcc-btn--sm"><span class="i" data-icon="zap" data-color="white" data-size="13"></span> Genereer</button></div></div></div>
+                    <div class="tcc-aidoc-card"><div class="tcc-aidoc-card-header"><div class="tcc-aidoc-card-icon tcc-aidoc-card-icon--compliance"><span class="i" data-icon="barChart" data-size="24"></span></div><div class="tcc-aidoc-card-info"><div class="tcc-aidoc-card-title">Compliance Matrix</div><div class="tcc-aidoc-card-desc">Alle eisen en bewijsstukken</div></div></div><div class="tcc-aidoc-card-body"><div class="tcc-aidoc-status tcc-aidoc-status--ready"><span class="i" data-icon="clipboardList" data-size="16"></span><div class="tcc-aidoc-status-text"><div class="tcc-aidoc-status-label">Nog niet gegenereerd</div></div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--primary tcc-btn--sm"><span class="i" data-icon="zap" data-color="white" data-size="13"></span> Genereer</button></div></div></div>
+                    <div class="tcc-aidoc-card"><div class="tcc-aidoc-card-header"><div class="tcc-aidoc-card-icon tcc-aidoc-card-icon--risico"><span class="i" data-icon="shieldCheck" data-color="#dc2626" data-size="24"></span></div><div class="tcc-aidoc-card-info"><div class="tcc-aidoc-card-title">Risico Analyse</div><div class="tcc-aidoc-card-desc">Risico's en mitigatie</div></div></div><div class="tcc-aidoc-card-body"><div class="tcc-aidoc-status tcc-aidoc-status--generating"><div class="tcc-spinner"></div><div class="tcc-aidoc-status-text"><div class="tcc-aidoc-status-label">Bezig met genereren...</div><div class="tcc-aidoc-status-meta">~15-30 sec</div></div></div></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════ TAB 2: PLANNING ══════════ -->
+        <div class="tcc-tab-panel" data-panel="planning">
+            <div class="tcc-planning-header"><div class="tcc-planning-header-left"><span class="i" data-icon="calendar" data-size="18"></span><h3>Interne backplanning</h3></div><div class="tcc-planning-stats"><div class="tcc-planning-stat"><div class="tcc-planning-stat-value">14</div><div class="tcc-planning-stat-label">dagen rest</div></div><div class="tcc-planning-stat"><div class="tcc-planning-stat-value">4/12</div><div class="tcc-planning-stat-label">taken klaar</div></div></div></div>
+            <div class="tcc-task-list">
+                <div class="tcc-task-phase-row"><span class="tcc-task-phase-label" style="background:#eef2ff;color:#4338ca;">Voorbereiding</span><div class="tcc-task-phase-line"></div></div>
+                <div class="tcc-task"><div class="tcc-task-status tcc-task-status--done"><span class="i" data-icon="check" data-color="white" data-size="12"></span></div><div class="tcc-task-info"><div class="tcc-task-name tcc-task-name--done">Go/No-Go beslissing</div><div class="tcc-task-detail"><span class="tcc-task-avatar" style="background:#ec4899;">RI</span><span>Rick · 28–30 jan</span></div></div></div>
+                <div class="tcc-task"><div class="tcc-task-status tcc-task-status--done"><span class="i" data-icon="check" data-color="white" data-size="12"></span></div><div class="tcc-task-info"><div class="tcc-task-name tcc-task-name--done">Documenten analyseren</div><div class="tcc-task-detail"><span class="tcc-task-avatar" style="background:#3b82f6;">NA</span><span>Nathalie · 30 jan – 3 feb</span></div></div></div>
+                <div class="tcc-task-phase-row"><span class="tcc-task-phase-label" style="background:#fef3c7;color:#92400e;">Schrijffase</span><div class="tcc-task-phase-line"></div></div>
+                <div class="tcc-task"><div class="tcc-task-status tcc-task-status--progress"><span class="i" data-icon="play" data-color="#4f46e5" data-size="10"></span></div><div class="tcc-task-info"><div class="tcc-task-name">PvA — definitief</div><div class="tcc-task-detail"><span class="tcc-task-avatar" style="background:#3b82f6;">NA</span><span>Nathalie · 10–17 feb</span></div></div></div>
+                <div class="tcc-task"><div class="tcc-task-status"></div><div class="tcc-task-info"><div class="tcc-task-name">Prijscalculatie</div><div class="tcc-task-detail"><span class="tcc-task-avatar" style="background:#ec4899;">RI</span><span>Rick · 14–19 feb</span></div></div></div>
+                <div class="tcc-task-phase-row"><span class="tcc-task-phase-label" style="background:#f0fdf4;color:#166534;">Indiening</span><div class="tcc-task-phase-line"></div></div>
+                <div class="tcc-task"><div class="tcc-task-status"></div><div class="tcc-task-info"><div class="tcc-task-name">Definitieve indiening</div><div class="tcc-task-detail"><span class="tcc-task-avatar" style="background:#ec4899;">RI</span><span>Rick</span></div></div><span class="tcc-task-date tcc-task-date--overdue"><span class="i" data-icon="clock" data-color="#dc2626" data-size="12"></span> 24 feb 12:00</span></div>
+            </div>
+        </div>
+
+        <!-- ══════════ TAB 3: CHECKLIST ══════════ -->
+        <div class="tcc-tab-panel" data-panel="checklist">
+            <div class="tcc-checklist-progress"><div class="tcc-progress-bar-container"><div class="tcc-progress-bar-header"><span class="tcc-progress-bar-label">Inleveritems</span><span class="tcc-progress-bar-pct">38%</span></div><div class="tcc-progress-bar"><div class="tcc-progress-bar-fill" style="width:38%"></div></div></div></div>
+            <div class="tcc-check-group"><div class="tcc-check-group-header"><span class="i" data-icon="fileText" data-size="14"></span> Documenten (2/4)</div>
+                <div class="tcc-check-item"><div class="tcc-check-box tcc-check-box--done"><span class="i" data-icon="check" data-color="white" data-size="12"></span></div><div class="tcc-check-info"><div class="tcc-check-name tcc-check-name--done">Plan van Aanpak</div></div></div>
+                <div class="tcc-check-item"><div class="tcc-check-box tcc-check-box--done"><span class="i" data-icon="check" data-color="white" data-size="12"></span></div><div class="tcc-check-info"><div class="tcc-check-name tcc-check-name--done">Eigen Verklaring</div></div></div>
+                <div class="tcc-check-item"><div class="tcc-check-box"></div><div class="tcc-check-info"><div class="tcc-check-name">SROI-plan</div><div class="tcc-check-desc">Verplicht</div></div><span class="tcc-check-action tcc-check-action--upload"><span class="i" data-icon="upload" data-color="#4338ca" data-size="11"></span> Upload</span></div>
+                <div class="tcc-check-item"><div class="tcc-check-box"></div><div class="tcc-check-info"><div class="tcc-check-name">Prijzenblad</div><div class="tcc-check-desc">Verplicht</div></div><span class="tcc-check-action tcc-check-action--upload"><span class="i" data-icon="upload" data-color="#4338ca" data-size="11"></span> Upload</span></div>
+            </div>
+            <div class="tcc-check-group"><div class="tcc-check-group-header"><span class="i" data-icon="shieldCheck" data-size="14"></span> Verklaringen (1/3)</div>
+                <div class="tcc-check-item"><div class="tcc-check-box tcc-check-box--done"><span class="i" data-icon="check" data-color="white" data-size="12"></span></div><div class="tcc-check-info"><div class="tcc-check-name tcc-check-name--done">KvK uittreksel</div></div></div>
+                <div class="tcc-check-item"><div class="tcc-check-box"></div><div class="tcc-check-info"><div class="tcc-check-name">VCA** certificaat</div></div><span class="tcc-check-action tcc-check-action--upload"><span class="i" data-icon="upload" data-color="#4338ca" data-size="11"></span> Upload</span></div>
+                <div class="tcc-check-item"><div class="tcc-check-box"></div><div class="tcc-check-info"><div class="tcc-check-name">Referentieprojecten</div></div><span class="tcc-check-action tcc-check-action--upload"><span class="i" data-icon="upload" data-color="#4338ca" data-size="11"></span> Upload</span></div>
+            </div>
+        </div>
+
+        <!-- ══════════ TAB 4: DOCUMENTEN ══════════ -->
+        <div class="tcc-tab-panel" data-panel="docs">
+            <div class="tcc-docs-section-title"><div class="tcc-docs-section-icon tcc-docs-section-icon--upload"><span class="i" data-icon="folderOpen" data-size="20"></span></div><div class="tcc-docs-section-info"><h3>Aanbestedingsstukken</h3><p>Upload alle relevante documenten voor deze tender</p></div><span class="tcc-docs-section-badge tcc-docs-section-badge--upload">3 documenten</span></div>
+            <div class="tcc-upload-zone" ondragover="event.preventDefault();this.classList.add('is-dragover')" ondragleave="this.classList.remove('is-dragover')" ondrop="event.preventDefault();this.classList.remove('is-dragover')"><div class="tcc-upload-icon-wrap"><span class="i" data-icon="upload" data-size="24"></span></div><div class="tcc-upload-title">Sleep bestanden hierheen of klik om te uploaden</div><div class="tcc-upload-desc">Upload de aanbestedingsleidraad en andere relevante documenten</div><div class="tcc-upload-formats">PDF, Word, Excel · Max 10MB per bestand</div></div>
+            <div class="tcc-upload-tip"><span class="i" data-icon="lightbulb" data-size="14"></span> Tip: Upload minimaal de Aanbestedingsleidraad. Hoe meer documenten, hoe beter de AI kan helpen.</div>
+            <div class="tcc-file-list">
+                <div class="tcc-file-item"><div class="tcc-file-icon tcc-file-icon--pdf"><span class="i" data-icon="fileText" data-color="#dc2626" data-size="20"></span></div><div class="tcc-file-info"><div class="tcc-file-name">Aanbestedingsleidraad_Onderhoud_Bermen_v2.pdf</div><div class="tcc-file-meta"><span>2.4 MB · 42 pag · 8 feb</span><span class="tcc-file-tag tcc-file-tag--analyzed"><span class="i" data-icon="checkCircle" data-color="#16a34a" data-size="10"></span> Geanalyseerd</span></div></div><div class="tcc-file-actions"><span class="tcc-file-action"><span class="i" data-icon="eye" data-size="14"></span></span><span class="tcc-file-action"><span class="i" data-icon="download" data-size="14"></span></span><span class="tcc-file-action tcc-file-action--danger"><span class="i" data-icon="trash" data-size="14"></span></span></div></div>
+                <div class="tcc-file-item"><div class="tcc-file-icon tcc-file-icon--pdf"><span class="i" data-icon="fileText" data-color="#dc2626" data-size="20"></span></div><div class="tcc-file-info"><div class="tcc-file-name">Nota_van_Inlichtingen_1.pdf</div><div class="tcc-file-meta"><span>890 KB · 12 pag · 9 feb</span><span class="tcc-file-tag tcc-file-tag--analyzed"><span class="i" data-icon="checkCircle" data-color="#16a34a" data-size="10"></span> Geanalyseerd</span></div></div><div class="tcc-file-actions"><span class="tcc-file-action"><span class="i" data-icon="eye" data-size="14"></span></span><span class="tcc-file-action"><span class="i" data-icon="download" data-size="14"></span></span><span class="tcc-file-action tcc-file-action--danger"><span class="i" data-icon="trash" data-size="14"></span></span></div></div>
+                <div class="tcc-file-item"><div class="tcc-file-icon tcc-file-icon--xlsx"><span class="i" data-icon="fileText" data-color="#16a34a" data-size="20"></span></div><div class="tcc-file-info"><div class="tcc-file-name">Prijzenblad_template_bermen.xlsx</div><div class="tcc-file-meta"><span>145 KB · 9 feb</span><span class="tcc-file-tag tcc-file-tag--source"><span class="i" data-icon="fileText" data-color="#4338ca" data-size="10"></span> Bronbestand</span></div></div><div class="tcc-file-actions"><span class="tcc-file-action"><span class="i" data-icon="eye" data-size="14"></span></span><span class="tcc-file-action"><span class="i" data-icon="download" data-size="14"></span></span><span class="tcc-file-action tcc-file-action--danger"><span class="i" data-icon="trash" data-size="14"></span></span></div></div>
+            </div>
+            <div class="tcc-docs-divider"></div>
+            <div class="tcc-docs-section-title"><div class="tcc-docs-section-icon tcc-docs-section-icon--generated"><span class="i" data-icon="zap" data-color="#16a34a" data-size="20"></span></div><div class="tcc-docs-section-info"><h3>Gegenereerde Documenten</h3><p>AI-gegenereerde documenten en workflow resultaten</p></div><span class="tcc-docs-section-badge tcc-docs-section-badge--generated">2 documenten</span></div>
+            <div class="tcc-file-list">
+                <div class="tcc-file-item"><div class="tcc-file-icon tcc-file-icon--ai"><span class="i" data-icon="statusGo" data-size="20"></span></div><div class="tcc-file-info"><div class="tcc-file-name">Go_NoGo_Analyse_Bermen_Watergangen.pdf</div><div class="tcc-file-meta"><span>9 feb · Score: 72 — GO</span><span class="tcc-file-tag tcc-file-tag--ai"><span class="i" data-icon="zap" data-color="#7c3aed" data-size="10"></span> AI Generatie</span></div></div><div class="tcc-file-actions"><span class="tcc-file-action"><span class="i" data-icon="eye" data-size="14"></span></span><span class="tcc-file-action"><span class="i" data-icon="download" data-size="14"></span></span><span class="tcc-file-action"><span class="i" data-icon="refresh" data-size="14"></span></span></div></div>
+                <div class="tcc-file-item"><div class="tcc-file-icon tcc-file-icon--ai"><span class="i" data-icon="calendar" data-color="#9333ea" data-size="20"></span></div><div class="tcc-file-info"><div class="tcc-file-name">Tenderplanning_geëxtraheerd.json</div><div class="tcc-file-meta"><span>8 feb · 8 deadlines</span><span class="tcc-file-tag tcc-file-tag--workflow"><span class="i" data-icon="refresh" data-color="#92400e" data-size="10"></span> Workflow stap 0</span></div></div><div class="tcc-file-actions"><span class="tcc-file-action"><span class="i" data-icon="eye" data-size="14"></span></span><span class="tcc-file-action"><span class="i" data-icon="download" data-size="14"></span></span></div></div>
+            </div>
+            <div class="tcc-empty-hint" style="margin-top:8px;">Meer documenten genereren? Ga naar <a onclick="switchTab('ai');setTimeout(()=>switchSub('generatie'),50)">AI Generatie</a> of <a onclick="switchTab('workflow')">Workflow</a>.</div>
+        </div>
+
+        <!-- ══════════ TAB 5: WORKFLOW ══════════ -->
+        <div class="tcc-tab-panel" data-panel="workflow">
+            <div class="tcc-wf-progress">
+                <div class="tcc-wf-progress-step"><div class="tcc-wf-progress-dot tcc-wf-progress-dot--done"><span class="i" data-icon="check" data-color="white" data-size="14"></span></div><div class="tcc-wf-progress-label">Planning</div></div><div class="tcc-wf-progress-line tcc-wf-progress-line--done"></div>
+                <div class="tcc-wf-progress-step"><div class="tcc-wf-progress-dot tcc-wf-progress-dot--done"><span class="i" data-icon="check" data-color="white" data-size="14"></span></div><div class="tcc-wf-progress-label">Checklist</div></div><div class="tcc-wf-progress-line"></div>
+                <div class="tcc-wf-progress-step"><div class="tcc-wf-progress-dot tcc-wf-progress-dot--active">2</div><div class="tcc-wf-progress-label">Samen-vatting</div></div><div class="tcc-wf-progress-line"></div>
+                <div class="tcc-wf-progress-step"><div class="tcc-wf-progress-dot tcc-wf-progress-dot--pending">3</div><div class="tcc-wf-progress-label">Offerte</div></div><div class="tcc-wf-progress-line"></div>
+                <div class="tcc-wf-progress-step"><div class="tcc-wf-progress-dot tcc-wf-progress-dot--pending">4</div><div class="tcc-wf-progress-label">Rode Draad</div></div><div class="tcc-wf-progress-line"></div>
+                <div class="tcc-wf-progress-step"><div class="tcc-wf-progress-dot tcc-wf-progress-dot--pending">5</div><div class="tcc-wf-progress-label">Versie 1</div></div><div class="tcc-wf-progress-line"></div>
+                <div class="tcc-wf-progress-step"><div class="tcc-wf-progress-dot tcc-wf-progress-dot--pending">6</div><div class="tcc-wf-progress-label">Win Check</div></div>
+            </div>
+
+            <!-- Step 0: Done -->
+            <div class="tcc-wf-step tcc-wf-step--done"><div class="tcc-wf-step-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-wf-step-num">0</div><div class="tcc-wf-step-info"><div class="tcc-wf-step-title">Tenderplanning</div><div class="tcc-wf-step-desc">Extraheer deadlines en mijlpalen</div></div><span class="tcc-wf-step-badge tcc-wf-step-badge--done"><span class="i" data-icon="check" data-color="#16a34a" data-size="11"></span> Afgerond</span><span class="tcc-wf-step-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div><div class="tcc-wf-step-body"><div class="tcc-wf-result"><div class="tcc-wf-result-header"><span class="i" data-icon="checkCircle" data-size="14"></span><span class="tcc-wf-result-label">Opgeslagen</span><span class="tcc-wf-result-date">8 feb</span></div><div class="tcc-wf-result-preview">8 deadlines geëxtraheerd incl. deadline 24 feb 12:00 en gunning 17 mrt.</div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="eye" data-size="13"></span> Bekijk</button><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="refresh" data-size="13"></span> Opnieuw</button></div></div></div>
+
+            <!-- Step 1: Done -->
+            <div class="tcc-wf-step tcc-wf-step--done"><div class="tcc-wf-step-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-wf-step-num">1</div><div class="tcc-wf-step-info"><div class="tcc-wf-step-title">Inlever Checklist</div><div class="tcc-wf-step-desc">Identificeer verplichte documenten</div></div><span class="tcc-wf-step-badge tcc-wf-step-badge--done"><span class="i" data-icon="check" data-color="#16a34a" data-size="11"></span> Afgerond</span><span class="tcc-wf-step-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div><div class="tcc-wf-step-body"><div class="tcc-wf-result"><div class="tcc-wf-result-header"><span class="i" data-icon="checkCircle" data-size="14"></span><span class="tcc-wf-result-label">Opgeslagen</span><span class="tcc-wf-result-date">8 feb</span></div><div class="tcc-wf-result-preview">8 inleveritems: 4 documenten, 3 verklaringen, 1 overig.</div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="eye" data-size="13"></span> Bekijk</button><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="refresh" data-size="13"></span> Opnieuw</button></div></div></div>
+
+            <!-- Step 2: Active -->
+            <div class="tcc-wf-step tcc-wf-step--active is-open"><div class="tcc-wf-step-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-wf-step-num">2</div><div class="tcc-wf-step-info"><div class="tcc-wf-step-title">Tender Samenvatting</div><div class="tcc-wf-step-desc">Beknopt overzicht voor het team</div></div><span class="tcc-wf-step-badge tcc-wf-step-badge--active"><span class="i" data-icon="play" data-color="#4338ca" data-size="11"></span> Volgende stap</span><span class="tcc-wf-step-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div><div class="tcc-wf-step-body">
+                <div class="tcc-wf-prompt-card"><div class="tcc-wf-prompt-header"><div class="tcc-wf-prompt-icon"><span class="i" data-icon="robot" data-color="white" data-size="16"></span></div><span class="tcc-wf-prompt-title">AI Prompt (Claude.ai)</span><span class="tcc-wf-prompt-version">v1</span><span class="tcc-wf-prompt-role">SUPERUSER</span></div><div class="tcc-wf-prompt-desc">Maak een beknopte samenvatting met kernpunten en eisen</div><span class="tcc-wf-prompt-edit"><span class="i" data-icon="edit" data-size="12"></span> Prompt Bewerken</span></div>
+                <div class="tcc-wf-tip"><span class="i" data-icon="lightbulb" data-size="14"></span> Tender naam, opdrachtgever en deadline worden automatisch ingevuld.</div>
+                <div class="tcc-wf-howto"><div class="tcc-wf-howto-title"><span class="i" data-icon="info" data-color="#92400e" data-size="14"></span> Hoe te gebruiken:</div><ol><li>Klik op "Copy Prompt"</li><li>Open Claude.ai met je Pro account</li><li>Upload je brondocumenten</li><li>Paste de prompt en druk op Enter</li><li>Wacht ~5 minuten</li><li>Copy het resultaat en klik "Resultaat Opslaan"</li></ol></div>
+                <div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--ghost"><span class="i" data-icon="copy" data-size="14"></span> Copy Prompt</button><button class="tcc-btn tcc-btn--secondary"><span class="i" data-icon="externalLink" data-size="14"></span> Open Claude.ai</button><button class="tcc-btn tcc-btn--success"><span class="i" data-icon="save" data-color="white" data-size="14"></span> Resultaat Opslaan</button></div>
+            </div></div>
+
+            <!-- Steps 3-6: Pending (compact) -->
+            <div class="tcc-wf-step tcc-wf-step--pending"><div class="tcc-wf-step-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-wf-step-num">3</div><div class="tcc-wf-step-info"><div class="tcc-wf-step-title">Tenderofferte</div><div class="tcc-wf-step-desc">Professionele offerte</div></div><span class="tcc-wf-step-badge tcc-wf-step-badge--pending">Wachtend</span><span class="tcc-wf-step-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div><div class="tcc-wf-step-body"><div class="tcc-wf-prompt-card"><div class="tcc-wf-prompt-header"><div class="tcc-wf-prompt-icon"><span class="i" data-icon="robot" data-color="white" data-size="16"></span></div><span class="tcc-wf-prompt-title">AI Prompt</span><span class="tcc-wf-prompt-version">v1</span></div><div class="tcc-wf-prompt-desc">Genereer offerte op basis van pricing strategieën</div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="copy" data-size="13"></span> Copy</button><button class="tcc-btn tcc-btn--secondary tcc-btn--sm"><span class="i" data-icon="externalLink" data-size="13"></span> Claude.ai</button><button class="tcc-btn tcc-btn--success tcc-btn--sm"><span class="i" data-icon="save" data-color="white" data-size="13"></span> Opslaan</button></div></div></div>
+            <div class="tcc-wf-step tcc-wf-step--pending"><div class="tcc-wf-step-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-wf-step-num">4</div><div class="tcc-wf-step-info"><div class="tcc-wf-step-title">Rode Draad Sessie</div><div class="tcc-wf-step-desc">Kick-off document</div></div><span class="tcc-wf-step-badge tcc-wf-step-badge--pending">Wachtend</span><span class="tcc-wf-step-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div><div class="tcc-wf-step-body"><div class="tcc-wf-prompt-card"><div class="tcc-wf-prompt-header"><div class="tcc-wf-prompt-icon"><span class="i" data-icon="robot" data-color="white" data-size="16"></span></div><span class="tcc-wf-prompt-title">AI Prompt</span><span class="tcc-wf-prompt-version">v1</span></div><div class="tcc-wf-prompt-desc">Rode-draad-sessie met alle kritieke info</div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="copy" data-size="13"></span> Copy</button><button class="tcc-btn tcc-btn--secondary tcc-btn--sm"><span class="i" data-icon="externalLink" data-size="13"></span> Claude.ai</button><button class="tcc-btn tcc-btn--success tcc-btn--sm"><span class="i" data-icon="save" data-color="white" data-size="13"></span> Opslaan</button></div></div></div>
+            <div class="tcc-wf-step tcc-wf-step--pending"><div class="tcc-wf-step-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-wf-step-num">5</div><div class="tcc-wf-step-info"><div class="tcc-wf-step-title">Versie 1 Concept</div><div class="tcc-wf-step-desc">Eerste concept inschrijving</div></div><span class="tcc-wf-step-badge tcc-wf-step-badge--pending">Wachtend</span><span class="tcc-wf-step-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div><div class="tcc-wf-step-body"><div class="tcc-wf-prompt-card"><div class="tcc-wf-prompt-header"><div class="tcc-wf-prompt-icon"><span class="i" data-icon="robot" data-color="white" data-size="16"></span></div><span class="tcc-wf-prompt-title">AI Prompt</span><span class="tcc-wf-prompt-version">v1</span></div><div class="tcc-wf-prompt-desc">Schrijf eerste concept</div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="copy" data-size="13"></span> Copy</button><button class="tcc-btn tcc-btn--secondary tcc-btn--sm"><span class="i" data-icon="externalLink" data-size="13"></span> Claude.ai</button><button class="tcc-btn tcc-btn--success tcc-btn--sm"><span class="i" data-icon="save" data-color="white" data-size="13"></span> Opslaan</button></div></div></div>
+            <div class="tcc-wf-step tcc-wf-step--pending"><div class="tcc-wf-step-header" onclick="this.parentElement.classList.toggle('is-open')"><div class="tcc-wf-step-num">6</div><div class="tcc-wf-step-info"><div class="tcc-wf-step-title">Check op Win Succes</div><div class="tcc-wf-step-desc">Feedback voor hogere winstkans</div></div><span class="tcc-wf-step-badge tcc-wf-step-badge--pending">Wachtend</span><span class="tcc-wf-step-chevron"><span class="i" data-icon="chevronDown" data-size="16"></span></span></div><div class="tcc-wf-step-body"><div class="tcc-wf-prompt-card"><div class="tcc-wf-prompt-header"><div class="tcc-wf-prompt-icon"><span class="i" data-icon="robot" data-color="white" data-size="16"></span></div><span class="tcc-wf-prompt-title">AI Prompt</span><span class="tcc-wf-prompt-version">v1</span></div><div class="tcc-wf-prompt-desc">Win/no-go analyse op criteria</div></div><div class="tcc-aidoc-actions"><button class="tcc-btn tcc-btn--ghost tcc-btn--sm"><span class="i" data-icon="copy" data-size="13"></span> Copy</button><button class="tcc-btn tcc-btn--secondary tcc-btn--sm"><span class="i" data-icon="externalLink" data-size="13"></span> Claude.ai</button><button class="tcc-btn tcc-btn--success tcc-btn--sm"><span class="i" data-icon="save" data-color="white" data-size="13"></span> Opslaan</button></div></div></div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="tcc-footer" id="tccFooter">
+        <div class="tcc-footer-left"><button class="tcc-btn tcc-btn--ghost" id="footerLeftBtn"><span class="i" data-icon="fileText" data-size="14"></span> Extra document</button></div>
+        <div class="tcc-footer-right"><button class="tcc-btn tcc-btn--ghost"><span class="i" data-icon="close" data-color="#64748b" data-size="14"></span> Sluiten</button><button class="tcc-btn tcc-btn--primary" id="footerPrimaryBtn"><span class="i" data-icon="edit" data-color="white" data-size="14"></span> Gegevens bewerken</button></div>
+    </div>
+
+</div>
+</div>
+
+<script>
+// ============================================
+// INLINE ICON LIBRARY (from icons.js)
+// ============================================
+const IC = {
+    blue:'#2563eb', indigo:'#4f46e5', green:'#16a34a', red:'#dc2626',
+    amber:'#d97706', orange:'#ea580c', purple:'#9333ea', pink:'#db2777',
+    teal:'#0d9488', slate:'#334155', white:'#ffffff'
+};
+
+function svg(paths, size=24, color='currentColor', sw=1.75, fill='none') {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${fill}" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+}
+
+const iconDefs = {
+    sparkles: (s,c) => svg(`<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>`,s,c||IC.purple),
+    robot: (s,c) => svg(`<rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="16" y1="16" x2="16" y2="16.01"/><path d="M9 20v1"/><path d="M15 20v1"/>`,s,c||IC.purple),
+    calendar: (s,c) => svg(`<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>`,s,c||IC.blue),
+    checkSquare: (s,c) => svg(`<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,s,c||IC.green),
+    fileText: (s,c) => svg(`<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>`,s,c||IC.indigo),
+    refresh: (s,c) => svg(`<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>`,s,c||IC.blue),
+    barChart: (s,c) => svg(`<line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/>`,s,c||IC.purple),
+    zap: (s,c) => svg(`<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,s,c||IC.amber),
+    clipboardList: (s,c) => svg(`<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>`,s,c||IC.indigo),
+    folderOpen: (s,c) => svg(`<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>`,s,c||IC.blue),
+    clock: (s,c) => svg(`<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,s,c||IC.amber),
+    close: (s,c) => svg(`<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`,s,c||IC.red),
+    chevronDown: (s,c) => svg(`<path d="m6 9 6 6 6-6"/>`,s,c||IC.slate,2.5),
+    check: (s,c) => svg(`<polyline points="20 6 9 17 4 12"/>`,s,c||IC.green),
+    checkCircle: (s,c) => svg(`<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`,s,c||IC.green),
+    warning: (s,c) => svg(`<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>`,s,c||IC.orange),
+    info: (s,c) => svg(`<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>`,s,c||IC.blue),
+    lightbulb: (s,c) => svg(`<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>`,s,c||IC.amber),
+    lock: (s,c) => svg(`<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,s,c||IC.indigo),
+    statusGo: (s,c) => svg(`<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`,s,c||IC.green),
+    shieldCheck: (s,c) => svg(`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>`,s,c||IC.indigo),
+    award: (s,c) => svg(`<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>`,s,c||IC.green),
+    archive: (s,c) => svg(`<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>`,s,c||IC.slate),
+    eye: (s,c) => svg(`<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>`,s,c||IC.blue),
+    download: (s,c) => svg(`<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>`,s,c||IC.blue),
+    upload: (s,c) => svg(`<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>`,s,c||IC.blue),
+    trash: (s,c) => svg(`<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>`,s,c||IC.red),
+    copy: (s,c) => svg(`<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>`,s,c||IC.blue),
+    edit: (s,c) => svg(`<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>`,s,c||IC.blue),
+    save: (s,c) => svg(`<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>`,s,c||IC.green),
+    externalLink: (s,c) => svg(`<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/>`,s,c||IC.blue),
+    play: (s,c) => svg(`<polygon points="5 3 19 12 5 21 5 3"/>`,s,c||IC.green),
+    plus: (s,c) => svg(`<line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/>`,s,c||IC.green),
+};
+
+// Render all icon placeholders
+function renderIcons() {
+    document.querySelectorAll('.i[data-icon]').forEach(el => {
+        const name = el.dataset.icon;
+        const size = parseInt(el.dataset.size) || 16;
+        const color = el.dataset.color || null;
+        if (iconDefs[name]) {
+            el.innerHTML = iconDefs[name](size, color);
+        }
+    });
+}
+
+// Tab switching
+function switchTab(tabName) {
+    document.querySelectorAll('.tcc-tab').forEach(t => t.classList.toggle('is-active', t.dataset.tab === tabName));
+    document.querySelectorAll('.tcc-tab-panel').forEach(p => p.classList.toggle('is-active', p.dataset.panel === tabName));
+    updateFooter(tabName);
+}
+
+function switchSub(subName) {
+    document.querySelectorAll('.tcc-subnav-btn').forEach(b => b.classList.toggle('is-active', b.dataset.sub === subName));
+    document.querySelectorAll('.tcc-subpanel').forEach(p => p.classList.toggle('is-active', p.dataset.sub === subName));
+    if (subName === 'generatie') updateFooter('ai-gen');
+    else updateFooter('ai');
+}
+
+function updateFooter(ctx) {
+    const fl = document.querySelector('.tcc-footer-left');
+    const fr = document.querySelector('.tcc-footer-right');
+    const ic = (name,s,c) => iconDefs[name] ? iconDefs[name](s||14,c) : '';
+    const configs = {
+        'ai': { l: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('fileText',14)}</span> Extra document</button>`, r: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('close',14,'#64748b')}</span> Sluiten</button><button class="tcc-btn tcc-btn--primary"><span class="i">${ic('edit',14,'white')}</span> Gegevens bewerken</button>` },
+        'ai-gen': { l: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('zap',14)}</span> Alles genereren</button>`, r: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('close',14,'#64748b')}</span> Sluiten</button><button class="tcc-btn tcc-btn--secondary"><span class="i">${ic('download',14)}</span> Alles downloaden</button>` },
+        'planning': { l: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('clipboardList',14)}</span> Template</button><button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('plus',14)}</span> Taak</button>`, r: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('close',14,'#64748b')}</span> Sluiten</button><button class="tcc-btn tcc-btn--primary"><span class="i">${ic('save',14,'white')}</span> Opslaan</button>` },
+        'checklist': { l: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('plus',14)}</span> Item</button>`, r: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('close',14,'#64748b')}</span> Sluiten</button><button class="tcc-btn tcc-btn--primary"><span class="i">${ic('save',14,'white')}</span> Opslaan</button>` },
+        'docs': { l: `<button class="tcc-btn tcc-btn--secondary"><span class="i">${ic('upload',14)}</span> Document uploaden</button>`, r: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('close',14,'#64748b')}</span> Sluiten</button><button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('download',14)}</span> Alles downloaden</button>` },
+        'workflow': { l: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('clipboardList',14)}</span> Alle prompts</button>`, r: `<button class="tcc-btn tcc-btn--ghost"><span class="i">${ic('close',14,'#64748b')}</span> Sluiten</button><button class="tcc-btn tcc-btn--primary"><span class="i">${ic('play',14,'white')}</span> Volgende stap</button>` },
+    };
+    const cfg = configs[ctx] || configs['ai'];
+    fl.innerHTML = cfg.l;
+    fr.innerHTML = cfg.r;
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', renderIcons);
+</script>
+</body>
+</html>

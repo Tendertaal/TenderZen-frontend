@@ -80,10 +80,6 @@ export class ResultStep {
         this.isGenerating = true;
         this.errors = [];
 
-        // Neem teamAssignments over van vorige stap
-        if (this.state.teamAssignments) {
-            // Merge eventuele updates
-        }
 
         try {
             // Parallel genereren: back-planning + AI documenten
@@ -598,7 +594,7 @@ export class ResultStep {
             const d = new Date(dateStr + (dateStr.includes('T') ? '' : 'T00:00:00'));
             const dagen = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
             const maanden = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun',
-                             'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+                'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
             return `${dagen[d.getDay()]} ${d.getDate()} ${maanden[d.getMonth()]}`;
         } catch {
             return dateStr;
@@ -611,14 +607,16 @@ export class ResultStep {
 
     async _generateBackplanning() {
         const deadline = this.state.extractedData?.planning?.deadline_indiening?.value;
-        const templateId = this.state.selectedTemplate?.id;
 
-        // Guard: skip als geen deadline of template
-        if (!deadline || !templateId) {
-            console.log('⏩ Backplanning overgeslagen (geen deadline of template)');
+        // Guard: skip als geen deadline
+        if (!deadline) {
+            console.log('⏩ Backplanning overgeslagen (geen deadline)');
             this.generationProgress.planning = 'skipped';
             return null;
         }
+
+        // TemplateId optioneel maken (kan null zijn)
+        const templateId = this.state.selectedTemplate?.id || null;
 
         try {
             const response = await fetch(
@@ -628,8 +626,7 @@ export class ResultStep {
                     headers: this._headers(),
                     body: JSON.stringify({
                         deadline: deadline.split('T')[0],
-                        template_id: templateId,
-                        team_assignments: this.state.teamAssignments || {}
+                        template_id: templateId
                     })
                 }
             );

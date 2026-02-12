@@ -1135,6 +1135,110 @@ function iconTenderZenLogoWhite(options = {}) {
     </svg>`;
 }
 
+
+// ============================================
+// 9. TENDER COMMAND CENTER ICONEN (8)
+// ============================================
+
+/**
+ * Sparkles icoon - Paars (AI/analyse)
+ */
+function iconSparkles(options = {}) {
+    return createIcon(
+        `<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+         <path d="M5 3v4"/>
+         <path d="M19 17v4"/>
+         <path d="M3 5h4"/>
+         <path d="M17 19h4"/>`,
+        { color: IconColors.purple, ...options }
+    );
+}
+
+/**
+ * Robot icoon - Paars (AI/bot)
+ */
+function iconRobot(options = {}) {
+    return createIcon(
+        `<rect x="3" y="11" width="18" height="10" rx="2"/>
+         <circle cx="12" cy="5" r="2"/>
+         <path d="M12 7v4"/>
+         <line x1="8" y1="16" x2="8" y2="16.01"/>
+         <line x1="16" y1="16" x2="16" y2="16.01"/>
+         <path d="M9 20v1"/>
+         <path d="M15 20v1"/>`,
+        { color: IconColors.purple, ...options }
+    );
+}
+
+/**
+ * CheckSquare icoon - Groen (checklist/voltooiing)
+ */
+function iconCheckSquare(options = {}) {
+    return createIcon(
+        `<polyline points="9 11 12 14 22 4"/>
+         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,
+        { color: IconColors.green, ...options }
+    );
+}
+
+/**
+ * FolderOpen icoon - Blauw (map/fase)
+ */
+function iconFolderOpen(options = {}) {
+    return createIcon(
+        `<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>`,
+        { color: IconColors.blue, ...options }
+    );
+}
+
+/**
+ * Lightbulb icoon - Amber (tips/suggesties)
+ */
+function iconLightbulb(options = {}) {
+    return createIcon(
+        `<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/>
+         <path d="M9 18h6"/>
+         <path d="M10 22h4"/>`,
+        { color: IconColors.amber, ...options }
+    );
+}
+
+/**
+ * Award icoon - Groen (gunning/prestatie)
+ */
+function iconAward(options = {}) {
+    return createIcon(
+        `<circle cx="12" cy="8" r="6"/>
+         <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>`,
+        { color: IconColors.green, ...options }
+    );
+}
+
+/**
+ * Archive icoon - Slate (percelen/archief)
+ */
+function iconArchive(options = {}) {
+    return createIcon(
+        `<rect width="20" height="5" x="2" y="3" rx="1"/>
+         <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/>
+         <path d="M10 12h4"/>`,
+        { color: IconColors.slate, ...options }
+    );
+}
+
+/**
+ * Play icoon - Groen (start/actief)
+ */
+function iconPlay(options = {}) {
+    return createIcon(
+        `<polygon points="5 3 19 12 5 21 5 3"/>`,
+        { color: IconColors.green, ...options }
+    );
+}
+
+
+
+
 // ============================================
 // EXPORT - Alle iconen beschikbaar maken
 // ============================================
@@ -1244,6 +1348,18 @@ window.Icons = {
     hardhat: iconHardhat,  // Bouwhelm icoon
     archive: iconArchive,  // Archief icoon
     
+
+// Tender Command Center
+    sparkles: iconSparkles,
+    robot: iconRobot,
+    checkSquare: iconCheckSquare,
+    folderOpen: iconFolderOpen,
+    lightbulb: iconLightbulb,
+    award: iconAward,
+    archive: iconArchive,
+    play: iconPlay,
+
+
     // TenderZen Logo
     logo: iconTenderZenLogo,
     logoWhite: iconTenderZenLogoWhite

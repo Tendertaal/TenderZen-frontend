@@ -55,6 +55,8 @@ import { KanbanView } from './views/KanbanView.js';
 import { teamService } from './services/TeamService.js';
 import { TemplateBeheerView } from './views/TemplateBeheerView.js';
 
+import { ProfielView } from './views/ProfielView.js';
+
 export class App {
     constructor() {
         // Components
@@ -579,7 +581,9 @@ export class App {
     initPlanningModal() {
         console.log('📋 Initializing planning modal...');
 
+
         this.planningModal = new PlanningModal();
+        window.planningModal = this.planningModal;
 
         this.planningModal.onUpdate = async (tenderId) => {
             console.log('✅ Planning/checklist updated for tender:', tenderId);
@@ -603,7 +607,8 @@ export class App {
             bedrijven: new BedrijvenView(),
             tenderbureaus: new TenderbureausView(),
             team: new TeamledenView(),
-            templatebeheer: new TemplateBeheerView()
+            templatebeheer: new TemplateBeheerView(),
+            profiel: new ProfielView()
         };
 
         // Initialize AgendaView
@@ -741,6 +746,35 @@ export class App {
         };
 
         console.log('✅ All views initialized');
+        // ── AI Button → Tender Command Center / Smart Import ──
+        // Vangt clicks op data-action="open-ai" (TenderCardBody) 
+        // en data-action="open-ai-docs" (TenderCardHeader)
+        document.addEventListener('click', (e) => {
+            const aiBtn = e.target.closest('[data-action="open-ai"], [data-action="open-ai-docs"]');
+            if (!aiBtn) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+
+            const tenderId = aiBtn.dataset.tenderId;
+            const smartImportId = aiBtn.dataset.smartImportId;
+            const hasAnalysis = aiBtn.dataset.hasAnalysis === 'true';
+
+            if (!tenderId) return;
+
+            const tender = this.tenders.find(t => t.id === tenderId);
+            const tenderNaam = tender?.naam || 'Onbekende tender';
+
+            console.log(`🤖 AI button clicked: tender="${tenderNaam}", hasAnalysis=${hasAnalysis}`);
+
+            if (hasAnalysis) {
+                // Bestaande analyse → open Tender Command Center
+                window.openCommandCenter(tenderId);
+            } else if (this.smartImportWizard) {
+                // Geen analyse → open Smart Import wizard
+                this.smartImportWizard.openAsModal(tenderId, tenderNaam);
+            }
+        });
     }
 
     /**
@@ -937,6 +971,10 @@ export class App {
             }
             else if (viewName === 'templatebeheer') {
                 this.header.setContext('tenders');
+                this.header.setActiveTab(null);
+            }
+            else if (viewName === 'profiel') {
+                this.header.setContext('profiel', { title: 'Mijn Profiel' });
                 this.header.setActiveTab(null);
             }
 
@@ -1193,7 +1231,7 @@ export class App {
                 this.exportData();
                 break;
             case 'profile':
-                alert('Profiel bewerken - komt binnenkort!');
+                this.showView('profiel');
                 break;
             case 'mfa-settings':
                 alert('MFA instellingen - komt binnenkort!');

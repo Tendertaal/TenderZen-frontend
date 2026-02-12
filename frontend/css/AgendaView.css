@@ -1440,3 +1440,339 @@
         padding: 6px 8px;
     }
 }
+
+/* ================================================================
+   AgendaView — "Niet Gepland" sectie
+   TenderZen — 2026-02-11
+   
+   Prefix: ngp- (niet gepland)
+   
+   TOEVOEGEN AAN: Frontend/css/AgendaView.css
+   Plak deze CSS onderaan het bestaande bestand.
+   ================================================================ */
+
+
+/* ════════════════════════════════════════════════
+   SECTIE CONTAINER
+   ════════════════════════════════════════════════ */
+
+.ngp-section {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.ngp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.ngp-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ngp-header-icon {
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.ngp-header-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.2px;
+}
+
+.ngp-header-count {
+    font-size: 12px;
+    color: #94a3b8;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+
+/* ════════════════════════════════════════════════
+   CARDS GRID
+   ════════════════════════════════════════════════ */
+
+.ngp-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 768px) {
+    .ngp-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ════════════════════════════════════════════════
+   TENDER CARD
+   ════════════════════════════════════════════════ */
+
+.ngp-card {
+    display: flex;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    animation: ngp-card-in 0.3s ease both;
+}
+
+.ngp-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: var(--fase-color, #cbd5e1);
+}
+
+@keyframes ngp-card-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Stagger animatie per card */
+.ngp-card:nth-child(1) { animation-delay: 0s; }
+.ngp-card:nth-child(2) { animation-delay: 0.04s; }
+.ngp-card:nth-child(3) { animation-delay: 0.08s; }
+.ngp-card:nth-child(4) { animation-delay: 0.12s; }
+.ngp-card:nth-child(5) { animation-delay: 0.16s; }
+.ngp-card:nth-child(6) { animation-delay: 0.20s; }
+
+/* Accent strip links */
+.ngp-card-accent {
+    width: 4px;
+    flex-shrink: 0;
+    border-radius: 10px 0 0 10px;
+}
+
+/* Card body */
+.ngp-card-body {
+    flex: 1;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+
+/* ════════════════════════════════════════════════
+   CARD TOP ROW — Fase badge + checklist count
+   ════════════════════════════════════════════════ */
+
+.ngp-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.ngp-fase-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.ngp-checklist-count {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+
+/* ════════════════════════════════════════════════
+   CARD INFO — Naam, org, deadline
+   ════════════════════════════════════════════════ */
+
+.ngp-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ngp-tender-naam {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    letter-spacing: -0.1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ngp-tender-org {
+    font-size: 12px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Deadline labels */
+.ngp-deadline {
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ngp-deadline--ok { color: #16a34a; }
+.ngp-deadline--warn { color: #d97706; }
+.ngp-deadline--danger { color: #dc2626; font-weight: 600; }
+.ngp-deadline--verlopen { color: #dc2626; font-weight: 700; }
+.ngp-deadline--none { color: #94a3b8; font-style: italic; }
+
+
+/* ════════════════════════════════════════════════
+   CARD ACTIONS — Buttons
+   ════════════════════════════════════════════════ */
+
+.ngp-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* Primary: Automatisch plannen */
+.ngp-btn-plan {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.ngp-btn-plan:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+    transform: translateY(-1px);
+}
+
+.ngp-btn-plan:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.ngp-btn-plan:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    background: #94a3b8;
+}
+
+/* Secondary: Open TCC */
+.ngp-btn-tcc {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.ngp-btn-tcc:hover {
+    color: #3b82f6;
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+
+
+/* ════════════════════════════════════════════════
+   LOADING SPINNER (in button)
+   ════════════════════════════════════════════════ */
+
+.ngp-spinner {
+    animation: ngp-spin 0.8s linear infinite;
+}
+
+@keyframes ngp-spin {
+    to { transform: rotate(360deg); }
+}
+
+
+/* ════════════════════════════════════════════════
+   TOAST NOTIFICATIONS (fallback)
+   ════════════════════════════════════════════════ */
+
+.ngp-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    z-index: 10000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    text-align: center;
+}
+
+.ngp-toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+.ngp-toast--success { background: #16a34a; }
+.ngp-toast--warning { background: #d97706; }
+.ngp-toast--info    { background: #3b82f6; }
+.ngp-toast--error   { background: #dc2626; }
+
+
+/* ════════════════════════════════════════════════
+   VERWIJDER — Oude ongepland CSS
+   ════════════════════════════════════════════════
+   
+   De volgende CSS classes kunnen VERWIJDERD worden 
+   uit je AgendaView.css (ze worden niet meer gebruikt):
+   
+   .agenda-ongepland-section
+   .agenda-ongepland-header
+   .agenda-ongepland-icon
+   .agenda-ongepland-title
+   .agenda-ongepland-subtitle
+   .agenda-ongepland-tender
+   .agenda-ongepland-tender-header
+   .agenda-ongepland-tender-naam
+   .agenda-ongepland-count
+   .agenda-ongepland-taken
+   .agenda-ongepland-task
+   .agenda-ongepland-meta
+   
+   (optioneel — ze doen geen kwaad als ze blijven staan)
+   ════════════════════════════════════════════════ */

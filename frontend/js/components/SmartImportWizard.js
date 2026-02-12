@@ -23,12 +23,11 @@
  * @date 2026-02-09
  */
 
-import { UploadStep }        from './smart-import/UploadStep.js';
-import { AnalyzeStep }       from './smart-import/AnalyzeStep.js';
-import { ReviewStep }        from './smart-import/ReviewStep.js';
-import { TeamStep }          from './smart-import/TeamStep.js';
-import { ResultStep }        from './smart-import/ResultStep.js';
-import { SmartImportStyles }  from './smart-import/SmartImportStyles.js';
+import { UploadStep } from './smart-import/UploadStep.js';
+import { AnalyzeStep } from './smart-import/AnalyzeStep.js';
+import { ReviewStep } from './smart-import/ReviewStep.js';
+import { ResultStep } from './smart-import/ResultStep.js';
+import { SmartImportStyles } from './smart-import/SmartImportStyles.js';
 
 // ─── Icon helper (zelfde als v3.7) ───
 const Icons = window.Icons || {};
@@ -40,11 +39,10 @@ const getIcon = (name) => {
 
 // ─── Step definitions ───
 const STEPS = [
-    { key: 'upload',   num: 1, label: 'Upload',     Component: UploadStep   },
-    { key: 'analyze',  num: 2, label: 'Analyse',    Component: AnalyzeStep  },
-    { key: 'review',   num: 3, label: 'Controleer', Component: ReviewStep   },
-    { key: 'team',     num: 4, label: 'Team',       Component: TeamStep     },
-    { key: 'result',   num: 5, label: 'Resultaat',  Component: ResultStep   },
+    { key: 'upload', num: 1, label: 'Upload', Component: UploadStep },
+    { key: 'analyze', num: 2, label: 'Analyse', Component: AnalyzeStep },
+    { key: 'review', num: 3, label: 'Controleer', Component: ReviewStep },
+    { key: 'result', num: 5, label: 'Resultaat', Component: ResultStep },
 ];
 
 
@@ -52,8 +50,8 @@ export class SmartImportWizard {
 
     constructor(options = {}) {
         this.options = options;
-        this.onComplete = options.onComplete || (() => {});
-        this.onCancel  = options.onCancel  || (() => {});
+        this.onComplete = options.onComplete || (() => { });
+        this.onCancel = options.onCancel || (() => { });
 
         // v3.6: Tender linking
         this.tenderId = options.tenderId || null;
@@ -115,10 +113,7 @@ export class SmartImportWizard {
             tenderNaam: this.tenderNaam || null,
             isExistingTender: false,
 
-            // Team (stap 4)
-            teamAssignments: {},
-            selectedTemplate: null,
-            teamMembers: [],
+            // Team (verwijderd)
 
             // Result (stap 5)
             backplanning: null,
@@ -176,7 +171,8 @@ export class SmartImportWizard {
         // Ensure auth
         await this._ensureAuth();
 
-        // Render modal met loading state
+        // Inject CSS + render modal met loading state
+        SmartImportStyles.inject();
         this._renderModal();
         this._showLoading('Analyse data laden...');
 
@@ -369,13 +365,13 @@ export class SmartImportWizard {
     }
 
     _updateFooter() {
-        const left  = this.backdrop?.querySelector('#siwFooterLeft');
+        const left = this.backdrop?.querySelector('#siwFooterLeft');
         const right = this.backdrop?.querySelector('#siwFooterRight');
         if (!left || !right) return;
 
         const cur = this.state.currentStep;
         const isFirst = cur === 1;
-        const isLast  = cur === STEPS.length;
+        const isLast = cur === STEPS.length;
         const isAnalyze = cur === 2;
         const isViewMode = this.state.viewMode;
 
@@ -524,8 +520,7 @@ export class SmartImportWizard {
         if (instance?.getData) {
             const data = instance.getData();
             // Merge step data into state
-            if (data.teamAssignments) this.state.teamAssignments = data.teamAssignments;
-            if (data.selectedTemplate) this.state.selectedTemplate = data.selectedTemplate;
+            // Team data niet meer nodig
             if (data.editedData) this.state.editedData = data.editedData;
         }
 
@@ -792,9 +787,9 @@ export class SmartImportWizard {
         body.querySelector('.siw-notification')?.remove();
 
         const colors = {
-            error:   { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b' },
+            error: { bg: '#fef2f2', border: '#fca5a5', text: '#991b1b' },
             success: { bg: '#f0fdf4', border: '#86efac', text: '#166534' },
-            info:    { bg: '#eff6ff', border: '#93c5fd', text: '#1e40af' },
+            info: { bg: '#eff6ff', border: '#93c5fd', text: '#1e40af' },
         };
         const c = colors[type] || colors.info;
 

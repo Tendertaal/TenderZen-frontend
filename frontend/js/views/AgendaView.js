@@ -127,7 +127,12 @@ export class AgendaView extends BaseView {
         // ── Data ──
         this.tenders = [];           // Array van tender objecten (met taken erin)
         this.teamMembers = [];
+        this.nietGeplandeTenders = []; // Tenders zonder backplanning
         this.isLoading = false;
+
+        // ── Raw data (voor niet-gepland detectie) ──
+        this.rawTenders = {};
+        this.rawTaken = [];
 
         // ── Event tracking ──
         this._boundClickHandler = null;
@@ -136,7 +141,7 @@ export class AgendaView extends BaseView {
         // ── Callbacks (set door App.js) ──
         this.onOpenPlanningModal = null;
 
-        console.log('📅 AgendaView v2.0 constructed');
+        console.log('📅 AgendaView v2.1 constructed');
     }
 
     // ── Icon helper ──
@@ -178,23 +183,72 @@ export class AgendaView extends BaseView {
 
             const data = await planningService.getAgendaData(startDate, endDate, teamMemberId);
 
+            // Bewaar ruwe data voor niet-gepland detectie
+            this.rawTenders = data.tenders || {};
+            this.rawTaken = data.taken || [];
+
             // Bouw tenders array op vanuit de API response
             this.tenders = this._buildTenderList(data);
             this.teamMembers = data.team_members || [];
+
+            // Detecteer tenders zonder backplanning
+            this._detectNietGepland();
 
             // Auto-select eerste teamlid
             if (!this.selectedTeamMemberId && this.teamMembers.length > 0) {
                 this.selectedTeamMemberId = this.teamMembers[0].id;
             }
 
-            console.log(`📅 Loaded: ${this.tenders.length} tenders`);
+            console.log(`📅 Loaded: ${this.tenders.length} tenders, ${this.nietGeplandeTenders.length} niet gepland`);
         } catch (error) {
             console.error('❌ AgendaView loadData error:', error);
             this.tenders = [];
+            this.nietGeplandeTenders = [];
         }
 
         this.isLoading = false;
         this.render();
+    }
+
+    /** Detecteer tenders zonder backplanning */
+    _detectNietGepland() {
+        const geplandeTenderIds = new Set(this.tenders.map(t => t.id));
+        const alleTenderEntries = Object.entries(this.rawTenders);
+
+        this.nietGeplandeTenders = alleTenderEntries
+            .filter(([id]) => !geplandeTenderIds.has(id))
+            .map(([id, info]) => ({
+                id,
+                naam: info.naam || 'Onbekend',
+                organisatie: info.opdrachtgever || '-',
+                fase: info.fase || 'acquisitie',
+                fase_status: info.fase_status || '',
+                deadline: info.deadline_indiening || null,
+                tenderbureau_id: info.tenderbureau_id || null,
+                checklistCount: 0,
+            }))
+            .filter(t => t.fase !== 'archief');
+
+        // Tel checklist items per niet-geplande tender
+        const checklistPerTender = {};
+        this.rawTaken.forEach(t => {
+            if (t.bron === 'checklist' && t.tender_id) {
+                checklistPerTender[t.tender_id] = (checklistPerTender[t.tender_id] || 0) + 1;
+            }
+        });
+        this.nietGeplandeTenders.forEach(t => {
+            t.checklistCount = checklistPerTender[t.id] || 0;
+        });
+
+        // Sorteer op fase, dan naam
+        const faseOrder = { acquisitie: 0, inschrijvingen: 1, ingediend: 2, evaluatie: 3 };
+        this.nietGeplandeTenders.sort((a, b) => {
+            const fa = faseOrder[a.fase] ?? 99;
+            const fb = faseOrder[b.fase] ?? 99;
+            return fa !== fb ? fa - fb : a.naam.localeCompare(b.naam);
+        });
+
+        console.log(`📅 Niet gepland: ${this.nietGeplandeTenders.length} tenders zonder planning`);
     }
 
     /** Bepaal datum-bereik op basis van huidige view + offset */
@@ -487,9 +541,6 @@ export class AgendaView extends BaseView {
         const stats = this.getStats();
         const navInfo = this.getNavInfo();
 
-        // Ongeplande taken (alle views)
-        const ongeplandeTenders = this.tenders.filter(t => t.ongepland.length > 0);
-
         this.container.innerHTML = `
             <div class="agenda-view">
                 ${this.renderAgendaHeader(navInfo)}
@@ -497,13 +548,13 @@ export class AgendaView extends BaseView {
                 <div class="agenda-planning-container">
                     ${this.isLoading
                         ? this.renderLoading()
-                        : this.tenders.length === 0
+                        : this.tenders.length === 0 && this.nietGeplandeTenders.length === 0
                             ? this.renderEmpty()
                             : this.renderMainContent()
                     }
                 </div>
                 ${!this.isLoading ? this.renderLegend() : ''}
-                ${!this.isLoading && ongeplandeTenders.length > 0 ? this.renderOngepland(ongeplandeTenders) : ''}
+                ${!this.isLoading && this.nietGeplandeTenders.length > 0 ? this.renderNietGepland() : ''}
                 ${!this.isLoading && stats.nietToegewezen > 0 ? this.renderWarningBanner(stats.nietToegewezen) : ''}
             </div>
         `;
@@ -1185,56 +1236,222 @@ export class AgendaView extends BaseView {
 
 
     // ══════════════════════════════════════════════
-    // RENDER — ONGEPLAND SECTIE
+    // RENDER — NIET GEPLAND SECTIE (vervangt oud renderOngepland)
     // ══════════════════════════════════════════════
 
-    renderOngepland(tenders) {
-        const totalOngepland = tenders.reduce((s, t) => s + t.ongepland.length, 0);
+    renderNietGepland() {
+        const tenders = this.nietGeplandeTenders;
+        if (tenders.length === 0) return '';
 
-        const groups = tenders.map(t => {
+        const cards = tenders.map(t => {
             const fc = this.fc(t.fase);
             const faseLabel = (FASE_LABELS[t.fase] || t.fase).toUpperCase();
 
-            const tasks = t.ongepland.map(tk => {
-                const isDone = tk.status === 'done';
-                const bron = tk.bron || 'planning';
-                return `
-                    <div class="agenda-ongepland-task" style="--tc:${fc.a}"
-                         data-action="open-planning" data-tender-id="${t.id}" data-taak-id="${tk.id}">
-                        <span class="agenda-task-cb ${isDone ? 'done' : ''}"
-                              data-action="toggle-status" data-taak-id="${tk.id}"
-                              data-current-status="${tk.status}" data-bron="${bron}"></span>
-                        <div class="agenda-task-body">
-                            <div class="agenda-task-name ${isDone ? 'done' : ''}">${escapeHtml(tk.taak_naam || 'Onbekende taak')}</div>
-                            <div class="agenda-task-meta">
-                                <span class="agenda-task-type ${bron === 'checklist' ? 'checklist' : 'planning'}">${bron === 'checklist' ? 'CHECKLIST' : 'PLANNING'}</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            // Deadline berekening
+            let deadlineHtml = '';
+            if (t.deadline) {
+                const dl = parseDate(t.deadline);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const diffDays = Math.ceil((dl - today) / 864e5);
+                const dlStr = `${dl.getDate()} ${MONTHS_SHORT[dl.getMonth()]} ${dl.getFullYear()}`;
+
+                if (diffDays < 0) {
+                    deadlineHtml = `<span class="ngp-deadline ngp-deadline--verlopen">⚠ ${dlStr} · Verlopen</span>`;
+                } else if (diffDays <= 7) {
+                    deadlineHtml = `<span class="ngp-deadline ngp-deadline--danger">⏰ ${dlStr} · Nog ${diffDays} dagen</span>`;
+                } else if (diffDays <= 14) {
+                    deadlineHtml = `<span class="ngp-deadline ngp-deadline--warn">📅 ${dlStr} · Nog ${diffDays} dagen</span>`;
+                } else {
+                    deadlineHtml = `<span class="ngp-deadline ngp-deadline--ok">📅 ${dlStr} · Nog ${diffDays} dagen</span>`;
+                }
+            } else {
+                deadlineHtml = `<span class="ngp-deadline ngp-deadline--none">Geen deadline ingesteld</span>`;
+            }
 
             return `
-                <div class="agenda-ongepland-group">
-                    <div class="agenda-ongepland-group-header" style="background:linear-gradient(135deg,${fc.s},${fc.e})">
-                        ${faseLabel} · ${escapeHtml(t.naam)}
-                        <span class="agenda-ongepland-group-count">${t.ongepland.length} taken</span>
+                <div class="ngp-card" data-tender-id="${t.id}" style="--fase-color: ${fc.a}">
+                    <div class="ngp-card-accent" style="background: ${fc.a}"></div>
+                    <div class="ngp-card-body">
+                        <div class="ngp-card-top">
+                            <span class="ngp-fase-badge" style="background: ${fc.a}15; color: ${fc.a}; border: 1px solid ${fc.a}30">
+                                ${faseLabel}
+                            </span>
+                            ${t.checklistCount > 0 ? `
+                                <span class="ngp-checklist-count" title="Checklist items">✓ ${t.checklistCount} items</span>
+                            ` : ''}
+                        </div>
+                        <div class="ngp-card-info">
+                            <div class="ngp-tender-naam">${escapeHtml(t.naam)}</div>
+                            <div class="ngp-tender-org">${escapeHtml(t.organisatie)}</div>
+                            ${deadlineHtml}
+                        </div>
+                        <div class="ngp-card-actions">
+                            <button class="ngp-btn-plan"
+                                    data-action="auto-backplan"
+                                    data-tender-id="${t.id}"
+                                    data-tenderbureau-id="${t.tenderbureau_id || ''}"
+                                    ${!t.deadline ? 'disabled title="Stel eerst een deadline in"' : ''}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                                    <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                                Automatisch plannen
+                            </button>
+                            <button class="ngp-btn-tcc"
+                                    data-action="open-tcc"
+                                    data-tender-id="${t.id}"
+                                    title="Open in Tender Command Center">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                    <div class="agenda-ongepland-tasks">${tasks}</div>
                 </div>
             `;
         }).join('');
 
         return `
-            <div class="agenda-ongepland">
-                <div class="agenda-ongepland-bar">
-                    <span class="agenda-ongepland-icon">📋</span>
-                    <span class="agenda-ongepland-title">Ongepland</span>
-                    <span class="agenda-ongepland-badge">${totalOngepland} taken zonder datum</span>
+            <div class="ngp-section">
+                <div class="ngp-header">
+                    <div class="ngp-header-left">
+                        <svg class="ngp-header-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                            <line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/>
+                        </svg>
+                        <span class="ngp-header-title">Niet gepland</span>
+                        <span class="ngp-header-count">${tenders.length} ${tenders.length === 1 ? 'tender' : 'tenders'} zonder planning</span>
+                    </div>
                 </div>
-                ${groups}
+                <div class="ngp-cards">
+                    ${cards}
+                </div>
             </div>
         `;
+    }
+
+
+    // ══════════════════════════════════════════════
+    // AUTO BACKPLAN — Automatisch plannen
+    // ══════════════════════════════════════════════
+
+    async autoBackplan(tenderId, tenderbureauId) {
+        const tender = this.nietGeplandeTenders?.find(t => t.id === tenderId);
+        if (!tender) return;
+
+        if (!tender.deadline) {
+            this._showToast('Stel eerst een deadline in voordat je kunt plannen', 'warning');
+            this._openTCC(tenderId, 'planning');
+            return;
+        }
+
+        // Loading state op knop
+        const btn = this.container?.querySelector(`.ngp-btn-plan[data-tender-id="${tenderId}"]`);
+        const originalHtml = btn?.innerHTML;
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `
+                <svg class="ngp-spinner" width="14" height="14" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" stroke-dasharray="40" stroke-dashoffset="10">
+                        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/>
+                    </circle>
+                </svg>
+                Planning genereren...
+            `;
+        }
+
+        try {
+            // 1. Haal standaard template op
+            const bureauId = tenderbureauId || tender.tenderbureau_id;
+            const templateResponse = await planningService._fetch(`/api/v1/planning-templates?tenderbureau_id=${bureauId}`);
+            const templates = templateResponse?.data || templateResponse || [];
+
+            const defaultTemplate = Array.isArray(templates)
+                ? templates.find(t => t.is_standaard || t.template_naam === 'Standaard') || templates[0]
+                : null;
+
+            if (!defaultTemplate) {
+                console.warn('⚠️ Geen planning template gevonden voor bureau', bureauId);
+                this._showToast('Geen planning template gevonden. Open het Command Center om handmatig te plannen.', 'warning');
+                this._openTCC(tenderId, 'planning');
+                return;
+            }
+
+            // 2. Genereer backplanning
+            const backplanResponse = await planningService._fetch('/api/v1/planning/generate-backplanning', {
+                method: 'POST',
+                body: JSON.stringify({
+                    deadline: tender.deadline,
+                    template_id: defaultTemplate.id,
+                    team_assignments: {},
+                    tenderbureau_id: bureauId,
+                    tender_id: tenderId,
+                    include_checklist: true
+                })
+            });
+
+            if (backplanResponse?.success || backplanResponse?.data) {
+                console.log('✅ Backplanning gegenereerd voor tender:', tenderId);
+                this._showToast(`Planning gegenereerd voor "${tender.naam}"`, 'success');
+                await this.loadData();
+            } else {
+                throw new Error(backplanResponse?.error || 'Onbekende fout bij genereren backplanning');
+            }
+
+        } catch (error) {
+            console.error('❌ Auto-backplan mislukt:', error);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+            this._showToast('Automatisch plannen mislukt. Het Command Center wordt geopend.', 'info');
+            this._openTCC(tenderId, 'planning');
+        }
+    }
+
+
+    // ══════════════════════════════════════════════
+    // OPEN TCC — Fallback
+    // ══════════════════════════════════════════════
+
+    _openTCC(tenderId, tab = 'planning') {
+        if (window.app?.openTenderCommandCenter) {
+            window.app.openTenderCommandCenter(tenderId, tab);
+            return;
+        }
+        const event = new CustomEvent('open-tcc', {
+            detail: { tenderId, tab },
+            bubbles: true
+        });
+        document.dispatchEvent(event);
+
+        if (window.app?.tccModal?.open) {
+            const tender = window.app?.tenders?.find(t => t.id === tenderId);
+            if (tender) window.app.tccModal.open(tender, tab);
+        }
+    }
+
+
+    // ══════════════════════════════════════════════
+    // TOAST — Notificaties
+    // ══════════════════════════════════════════════
+
+    _showToast(message, type = 'info') {
+        if (window.app?.showToast) {
+            window.app.showToast(message, type);
+            return;
+        }
+        const toast = document.createElement('div');
+        toast.className = `ngp-toast ngp-toast--${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        requestAnimationFrame(() => toast.classList.add('visible'));
+        setTimeout(() => {
+            toast.classList.remove('visible');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
 
@@ -1334,6 +1551,18 @@ export class AgendaView extends BaseView {
                         const tender = this.tenders.find(t => t.id === tenderId);
                         if (tender) this.onOpenPlanningModal(tender);
                     }
+                    break;
+                }
+                // ── Niet Gepland acties ──
+                case 'auto-backplan': {
+                    const tenderId = btn.dataset.tenderId;
+                    const bureauId = btn.dataset.tenderbureauId;
+                    this.autoBackplan(tenderId, bureauId);
+                    break;
+                }
+                case 'open-tcc': {
+                    const tenderId = btn.dataset.tenderId;
+                    this._openTCC(tenderId, 'planning');
                     break;
                 }
             }

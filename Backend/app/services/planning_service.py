@@ -288,16 +288,23 @@ class PlanningService:
         bureau_id = await self._get_user_bureau_id(user_id)
         if not bureau_id:
             return []
-        
         try:
             result = self.db.table('planning_templates')\
-                .select('*')\
+                .select('*, planning_template_taken(*)')\
                 .eq('tenderbureau_id', bureau_id)\
-                .eq('template_naam', template_naam)\
-                .eq('is_active', True)\
-                .order('volgorde')\
+                .eq('naam', template_naam)\
+                .eq('is_actief', True)\
+                .order('naam')\
                 .execute()
-            return result.data or []
+            # Transformeer naar response format
+            templates = []
+            for tmpl in (result.data or []):
+                taken = tmpl.pop('planning_template_taken', [])
+                templates.append({
+                    **tmpl,
+                    'taken': sorted(taken, key=lambda t: t.get('volgorde', 0))
+                })
+            return templates
         except Exception as e:
             print(f"❌ Error getting planning templates: {e}")
             return []
@@ -307,16 +314,22 @@ class PlanningService:
         bureau_id = await self._get_user_bureau_id(user_id)
         if not bureau_id:
             return []
-        
         try:
-            result = self.db.table('checklist_templates')\
-                .select('*')\
+            result = self.db.table('planning_templates')\
+                .select('*, planning_template_taken(*)')\
                 .eq('tenderbureau_id', bureau_id)\
-                .eq('template_naam', template_naam)\
-                .eq('is_active', True)\
-                .order('volgorde')\
+                .eq('naam', template_naam)\
+                .eq('type', 'checklist')\
+                .eq('is_actief', True)\
                 .execute()
-            return result.data or []
+            templates = []
+            for tmpl in (result.data or []):
+                taken = tmpl.pop('planning_template_taken', [])
+                templates.append({
+                    **tmpl,
+                    'taken': sorted(taken, key=lambda t: t.get('volgorde', 0))
+                })
+            return templates
         except Exception as e:
             print(f"❌ Error getting checklist templates: {e}")
             return []
@@ -326,15 +339,13 @@ class PlanningService:
         bureau_id = await self._get_user_bureau_id(user_id)
         if not bureau_id:
             return []
-        
         try:
             result = self.db.table('planning_templates')\
-                .select('template_naam')\
+                .select('naam')\
                 .eq('tenderbureau_id', bureau_id)\
-                .eq('is_active', True)\
+                .eq('is_actief', True)\
                 .execute()
-            
-            names = list(set(r['template_naam'] for r in (result.data or [])))
+            names = list(set(r['naam'] for r in (result.data or [])))
             return sorted(names)
         except Exception as e:
             print(f"❌ Error getting template names: {e}")
@@ -351,8 +362,13 @@ class PlanningService:
         template_naam: str = 'Standaard',
         overwrite: bool = False
     ) -> dict:
+        print(f"\U0001F534\U0001F534\U0001F534 populate_from_templates CALLED: tender={tender_id}, template={template_naam}")
         """
         Kopieer template taken naar een tender.
+        
+        Zoekt in planning_templates (type='planning' en type='checklist')
+        en kopieert de bijbehorende planning_template_taken naar
+        planning_taken en checklist_items tabellen.
         """
         bureau_id = await self._get_tender_bureau_id(tender_id)
         if not bureau_id:
@@ -367,7 +383,8 @@ class PlanningService:
                 'planning_taken': len(existing_planning),
                 'checklist_items': len(existing_checklist),
                 'skipped': True,
-                'message': 'Tender heeft al items. Gebruik overwrite=true om te overschrijven.'
+                'message': 'Tender heeft al items. Gebruik overwrite=true om te overschrijven.',
+                'template_naam': template_naam
             }
         
         # Als overwrite: verwijder bestaande items
@@ -381,84 +398,126 @@ class PlanningService:
                 .eq('tender_id', tender_id)\
                 .execute()
         
-        # Gebruik de database functie
-        try:
-            result = self.db.rpc('populate_tender_from_templates', {
-                'p_tender_id': tender_id,
-                'p_tenderbureau_id': bureau_id,
-                'p_template_naam': template_naam
-            }).execute()
-            
-            data = result.data if result.data else {}
-            
-            return {
-                'planning_taken': data.get('planning_taken', 0) if isinstance(data, dict) else 0,
-                'checklist_items': data.get('checklist_items', 0) if isinstance(data, dict) else 0,
-                'skipped': False,
-                'template_naam': template_naam
-            }
-        except Exception as e:
-            print(f"⚠️ RPC functie mislukt: {e}, falling back to manual populate...")
-            return await self._populate_manual(tender_id, bureau_id, template_naam)
+        # Direct manual populate (RPC niet nodig)
+        return await self._populate_manual(tender_id, bureau_id, template_naam)
     
     async def _populate_manual(self, tender_id: str, bureau_id: str, template_naam: str) -> dict:
-        """Fallback: handmatig kopiëren als DB functie niet beschikbaar is"""
+        """
+        Kopieer template taken naar tender's planning_taken en checklist_items.
+        
+        Tabel-structuur:
+        - planning_templates: id, naam, type ('planning'|'checklist'), tenderbureau_id, is_standaard, is_actief
+        - planning_template_taken: id, template_id, naam, beschrijving, rol, t_minus_werkdagen, 
+                                   duur_werkdagen, is_mijlpaal, is_verplicht, volgorde
+        """
         planning_count = 0
         checklist_count = 0
         
         try:
-            # Planning templates ophalen
-            templates = self.db.table('planning_templates')\
-                .select('*')\
-                .eq('tenderbureau_id', bureau_id)\
-                .eq('template_naam', template_naam)\
-                .eq('is_active', True)\
-                .order('volgorde')\
+            # ─── PLANNING TAKEN ───────────────────────────
+            # Stap 1: Zoek het planning template
+            planning_tmpl = self.db.table('planning_templates')\
+                .select('id')\
+                .eq('naam', template_naam)\
+                .eq('type', 'planning')\
+                .eq('is_actief', True)\
+                .limit(1)\
                 .execute()
             
-            if templates.data:
-                inserts = [{
-                    'tender_id': tender_id,
-                    'tenderbureau_id': bureau_id,
-                    'template_id': t['id'],
-                    'taak_naam': t['taak_naam'],
-                    'categorie': t['categorie'],
-                    'beschrijving': t.get('beschrijving'),
-                    'is_milestone': t.get('is_milestone', False),
-                    'volgorde': t['volgorde'],
-                    'status': 'todo'
-                } for t in templates.data]
+            if planning_tmpl.data:
+                tmpl_id = planning_tmpl.data[0]['id']
                 
-                self.db.table('planning_taken').insert(inserts).execute()
-                planning_count = len(inserts)
+                # Stap 2: Haal template taken op
+                taken = self.db.table('planning_template_taken')\
+                    .select('*')\
+                    .eq('template_id', tmpl_id)\
+                    .order('volgorde')\
+                    .execute()
+                
+                if taken.data:
+                    # Stap 3: Groepeer taken per categorie op basis van volgorde
+                    def get_categorie(volgorde):
+                        if volgorde <= 30:
+                            return 'Voorbereiding'
+                        elif volgorde <= 100:
+                            return 'Schrijven & Review'
+                        else:
+                            return 'Afronding & Indiening'
+                    
+                    inserts = [{
+                        'tender_id': tender_id,
+                        'tenderbureau_id': bureau_id,
+                        'taak_naam': t['naam'],
+                        'categorie': get_categorie(t.get('volgorde', 0)),
+                        'beschrijving': t.get('beschrijving'),
+                        'is_milestone': t.get('is_mijlpaal', False),
+                        'volgorde': t.get('volgorde', 0),
+                        'status': 'todo'
+                    } for t in taken.data]
+                    
+                    self.db.table('planning_taken').insert(inserts).execute()
+                    planning_count = len(inserts)
+                    print(f"✅ {planning_count} planning taken gekopieerd naar tender {tender_id}")
+                else:
+                    print(f"⚠️ Planning template '{template_naam}' gevonden (id={tmpl_id}) maar heeft 0 taken")
+            else:
+                print(f"⚠️ Geen planning template gevonden met naam='{template_naam}', type='planning', is_actief=True")
             
-            # Checklist templates ophalen
-            cl_templates = self.db.table('checklist_templates')\
-                .select('*')\
-                .eq('tenderbureau_id', bureau_id)\
-                .eq('template_naam', template_naam)\
-                .eq('is_active', True)\
-                .order('volgorde')\
+            # ─── CHECKLIST ITEMS ──────────────────────────
+            # Stap 1: Zoek het checklist template
+            checklist_tmpl = self.db.table('planning_templates')\
+                .select('id')\
+                .eq('naam', template_naam)\
+                .eq('type', 'checklist')\
+                .eq('is_actief', True)\
+                .limit(1)\
                 .execute()
             
-            if cl_templates.data:
-                cl_inserts = [{
-                    'tender_id': tender_id,
-                    'tenderbureau_id': bureau_id,
-                    'template_id': t['id'],
-                    'taak_naam': t['taak_naam'],
-                    'sectie': t['sectie'],
-                    'beschrijving': t.get('beschrijving'),
-                    'is_verplicht': t.get('is_verplicht', True),
-                    'volgorde': t['volgorde'],
-                    'status': 'pending'
-                } for t in cl_templates.data]
+            if checklist_tmpl.data:
+                tmpl_id = checklist_tmpl.data[0]['id']
                 
-                self.db.table('checklist_items').insert(cl_inserts).execute()
-                checklist_count = len(cl_inserts)
+                # Stap 2: Haal template taken op
+                items = self.db.table('planning_template_taken')\
+                    .select('*')\
+                    .eq('template_id', tmpl_id)\
+                    .order('volgorde')\
+                    .execute()
+                
+                if items.data:
+                    # Stap 3: Groepeer per sectie op basis van rol
+                    def get_sectie(rol):
+                        if rol in ('tendermanager', 'reviewer'):
+                            return 'Verklaringen & Formulieren'
+                        elif rol in ('schrijver',):
+                            return 'Inhoudelijke Documenten'
+                        elif rol in ('calculator',):
+                            return 'Financieel'
+                        else:
+                            return 'Overige Documenten'
+                    
+                    cl_inserts = [{
+                        'tender_id': tender_id,
+                        'tenderbureau_id': bureau_id,
+                        'taak_naam': t['naam'],
+                        'sectie': get_sectie(t.get('rol', '')),
+                        'beschrijving': t.get('beschrijving'),
+                        'is_verplicht': t.get('is_verplicht', True),
+                        'volgorde': t.get('volgorde', 0),
+                        'status': 'pending'
+                    } for t in items.data]
+                    
+                    self.db.table('checklist_items').insert(cl_inserts).execute()
+                    checklist_count = len(cl_inserts)
+                    print(f"✅ {checklist_count} checklist items gekopieerd naar tender {tender_id}")
+                else:
+                    print(f"⚠️ Checklist template '{template_naam}' gevonden (id={tmpl_id}) maar heeft 0 items")
+            else:
+                print(f"⚠️ Geen checklist template gevonden met naam='{template_naam}', type='checklist', is_actief=True")
             
         except Exception as e:
-            print(f"❌ Error bij handmatige populate: {e}")
+            print(f"❌ Error bij populate: {e}")
+            import traceback
+            traceback.print_exc()
         
         return {
             'planning_taken': planning_count,
