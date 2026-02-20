@@ -35,6 +35,21 @@ export class TeamledenView extends BaseView {
         this.onDeleteMember = null;
         this.onInviteMember = null;
         this.onResendInvite = null;
+
+        // ✅ Listen for team-updated events (event-driven refresh)
+        window.addEventListener('team-updated', async (event) => {
+            console.log('📢 TeamledenView: Received team-updated event', event.detail);
+            if (window.teamService) {
+                // Force fresh fetch, ignore cache
+                const freshMembers = await window.teamService.getAllTeamMembers(true);
+                this.teamMembers = freshMembers || [];
+                this.applyFilters();
+            }
+            // Re-render view
+            console.log('🎨 Re-rendering TeamledenView (fresh data)');
+            await this.render();
+            console.log('✅ TeamledenView refresh complete');
+        });
     }
 
     getIcon(name, size = 14, color = null) {

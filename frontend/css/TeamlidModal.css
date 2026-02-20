@@ -749,3 +749,162 @@
         grid-template-columns: repeat(5, 1fr);
     }
 }
+
+/* ════════════════════════════════════════════════════════════
+   USER TYPE SELECTOR (Hybrid Resource/User System)
+   Added: 2026-02-20
+   ════════════════════════════════════════════════════════════ */
+
+.teamlid-modal .user-type-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.teamlid-modal .user-type-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px 20px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    font-family: inherit;
+    min-height: 140px;
+}
+
+.teamlid-modal .user-type-btn:hover {
+    border-color: #8b5cf6;
+    background: #faf5ff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+}
+
+.teamlid-modal .user-type-btn.active {
+    border-color: #8b5cf6;
+    background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2), 0 8px 24px rgba(139, 92, 246, 0.25);
+    transform: translateY(0);
+}
+
+/* Emoji icon - Groot en prominent */
+.teamlid-modal .user-type-icon {
+    font-size: 48px;
+    line-height: 1;
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+    transition: all 0.2s ease;
+}
+
+.teamlid-modal .user-type-btn:hover .user-type-icon {
+    transform: scale(1.05);
+}
+
+.teamlid-modal .user-type-btn.active .user-type-icon {
+    transform: scale(1.1);
+    filter: drop-shadow(0 4px 8px rgba(139, 92, 246, 0.3));
+}
+
+/* Content */
+.teamlid-modal .user-type-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.teamlid-modal .user-type-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.3;
+}
+
+.teamlid-modal .user-type-desc {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.teamlid-modal .user-type-btn.active .user-type-title {
+    color: #7c3aed;
+}
+
+.teamlid-modal .user-type-btn.active .user-type-desc {
+    color: #8b5cf6;
+}
+
+/* Info boxes */
+.teamlid-modal .user-type-info {
+    margin-top: 0;
+}
+
+.teamlid-modal .user-type-info > div {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    animation: fadeSlideIn 0.3s ease;
+}
+
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.teamlid-modal .user-type-info span {
+    font-size: 18px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.teamlid-modal .user-type-info strong {
+    font-weight: 600;
+}
+
+/* Responsive aanpassingen */
+@media (max-width: 768px) {
+    .teamlid-modal .user-type-selector {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .teamlid-modal .user-type-btn {
+        min-height: 120px;
+        padding: 20px 16px;
+    }
+    
+    .teamlid-modal .user-type-icon {
+        font-size: 40px;
+    }
+    
+    .teamlid-modal .user-type-title {
+        font-size: 15px;
+    }
+    
+    .teamlid-modal .user-type-desc {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .teamlid-modal .user-type-btn {
+        min-height: 100px;
+        padding: 16px;
+    }
+    
+    .teamlid-modal .user-type-icon {
+        font-size: 36px;
+    }
+}

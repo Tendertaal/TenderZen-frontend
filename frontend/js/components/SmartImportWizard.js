@@ -19,13 +19,18 @@
  *   wizard.openForExistingAnalysis(smartImportId, tenderId, tenderNaam)
  *   wizard.close()
  *
- * @version 4.0.0
- * @date 2026-02-09
+ * FIXES v4.1 (2026-02-17):
+ * - _handleNext: schrijft teamAssignments direct naar state (fix voor ResultStep)
+ * - _handleFinalize: stuurt team_assignments + tenderbureau_id mee naar /planning/save
+ *
+ * @version 4.1.0
+ * @date 2026-02-17
  */
 
 import { UploadStep } from './smart-import/UploadStep.js';
 import { AnalyzeStep } from './smart-import/AnalyzeStep.js';
 import { ReviewStep } from './smart-import/ReviewStep.js';
+import { TeamStep } from './smart-import/TeamStep.js';
 import { ResultStep } from './smart-import/ResultStep.js';
 import { SmartImportStyles } from './smart-import/SmartImportStyles.js';
 
@@ -42,6 +47,7 @@ const STEPS = [
     { key: 'upload', num: 1, label: 'Upload', Component: UploadStep },
     { key: 'analyze', num: 2, label: 'Analyse', Component: AnalyzeStep },
     { key: 'review', num: 3, label: 'Controleer', Component: ReviewStep },
+    { key: 'team', num: 4, label: 'Team', Component: TeamStep },
     { key: 'result', num: 5, label: 'Resultaat', Component: ResultStep },
 ];
 
@@ -113,7 +119,9 @@ export class SmartImportWizard {
             tenderNaam: this.tenderNaam || null,
             isExistingTender: false,
 
-            // Team (verwijderd)
+            // Team (stap 4) — FIX: voeg toe aan state
+            teamAssignments: {},
+            selectedTemplate: null,
 
             // Result (stap 5)
             backplanning: null,
@@ -284,9 +292,14 @@ export class SmartImportWizard {
             }
 
             console.log('🏢 Wizard bureau resolved:', this.state.tenderbureauId);
+            
+            // ← VOEG DEZE 2 REGELS TOE:
+            this.state.activeBureauId = this.state.tenderbureauId;
+            this.state.tenderbureau_id = this.state.tenderbureauId;
         }
     }
 
+    
     // ═══════════════════════════════════════════
     //  INTERNAL: MODAL RENDERING
     // ═══════════════════════════════════════════
@@ -519,9 +532,16 @@ export class SmartImportWizard {
         // Collect data from current step into shared state
         if (instance?.getData) {
             const data = instance.getData();
-            // Merge step data into state
-            // Team data niet meer nodig
-            if (data.editedData) this.state.editedData = data.editedData;
+            
+            // FIX v4.1: Merge alle step data direct in state
+            // Voorheen: alleen editedData werd gemerged
+            // Nu: ook teamAssignments, selectedTemplate, etc.
+            Object.assign(this.state, data);
+            
+            // Backward compatible: editedData apart mergen
+            if (data.editedData) {
+                this.state.editedData = data.editedData;
+            }
         }
 
         // Go to next step
@@ -591,9 +611,20 @@ export class SmartImportWizard {
             }
 
             // ── Stap B: Planning opslaan (als geaccepteerd) ──
+            // FIX v4.1: stuurt nu team_assignments en tenderbureau_id mee
             if (resultData.planning && tenderId) {
                 try {
-                    await fetch(
+                    const planningPayload = {
+                        tender_id: tenderId,
+                        taken: resultData.planning,
+                        checklist: resultData.checklist,
+                        team_assignments: this.state.teamAssignments || {},
+                        tenderbureau_id: this.state.tenderbureauId || this.state.overrideBureauId
+                    };
+
+                    console.log('📋 Saving planning with payload:', planningPayload);
+
+                    const planResp = await fetch(
                         `${this.state.baseURL}/planning/save`,
                         {
                             method: 'POST',
@@ -601,15 +632,16 @@ export class SmartImportWizard {
                                 'Authorization': `Bearer ${this.state.authToken}`,
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({
-                                tender_id: tenderId,
-                                taken: resultData.planning,
-                                checklist: resultData.checklist,
-                                team_assignments: this.state.teamAssignments
-                            })
+                            body: JSON.stringify(planningPayload)
                         }
                     );
-                    console.log('✅ Planning saved');
+
+                    if (!planResp.ok) {
+                        const errText = await planResp.text().catch(() => '');
+                        console.warn(`⚠️ Planning save ${planResp.status}:`, errText);
+                    } else {
+                        console.log('✅ Planning saved');
+                    }
                 } catch (planErr) {
                     console.warn('⚠️ Planning opslaan mislukt:', planErr);
                 }

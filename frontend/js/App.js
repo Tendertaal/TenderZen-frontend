@@ -26,7 +26,7 @@ import { SmartImportWizard } from './components/SmartImportWizard.js';
 import { TenderAanmaken } from './components/TenderAanmaken.js';
 import { BedrijfModal } from './components/BedrijfModal.js';
 import { TeamlidModal } from './components/TeamlidModal.js';
-import { PlanningModal } from './modals/PlanningModal.js';
+import { PlanningModal } from './modals/PlanningModal/PlanningModal.js';
 import { apiService } from './services/ApiService.js';
 import { faseService } from './services/FaseService.js';
 import { bedrijvenService } from './services/Bedrijvenservice.js';
@@ -54,7 +54,6 @@ import { AgendaView } from './views/AgendaView.js';
 import { KanbanView } from './views/KanbanView.js';
 import { teamService } from './services/TeamService.js';
 import { TemplateBeheerView } from './views/TemplateBeheerView.js';
-
 import { ProfielView } from './views/ProfielView.js';
 
 export class App {

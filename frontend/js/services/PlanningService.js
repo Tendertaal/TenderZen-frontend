@@ -110,12 +110,12 @@ class PlanningServiceClass {
    * @param {string|null} teamMemberId - Optioneel: filter op teamlid UUID
    * @returns {Promise<object>} { taken, tenders, team_members }
    */
-  async getAgendaData(startDate, endDate, teamMemberId = null) {
+  async getAgendaData(startDate, endDate, userId = null) {
     const params = new URLSearchParams({
       start_date: startDate,
       end_date: endDate
     });
-    if (teamMemberId) params.append('team_member_id', teamMemberId);
+    if (userId) params.append('user_id', userId);
 
     const url = `/api/v1/planning/agenda?${params.toString()}`;
     console.log('📡 PlanningService.getAgendaData() →', url);
@@ -130,7 +130,7 @@ class PlanningServiceClass {
     console.log('✅ getAgendaData response:', {
       taken: data?.taken?.length || 0,
       tenders: Object.keys(data?.tenders || {}).length,
-      team_members: data?.team_members?.length || 0
+      v_bureau_team: data?.v_bureau_team?.length || 0
     });
 
     return data;

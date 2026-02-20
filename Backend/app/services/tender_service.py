@@ -169,19 +169,39 @@ class TenderService:
     async def _get_team_assignments(self, tender_id: str) -> List[dict]:
         """Get team assignments for a tender"""
         try:
+            # Haal tender_team_assignments op
             result = self.db.table('tender_team_assignments')\
-                .select('*, team_members(naam, rol, initialen)')\
+                .select('*')\
                 .eq('tender_id', tender_id)\
                 .execute()
             
-            # Transform to frontend format
+            if not result.data:
+                return []
+            
+            # Haal user IDs
+            user_ids = [row['user_id'] for row in result.data if row.get('user_id')]
+            
+            if not user_ids:
+                return []
+            
+            # Haal user details apart op
+            users_result = self.db.table('users')\
+                .select('id, naam, initialen')\
+                .in_('id', user_ids)\
+                .execute()
+            
+            users_map = {u['id']: u for u in (users_result.data or [])}
+            
+            # Combineer data
             assignments = []
             for row in result.data:
-                team_member = row.get('team_members', {}) or {}
+                user_id = row.get('user_id')
+                user = users_map.get(user_id, {})
+                
                 assignments.append({
                     'id': row.get('id'),
-                    'team_member_id': row.get('team_member_id'),
-                    'naam': team_member.get('naam', ''),
+                    'user_id': user_id,
+                    'naam': user.get('naam', ''),
                     'rol': row.get('rol_in_tender', ''),
                     'uren': row.get('geplande_uren', 0),
                     'werkelijke_uren': row.get('werkelijke_uren', 0)
@@ -190,7 +210,7 @@ class TenderService:
             return assignments
             
         except Exception as e:
-            print(f"âŒ Error getting team assignments: {e}")
+            print(f"❌ Error getting team assignments: {e}")
             return []
     
     async def get_all_tenders(self, user_id: str, tenderbureau_id: Optional[str] = None) -> List[dict]:

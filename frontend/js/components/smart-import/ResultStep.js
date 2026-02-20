@@ -1,16 +1,20 @@
 // ================================================================
 // TenderZen — Smart Import v4.0 — ResultStep.js
 // Stap 5: Resultaat — Planning, Checklist & AI Documenten
-// Datum: 2026-02-08
+// Datum: 2026-02-17 v2.2
 // Doel-pad: Frontend/js/components/smart-import/ResultStep.js
 // ================================================================
 //
-// Preview van alle gegenereerde output:
-// - Back-planning (tijdlijn met taken en toewijzingen)
-// - Indieningschecklist
-// - AI-gegenereerde documenten (Go/No-Go, samenvatting, etc.)
+// FIXES v2.2 (2026-02-17 16:00):
+// - Debug logging toegevoegd om lege planning/checklist te debuggen
+// - Log in init() wat backplanning retourneert
+// - Log in getData() wat er wordt doorgegeven
+// - Log in _generateBackplanning() alle state values
 //
-// De gebruiker kan per onderdeel accepteren of overslaan.
+// FIXES v2.1 (2026-02-17):
+// 1. init() null-guard op backplanningResult.value
+// 2. _generateBackplanning() team_assignments + tenderbureau_id in body
+// 3. _generateDocuments() guard op null tender_id
 // ================================================================
 
 /**
@@ -80,7 +84,6 @@ export class ResultStep {
         this.isGenerating = true;
         this.errors = [];
 
-
         try {
             // Parallel genereren: back-planning + AI documenten
             const [backplanningResult, documentsResult] = await Promise.allSettled([
@@ -89,13 +92,31 @@ export class ResultStep {
             ]);
 
             // ── Verwerk back-planning ──
-            if (backplanningResult.status === 'fulfilled') {
+            if (backplanningResult.status === 'fulfilled' && backplanningResult.value) {
                 const data = backplanningResult.value;
-                this.backplanning = data.planning_taken || [];
-                this.checklist = data.checklist_items || [];
+                this.backplanning = data.planning_taken || data.planning || [];
+                this.checklist = data.checklist_items || data.checklist || [];
                 this.workloadWarnings = data.workload_warnings || [];
                 this.metadata = data.metadata || {};
                 this.generationProgress.planning = 'done';
+                
+                // DEBUG v2.2: Log wat we hebben ontvangen
+                console.log('📊 Backplanning generated:', {
+                    backplanning_count: this.backplanning.length,
+                    checklist_count: this.checklist.length,
+                    first_task: this.backplanning[0],
+                    acceptedItems_initial: [...this.acceptedItems],
+                    metadata: this.metadata
+                });
+                
+            } else if (backplanningResult.status === 'fulfilled' && !backplanningResult.value) {
+                // DEBUG v2.2: Log waarom null
+                console.warn('⚠️ Backplanning returned NULL - was skipped');
+                this.backplanning = [];
+                this.checklist = [];
+                this.workloadWarnings = [];
+                this.metadata = {};
+                this.generationProgress.planning = 'skipped';
             } else {
                 this.errors.push({
                     type: 'backplanning',
@@ -128,6 +149,9 @@ export class ResultStep {
                 ...(this.checklist.length > 0 ? ['checklist'] : []),
                 ...this.documents.map(d => d.type)
             ]);
+            
+            // DEBUG v2.2: Log finale accepted items
+            console.log('✅ ResultStep init complete - acceptedItems:', [...this.acceptedItems]);
 
         } catch (err) {
             console.error('ResultStep: Onverwachte fout:', err);
@@ -266,6 +290,17 @@ export class ResultStep {
     }
 
     getData() {
+        // DEBUG v2.2: Log wat we gaan returnen
+        console.log('📦 ResultStep.getData() called:', {
+            acceptedItems: [...this.acceptedItems],
+            backplanning_length: this.backplanning?.length || 0,
+            checklist_length: this.checklist?.length || 0,
+            has_planning: this.acceptedItems.has('planning'),
+            has_checklist: this.acceptedItems.has('checklist'),
+            will_return_planning: this.acceptedItems.has('planning') && this.backplanning ? this.backplanning.length : 0,
+            will_return_checklist: this.acceptedItems.has('checklist') && this.checklist ? this.checklist.length : 0
+        });
+        
         return {
             accepted: [...this.acceptedItems],
             planning: this.acceptedItems.has('planning') ? this.backplanning : null,
@@ -475,7 +510,7 @@ export class ResultStep {
             <div class="rs-checklist-list">
                 ${this.checklist.map(item => `
                     <div class="rs-check-row ${item.is_verplicht ? 'rs-check-row--required' : ''}">
-                        <span class="rs-check-box">${item.is_verplicht ? '☐' : '☐'}</span>
+                        <span class="rs-check-box">☐</span>
                         <span class="rs-check-naam">${item.naam}</span>
                         <span class="rs-check-deadline">${this._formatDatum(item.datum)}</span>
                         <div class="rs-check-assign">
@@ -497,7 +532,6 @@ export class ResultStep {
     // ══════════════════════════════════════════════
 
     _renderDocumentPreview(doc) {
-        // Probeer een leesbare preview te tonen uit de JSONB inhoud
         const preview = this._extractDocPreview(doc);
 
         return `
@@ -518,14 +552,12 @@ export class ResultStep {
     }
 
     _extractDocPreview(doc) {
-        // Preview uit inhoud_tekst (plain text) of inhoud (JSONB)
         if (doc.inhoud_tekst) {
             const truncated = doc.inhoud_tekst.substring(0, 500);
             return `<p class="rs-doc-text">${truncated}${doc.inhoud_tekst.length > 500 ? '…' : ''}</p>`;
         }
 
         if (doc.inhoud && typeof doc.inhoud === 'object') {
-            // Probeer secties te renderen
             if (doc.inhoud.sections) {
                 return doc.inhoud.sections.slice(0, 3).map(s => `
                     <div class="rs-doc-section">
@@ -535,7 +567,6 @@ export class ResultStep {
                 `).join('');
             }
 
-            // Probeer conclusie of samenvatting
             if (doc.inhoud.conclusie || doc.inhoud.samenvatting) {
                 return `<p class="rs-doc-text">${doc.inhoud.conclusie || doc.inhoud.samenvatting}</p>`;
             }
@@ -607,6 +638,23 @@ export class ResultStep {
 
     async _generateBackplanning() {
         const deadline = this.state.extractedData?.planning?.deadline_indiening?.value;
+        const templateId = this.state.selectedTemplate?.id || null;
+        const teamAssignments = this.state.teamAssignments || {};
+        const bureauId = this.state.tenderbureau_id
+            || this.state.tenderbureauId
+            || this.state.bureau_id
+            || null;
+        
+        // DEBUG v2.2: Log alle inputs
+        console.log('🔄 _generateBackplanning called with:', {
+            deadline,
+            template: this.state.selectedTemplate?.naam,
+            template_id: templateId,
+            teamAssignments,
+            teamAssignments_keys: Object.keys(teamAssignments),
+            bureauId,
+            state_keys: Object.keys(this.state)
+        });
 
         // Guard: skip als geen deadline
         if (!deadline) {
@@ -615,19 +663,36 @@ export class ResultStep {
             return null;
         }
 
-        // TemplateId optioneel maken (kan null zijn)
-        const templateId = this.state.selectedTemplate?.id || null;
+        // Guard: skip als geen bureau
+        if (!bureauId) {
+            console.log('⏩ Backplanning overgeslagen (geen tenderbureau_id)');
+            this.generationProgress.planning = 'skipped';
+            return null;
+        }
+        
+        // Guard: skip als geen team assignments
+        if (Object.keys(teamAssignments).length === 0) {
+            console.log('⏩ Backplanning overgeslagen (geen team assignments)');
+            this.generationProgress.planning = 'skipped';
+            return null;
+        }
 
         try {
+            const requestBody = {
+                deadline: deadline.split('T')[0],
+                template_id: templateId,
+                team_assignments: teamAssignments,
+                tenderbureau_id: bureauId
+            };
+            
+            console.log('📤 Sending backplanning request:', requestBody);
+            
             const response = await fetch(
                 `${this.state.baseURL}/planning/generate-backplanning`,
                 {
                     method: 'POST',
                     headers: this._headers(),
-                    body: JSON.stringify({
-                        deadline: deadline.split('T')[0],
-                        template_id: templateId
-                    })
+                    body: JSON.stringify(requestBody)
                 }
             );
 
@@ -638,8 +703,10 @@ export class ResultStep {
                 return null;
             }
 
+            const result = await response.json();
+            console.log('📥 Backplanning response:', result);
             this.generationProgress.planning = 'done';
-            return await response.json();
+            return result;
         } catch (err) {
             console.warn('⚠️ Backplanning error:', err);
             this.generationProgress.planning = 'error';
@@ -654,6 +721,13 @@ export class ResultStep {
             .map(([type]) => type);
 
         if (selectedDocs.length === 0 || !this.state.importId) {
+            this.generationProgress.documents = 'skipped';
+            return { documents: [] };
+        }
+
+        // FIX 3: tender_id is null vóór finalize — sla over
+        if (!this.state.tenderId) {
+            console.log('⏩ Document generatie uitgesteld (tender_id nog niet beschikbaar)');
             this.generationProgress.documents = 'skipped';
             return { documents: [] };
         }

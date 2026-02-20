@@ -78,9 +78,9 @@ async def get_profile(
             ).execute()
             for bureau in (bureau_result.data or []):
                 # Tel teamleden en tenders per bureau
-                team_count = db.table('team_members').select(
-                    'id', count='exact'
-                ).eq('tenderbureau_id', bureau['id']).eq('is_active', True).execute()
+                team_count = db.table('v_bureau_team').select(
+                    'user_id', count='exact'
+                ).eq('tenderbureau_id', bureau['id']).execute()
 
                 tender_count = db.table('tenders').select(
                     'id', count='exact'

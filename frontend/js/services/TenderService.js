@@ -15,7 +15,7 @@ import { supabase } from '../config.js';
 
 class TeamService {
     constructor() {
-        this.tableName = 'team_members';
+        this.tableName = 'v_bureau_team';
     }
 
     /**
@@ -28,8 +28,8 @@ class TeamService {
                 .from(this.tableName)
                 .select(`
                     *,
-                    user:users(email, naam),
-                    tenderbureau:tenderbureaus(naam)
+                    users(email, naam),
+                    tenderbureaus(naam)
                 `)
                 .eq('is_active', true)
                 .order('naam', { ascending: true });
@@ -51,10 +51,10 @@ class TeamService {
                 .from(this.tableName)
                 .select(`
                     *,
-                    user:users(email, naam),
-                    tenderbureau:tenderbureaus(naam)
+                    users(email, naam),
+                    tenderbureaus(naam)
                 `)
-                .eq('id', id)
+                .eq('user_id', id)
                 .single();
 
             if (error) throw error;
@@ -97,29 +97,22 @@ class TeamService {
                 .select('tenderbureau_id')
                 .eq('id', (await supabase.auth.getUser()).data.user?.id)
                 .single();
-
             if (userError) throw userError;
-
             const newMember = {
                 ...teamMemberData,
                 tenderbureau_id: userData.tenderbureau_id,
                 is_active: true,
                 created_at: new Date().toISOString()
             };
-
-            // Generate initialen if not provided
             if (!newMember.initialen && newMember.naam) {
                 newMember.initialen = this.generateInitials(newMember.naam);
             }
-
             const { data, error } = await supabase
                 .from(this.tableName)
                 .insert([newMember])
                 .select()
                 .single();
-
             if (error) throw error;
-            
             console.log('✅ Team member created:', data);
             return data;
         } catch (error) {
@@ -133,20 +126,16 @@ class TeamService {
      */
     async updateTeamMember(id, updates) {
         try {
-            // Regenerate initialen if naam changed
             if (updates.naam && !updates.initialen) {
                 updates.initialen = this.generateInitials(updates.naam);
             }
-
             const { data, error } = await supabase
                 .from(this.tableName)
                 .update(updates)
-                .eq('id', id)
+                .eq('user_id', id)
                 .select()
                 .single();
-
             if (error) throw error;
-            
             console.log('✅ Team member updated:', data);
             return data;
         } catch (error) {
@@ -164,12 +153,10 @@ class TeamService {
             const { data, error } = await supabase
                 .from(this.tableName)
                 .update({ is_active: false })
-                .eq('id', id)
+                .eq('user_id', id)
                 .select()
                 .single();
-
             if (error) throw error;
-            
             console.log('✅ Team member deactivated:', data);
             return data;
         } catch (error) {
@@ -187,10 +174,8 @@ class TeamService {
             const { error } = await supabase
                 .from(this.tableName)
                 .delete()
-                .eq('id', id);
-
+                .eq('user_id', id);
             if (error) throw error;
-            
             console.log('✅ Team member permanently deleted');
             return true;
         } catch (error) {
@@ -205,17 +190,12 @@ class TeamService {
     async getTeamStats() {
         try {
             const members = await this.getAllTeamMembers();
-            
-            // Count by role
             const byRole = {};
             members.forEach(m => {
                 const rol = m.rol || 'Onbekend';
                 byRole[rol] = (byRole[rol] || 0) + 1;
             });
-
-            // Total capacity
             const totalCapacity = members.reduce((sum, m) => sum + (m.capaciteit_uren_per_week || 0), 0);
-
             return {
                 total: members.length,
                 byRole,
@@ -236,11 +216,10 @@ class TeamService {
                 .from('tender_team_assignments')
                 .select(`
                     *,
-                    team_member:team_members(naam, initialen, avatar_kleur, capaciteit_uren_per_week),
+                    team_member:v_bureau_team(naam, initialen, avatar_kleur, capaciteit_uren_per_week),
                     tender:tenders(naam, fase)
                 `)
                 .eq('week_start', weekStart);
-
             if (error) throw error;
             return data || [];
         } catch (error) {
@@ -254,12 +233,12 @@ class TeamService {
      */
     generateInitials(naam) {
         if (!naam) return '??';
-        
+
         const parts = naam.trim().split(/\s+/);
         if (parts.length === 1) {
             return parts[0].substring(0, 2).toUpperCase();
         }
-        
+
         // First letter of first name + first letter of last name
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }

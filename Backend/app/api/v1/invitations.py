@@ -111,86 +111,79 @@ async def send_invitation(
     # Get team member details
     team_member = db.table('team_members')\
         .select('*, tenderbureaus(naam)')\
-        .eq('id', invitation.team_member_id)\
-        .execute()
-    
-    if not team_member.data:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Team member not found"
-        )
-    
-    member = team_member.data[0]
-    tenderbureau_id = member['tenderbureau_id']
-    
-    # Check permission
-    can_invite = await check_user_can_invite(db, user_id, tenderbureau_id)
-    if not can_invite:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to send invitations"
-        )
-    
-    # Check if already has pending invitation
-    existing = db.table('bureau_invites')\
-        .select('id, status')\
-        .eq('team_member_id', invitation.team_member_id)\
-        .eq('status', 'pending')\
-        .execute()
-    
-    if existing.data:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Team member already has a pending invitation"
-        )
-    
-    # Create invitation using bureau_invites table
-    invite_token = str(uuid.uuid4())
-    expires_at = datetime.utcnow() + timedelta(days=7)
-    
-    invitation_data = {
-        'tenderbureau_id': tenderbureau_id,
-        'invited_by': user_id,
-        'email': invitation.email,
-        'role': invitation.role,
-        'invite_token': invite_token,
-        'status': 'pending',
-        'expires_at': expires_at.isoformat(),
-        'team_member_id': invitation.team_member_id,
-        'personal_message': invitation.personal_message
-    }
-    
-    result = db.table('bureau_invites')\
-        .insert(invitation_data)\
-        .execute()
-    
-    if not result.data:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create invitation"
-        )
-    
-    # Update team member status
-    db.table('team_members')\
-        .update({
-            'invitation_status': 'pending',
-            'invited_at': datetime.utcnow().isoformat()
-        })\
-        .eq('id', invitation.team_member_id)\
-        .execute()
-    
-    created_invitation = result.data[0]
-    bureau_naam = member.get('tenderbureaus', {}).get('naam', 'Unknown')
-    
-    print(f"✅ Invitation sent to {invitation.email}")
-    print(f"📧 Bureau: {bureau_naam}")
-    print(f"🔗 Accept URL: /accept-invitation.html?token={invite_token}")
-    
-    # TODO: Send actual email via email service
-    # await send_invitation_email(
-    #     to_email=invitation.email,
-    #     token=invite_token,
-    #     bureau_name=bureau_naam,
+        for user_id in request.team_member_ids:
+            try:
+                user = db.table('users')\
+                    .select('id, email, naam')\
+                    .eq('id', user_id)\
+                    .execute()
+                if not user.data:
+                    results['failed'].append({
+                        'id': user_id,
+                        'reason': 'Not found'
+                    })
+                    continue
+                member = user.data[0]
+                if not member.get('email'):
+                    results['failed'].append({
+                        'id': user_id,
+                        'naam': member['naam'],
+                        'reason': 'No email address'
+                    })
+                    continue
+                # Check user_bureau_access for invitation status
+                access = db.table('user_bureau_access')\
+                    .select('invitation_status')\
+                    .eq('user_id', user_id)\
+                    .eq('tenderbureau_id', current_user.get('tenderbureau_id'))\
+                    .execute()
+                if access.data and access.data[0].get('invitation_status') in ('pending', 'accepted'):
+                    results['skipped'].append({
+                        'id': user_id,
+                        'naam': member['naam'],
+                        'reason': f"Already {access.data[0].get('invitation_status')}"
+                    })
+                    continue
+                # Check permission
+                can_invite = await check_user_can_invite(db, current_user['id'], current_user.get('tenderbureau_id'))
+                if not can_invite:
+                    results['failed'].append({
+                        'id': user_id,
+                        'naam': member['naam'],
+                        'reason': 'No permission'
+                    })
+                    continue
+                invite_token = str(uuid.uuid4())
+                expires_at = datetime.utcnow() + timedelta(days=7)
+                invitation_data = {
+                    'tenderbureau_id': current_user.get('tenderbureau_id'),
+                    'invited_by': current_user['id'],
+                    'email': member['email'],
+                    'role': request.role,
+                    'invite_token': invite_token,
+                    'status': 'pending',
+                    'expires_at': expires_at.isoformat(),
+                    'user_id': user_id
+                }
+                db.table('bureau_invites').insert(invitation_data).execute()
+                db.table('user_bureau_access')\
+                    .update({
+                        'invitation_status': 'pending',
+                        'invited_at': datetime.utcnow().isoformat()
+                    })\
+                    .eq('user_id', user_id)\
+                    .eq('tenderbureau_id', current_user.get('tenderbureau_id'))\
+                    .execute()
+                results['sent'].append({
+                    'id': user_id,
+                    'naam': member['naam'],
+                    'email': member['email']
+                })
+            except Exception as e:
+                results['failed'].append({
+                    'id': user_id,
+                    'reason': str(e)
+                })
     #     inviter_name=inviter_info['naam'],
     #     personal_message=invitation.personal_message
     # )

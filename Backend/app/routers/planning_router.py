@@ -1,13 +1,13 @@
 # ================================================================
-# TenderZen — Planning Router
+# TenderZen â€” Planning Router
 # Backend/app/routers/planning_router.py
-# Datum: 2026-02-11 (v3.5 — RLS-compatible met user JWT)
+# Datum: 2026-02-11 (v3.5 â€” RLS-compatible met user JWT)
 # ================================================================
 #
 # WIJZIGINGEN v3.5:
-# - ALLE endpoints: db = get_supabase() → db: Client = Depends(get_user_db)
-#   → auth.uid() werkt nu correct in RLS policies
-#   → Geen service_role bypass nodig
+# - ALLE endpoints: db = get_supabase() â†’ db: Client = Depends(get_user_db)
+#   â†’ auth.uid() werkt nu correct in RLS policies
+#   â†’ Geen service_role bypass nodig
 # - team-members: is_active NULL wordt als actief behandeld
 # - team-members: drie kolom-fallbacks (tenderbureau_id/company_id/bureau_id)
 # - BackplanningService ontvangt nu user-scoped DB client
@@ -56,9 +56,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Planning"])
 
 
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # DEPENDENCY: BackplanningService (nu met user DB)
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def get_backplanning_service(
     db: Client = Depends(get_user_db)
@@ -67,10 +67,10 @@ def get_backplanning_service(
     return BackplanningService(db)
 
 
-# ═══════════════════════════════════════════════════
-# 1. TEAM MEMBERS — Teamleden ophalen per bureau
-# ═══════════════════════════════════════════════════
-# ⚠️ BEVEILIGINGSKRITISCH: Altijd filteren op bureau.
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# 1. TEAM MEMBERS â€” Teamleden ophalen per bureau
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# âš ï¸ BEVEILIGINGSKRITISCH: Altijd filteren op bureau.
 # NOOIT team_members ophalen zonder bureau-filter.
 # team_members tabel is de bron voor tender_team_assignments.
 #
@@ -80,128 +80,74 @@ def get_backplanning_service(
 # - Kolom: drie fallbacks (tenderbureau_id/company_id/bureau_id)
 # - Fallback: retry zonder is_active als eerste query 0 retourneert
 
+from pydantic import BaseModel
+from typing import List, Optional, Any
+
+class TeamMemberOut(BaseModel):
+    user_id: str
+    naam: str
+    email: Optional[str]
+    bureau_rol: Optional[str]
+    initialen: Optional[str]
+    avatar_kleur: Optional[str]
+    tenderbureau_id: Optional[str]
+    # Voeg hier andere relevante velden toe indien gewenst
+
+class TeamMembersResponse(BaseModel):
+    success: bool
+    data: List[TeamMemberOut]
+    count: int
+
 @router.get(
     "/team-members",
-    summary="Haal teamleden op voor het bureau",
-    description="Retourneert alle actieve teamleden uit de team_members tabel voor het huidige bureau."
+    summary="Team Members voor Bureau",
+    description="Retourneert alle actieve teamleden uit de v_bureau_team view voor het huidige bureau.",
+    response_model=TeamMembersResponse
 )
 async def get_team_members(
     tenderbureau_id: Optional[str] = Query(None, description="Override bureau ID"),
     current_user: dict = Depends(get_current_user),
     db: Client = Depends(get_user_db)
 ):
-    """Haal alle teamleden op voor het bureau van de ingelogde gebruiker.
-    
-    Bron: team_members tabel (niet user_bureau_access).
-    SECURITY: Altijd gefilterd op bureau — nooit zonder filter.
+    """
+    Bron: v_bureau_team view (combineert user_bureau_access + users).
     """
     try:
-        # ⭐ Centraal bureau-context resolution
         bureau_id = await resolve_bureau_id(
             current_user, explicit_bureau_id=tenderbureau_id, db=db
         )
-
         logger.info(f"🔎 Team members ophalen voor bureau: {bureau_id}")
-
-        # ────────────────────────────────────────────────────────
-        # Stap 1: Detecteer welke kolom team_members gebruikt
-        # Probeer 3 mogelijke kolomnamen voor bureau-koppeling
-        # ────────────────────────────────────────────────────────
-        BUREAU_COLUMNS = ['tenderbureau_id', 'company_id', 'bureau_id']
-        BASE_SELECT = 'id, user_id, naam, email, rol, avatar_kleur, initialen, capaciteit_uren_per_week, is_active'
-
-        members = []
-        filter_used = None
-        errors = {}
-
-        for col in BUREAU_COLUMNS:
-            try:
-                # ────────────────────────────────────────────────
-                # FIX: .neq('is_active', False) i.p.v. .eq('is_active', True)
-                # .eq(True) matcht NIET op NULL
-                # .neq(False) matcht WEL op NULL + True
-                # ────────────────────────────────────────────────
-                result = db.table('team_members') \
-                    .select(f'{BASE_SELECT}, {col}') \
-                    .eq(col, bureau_id) \
-                    .neq('is_active', False) \
-                    .order('naam') \
-                    .execute()
-
-                all_members = result.data or []
-                filter_used = col
-
-                logger.info(
-                    f"✅ Filter op {col}: {len(all_members)} leden gevonden"
-                )
-                members = all_members
-                break  # Kolom gevonden en query geslaagd
-
-            except Exception as e:
-                errors[col] = str(e)
-                logger.info(f"ℹ️ Kolom '{col}' niet beschikbaar: {e}")
-                continue
-
-        # ────────────────────────────────────────────────────────
-        # Stap 2: Alle kolom-pogingen mislukt?
-        # ────────────────────────────────────────────────────────
-        if filter_used is None:
-            logger.error(
-                f"⛔ Kan team_members niet filteren op bureau: {errors}"
-            )
-            return {
-                "data": [],
-                "error": "Bureau filter kolom niet gevonden",
-                "filter_attempted": BUREAU_COLUMNS,
-                "bureau_id": bureau_id
-            }
-
-        # ────────────────────────────────────────────────────────
-        # Stap 3: Fallback zonder is_active filter
-        # ────────────────────────────────────────────────────────
-        if len(members) == 0 and filter_used:
-            logger.warning(f"⚠️ 0 leden, retry zonder is_active filter")
-            try:
-                fallback = db.table('team_members') \
-                    .select(f'{BASE_SELECT}, {filter_used}') \
-                    .eq(filter_used, bureau_id) \
-                    .order('naam') \
-                    .execute()
-                fb_members = fallback.data or []
-
-                if len(fb_members) > 0:
-                    members = [
-                        m for m in fb_members
-                        if m.get('is_active') is not False
-                    ]
-                    if len(members) == 0:
-                        members = fb_members
-                    logger.warning(f"   🔄 Fallback: {len(members)} leden")
-            except Exception as e:
-                logger.error(f"   ❌ Fallback mislukt: {e}")
-
-        logger.info(f"📋 {len(members)} team_members via '{filter_used}'")
-
+        # Direct query - view filtert al op is_active
+        result = db.table('v_bureau_team') \
+            .select('*') \
+            .eq('tenderbureau_id', bureau_id) \
+            .order('naam') \
+            .execute()
+        members = result.data or []
+        logger.info(f"📋 {len(members)} team members opgehaald via v_bureau_team")
+        # Converteer dicts naar TeamMemberOut instanties voor OpenAPI compatibiliteit
+        try:
+            members_out = [TeamMemberOut(**m) for m in members]
+        except Exception as e:
+            logger.error(f"❌ Fout bij converteren teamleden naar TeamMemberOut: {e}")
+            # Fallback: retourneer originele dicts (voor backward compatibility)
+            members_out = members
         return {
-            "data": members,
-            "filter_used": filter_used,
-            "bureau_id": bureau_id,
-            "count": len(members)
+            "success": True,
+            "data": members_out,
+            "count": len(members_out)
         }
-
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Fout bij ophalen teamleden: {e}", exc_info=True)
+        logger.error(f"❌ Fout bij ophalen team members: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail="Fout bij ophalen teamleden"
+            detail="Er ging iets mis bij het ophalen van teamleden"
         )
 
 
-# ═══════════════════════════════════════════════════
-# 2. AGENDA — Cross-tender overzicht (AgendaView)
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+# 2. AGENDA â€” Cross-tender overzicht (AgendaView)
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @router.get(
     "/planning/agenda",
@@ -275,10 +221,10 @@ async def get_agenda_data(
             current_user, explicit_bureau_id=tenderbureau_id, db=db, required=False
         )
         if resolved_bureau:
-            team_result = db.table('gebruikers') \
-                .select('id, naam, email, rol, avatar_url') \
+            team_result = db.table('v_bureau_team') \
+                .select('user_id, naam, email, initialen, avatar_kleur, bureau_rol') \
                 .eq('tenderbureau_id', resolved_bureau) \
-                .eq('actief', True) \
+                .order('naam') \
                 .execute()
             team_members = team_result.data or []
 
@@ -299,9 +245,9 @@ async def get_agenda_data(
         )
 
 
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # 3. BACK-PLANNING GENERATIE
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @router.post(
     "/planning/generate-backplanning",
@@ -323,7 +269,7 @@ async def generate_backplanning(
 
     - **deadline**: Indiendatum (T-0)
     - **template_id**: UUID van het planning template
-    - **team_assignments**: Mapping van rol → user_id
+    - **team_assignments**: Mapping van rol â†’ user_id
     - **tenderbureau_id**: UUID van het bureau
     - **tender_id**: Optioneel, voor workload-check
     """
@@ -348,9 +294,9 @@ async def generate_backplanning(
         )
 
 
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # 4. WORKLOAD QUERY
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @router.get(
     "/team/workload",
@@ -414,9 +360,9 @@ async def get_workload(
         )
 
 
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # 5. PLANNING & CHECKLIST COUNTS
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @router.get(
     "/planning-counts",
@@ -484,9 +430,9 @@ async def get_all_planning_counts(
         )
 
 
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # 6. TEMPLATE CRUD
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @router.get(
     "/planning-templates",
@@ -542,7 +488,7 @@ async def list_templates(
 @router.get(
     "/planning-templates/{template_id}",
     response_model=TemplateResponse,
-    summary="Eén template met taken ophalen"
+    summary="EÃ©n template met taken ophalen"
 )
 async def get_template(
     template_id: str,
@@ -803,9 +749,9 @@ async def duplicate_template(
         )
 
 
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 # 7. TEMPLATE TAKEN BULK UPDATE
-# ═══════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 @router.put(
     "/planning-templates/{template_id}/taken",
@@ -870,3 +816,150 @@ async def replace_template_taken(
             status_code=500,
             detail="Fout bij updaten template taken"
         )
+
+
+# ═══════════════════════════════════════════════════
+# 8. PLANNING SAVE — Voor SmartImport wizard
+# ═══════════════════════════════════════════════════
+
+@router.post("/planning/save", summary="Opslaan planning taken")
+async def save_planning(
+    request: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
+):
+    """
+    Sla planning taken en checklist items op voor een tender.
+    
+    Request body:
+    {
+        "tender_id": "uuid",
+        "taken": [...],
+        "checklist": [...],
+        "team_assignments": {...},
+        "tenderbureau_id": "uuid"
+    }
+    """
+    try:
+        tender_id = request.get('tender_id')
+        taken = request.get('taken', [])
+        checklist = request.get('checklist', [])
+        team_assignments = request.get('team_assignments', {})
+        tenderbureau_id = request.get('tenderbureau_id')
+        
+        if not tender_id:
+            raise HTTPException(status_code=400, detail="tender_id is verplicht")
+        
+        logger.info(f"💾 Opslaan planning voor tender {tender_id}: {len(taken or [])} taken, {len(checklist or [])} checklist items, {len(team_assignments or {})} team assignments")
+        
+        # ── Stap 1: Planning taken opslaan ──
+        # Simpele conversie - verwacht al correct format van BackplanningService
+        planning_inserts = []
+        for taak in taken:
+            # toegewezen_aan komt nu als array van user IDs
+            toegewezen = taak.get('toegewezen_aan')
+            
+            # Ensure het een list is
+            if not isinstance(toegewezen, list):
+                toegewezen = [toegewezen] if toegewezen else []
+            
+            planning_inserts.append({
+                'tender_id': tender_id,
+                'taak_naam': taak.get('naam'),
+                'beschrijving': taak.get('beschrijving'),
+                'datum': taak.get('datum'),
+                'categorie': taak.get('categorie') or taak.get('rol') or 'algemeen',
+                'toegewezen_aan': toegewezen,  # Al correct format: ["uuid"]
+                'is_milestone': taak.get('is_mijlpaal', False),
+                'volgorde': taak.get('volgorde', 0),
+                'status': 'todo',
+                'tenderbureau_id': tenderbureau_id
+            })
+
+        # ── Stap 2: Checklist items opslaan ──
+        checklist_inserts = []
+
+        # Insert planning taken (NA de loop!)
+        if planning_inserts:
+            logger.info(f"💾 Planning inserts array bevat: {len(planning_inserts)} items")
+            logger.info(f"🔍 Eerste 3 taken: {[p.get('taak_naam') for p in planning_inserts[:3]]}")
+            
+            db.table('planning_taken').insert(planning_inserts).execute()
+            
+            # Check hoeveel er echt in DB zijn gekomen
+            verify = db.table('planning_taken').select('id').eq('tender_id', tender_id).execute()
+            logger.info(f"✅ {len(planning_inserts)} taken VERSTUURD, {len(verify.data)} in DATABASE")
+
+        # Checklist loop
+        for item in checklist:
+            toegewezen = item.get('toegewezen_aan')
+            
+            # Ensure het een list is
+            if not isinstance(toegewezen, list):
+                toegewezen = [toegewezen] if toegewezen else []
+            
+            checklist_inserts.append({
+                'tender_id': tender_id,
+                'taak_naam': item.get('naam'),
+                'beschrijving': item.get('beschrijving'),
+                'sectie': item.get('categorie') or item.get('sectie') or 'algemeen',
+                'deadline': item.get('datum') or item.get('deadline'),
+                'verantwoordelijke_data': toegewezen,  # Al correct format: ["uuid"]
+                'is_verplicht': item.get('is_verplicht', True),
+                'volgorde': item.get('volgorde', 0),
+                'status': 'pending',
+                'tenderbureau_id': tenderbureau_id
+            })
+
+        if checklist_inserts:
+            db.table('checklist_items').insert(checklist_inserts).execute()
+            logger.info(f"✅ {len(checklist_inserts)} checklist items opgeslagen")
+                      
+        # ── Stap 3: Team assignments opslaan ──
+        # FIX v3.8: Robuuste validatie + error handling
+        team_saved = 0
+        if team_assignments:
+            team_inserts = []
+            for rol, user_id in team_assignments.items():
+                if not user_id:
+                    continue
+                
+                # Validate dat user_id bestaat in users tabel
+                try:
+                    user_check = db.table('users').select('id').eq('id', user_id).execute()
+                    if not user_check.data or len(user_check.data) == 0:
+                        logger.warning(f"⚠️ User {user_id} niet in users tabel - skip '{rol}'")
+                        continue
+                except Exception as check_err:
+                    logger.warning(f"⚠️ Validatie user {user_id} gefaald: {check_err} - skip '{rol}'")
+                    continue
+                
+                team_inserts.append({
+                    'tender_id': tender_id,
+                    'user_id': user_id,
+                    'rol_in_tender': rol
+                })
+            
+            if team_inserts:
+                try:
+                    # Verwijder bestaande assignments eerst
+                    db.table('tender_team_assignments').delete().eq('tender_id', tender_id).execute()
+                    db.table('tender_team_assignments').insert(team_inserts).execute()
+                    team_saved = len(team_inserts)
+                    logger.info(f"✅ {team_saved} team assignments opgeslagen")
+                except Exception as team_err:
+                    logger.error(f"❌ Team assignments opslaan gefaald: {team_err}")
+                    # Don't raise - planning en checklist zijn al opgeslagen
+        
+        return {
+            "success": True,
+            "planning_count": len(planning_inserts),
+            "checklist_count": len(checklist_inserts),
+            "team_count": team_saved
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Fout bij opslaan planning: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Fout bij opslaan planning: {str(e)}")

@@ -33,24 +33,24 @@
 // ============================================
 
 export const ROL_KLEUREN = {
-    manager:       '#ec4899',
-    coordinator:   '#8b5cf6',
-    schrijver:     '#3b82f6',
-    designer:      '#10b981',
-    calculator:    '#6366f1',
-    reviewer:      '#84cc16',
-    sales:         '#f59e0b',
+    manager: '#ec4899',
+    coordinator: '#8b5cf6',
+    schrijver: '#3b82f6',
+    designer: '#10b981',
+    calculator: '#6366f1',
+    reviewer: '#84cc16',
+    sales: '#f59e0b',
     klant_contact: '#06b6d4'
 };
 
 export const ROL_LABELS = {
-    manager:       'Manager',
-    coordinator:   'CoÃ¶rdinator',
-    schrijver:     'Schrijver',
-    designer:      'Designer',
-    calculator:    'Calculator',
-    reviewer:      'Reviewer',
-    sales:         'Sales',
+    manager: 'Manager',
+    coordinator: 'CoÃ¶rdinator',
+    schrijver: 'Schrijver',
+    designer: 'Designer',
+    calculator: 'Calculator',
+    reviewer: 'Reviewer',
+    sales: 'Sales',
     klant_contact: 'Klant contact'
 };
 
@@ -146,7 +146,7 @@ export class TenderCardFooter {
                 <span class="tcf-avatar" 
                       style="background: ${kleur}"
                       title="${this._esc(member.naam || '')} (${rolLabel}${urenText})"
-                      data-member-id="${member.team_member_id || ''}">
+                      data-member-id="${member.user_id || ''}">
                     ${initialen}
                 </span>
             `;

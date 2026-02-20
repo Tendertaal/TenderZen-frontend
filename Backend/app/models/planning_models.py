@@ -1,11 +1,16 @@
 # ================================================================
 # TenderZen — Planning Models
 # Backend/app/models/planning_models.py
-# Datum: 2026-02-08
+# Datum: 2026-02-19 (FIXED voor Optie A - User ID arrays)
 # ================================================================
 #
 # Pydantic modellen voor request/response validatie
 # van de planning endpoints.
+#
+# WIJZIGINGEN v2.0 (2026-02-19):
+# - toegewezen_aan: PersoonInfo dict → List[str] (array van user IDs)
+# - Verwijderd: PersoonInfo class (niet meer nodig)
+# - WorkloadWarning: simplified fields
 # ================================================================
 
 from pydantic import BaseModel, Field
@@ -144,14 +149,6 @@ class TemplateTakenBulkRequest(BaseModel):
 # RESPONSE MODELS
 # ════════════════════════════════════════════════
 
-class PersoonInfo(BaseModel):
-    """Team member info in een planning-taak"""
-    id: str
-    naam: str
-    initialen: str
-    avatar_kleur: str = '#6b7280'
-
-
 class ConflictInfo(BaseModel):
     """Workload conflict bij een taak"""
     type: str = 'workload'
@@ -160,14 +157,20 @@ class ConflictInfo(BaseModel):
 
 
 class PlanningTaak(BaseModel):
-    """Een berekende taak in de back-planning"""
+    """
+    Een berekende taak in de back-planning.
+    
+    FIXED v2.0: toegewezen_aan is nu List[str] (array van user UUIDs)
+    i.p.v. PersoonInfo object. Frontend resolved user IDs naar user details.
+    """
     naam: str
     beschrijving: Optional[str] = None
     datum: str
     eind_datum: str
     duur_werkdagen: int = 1
     rol: str
-    toegewezen_aan: Optional[PersoonInfo] = None
+    categorie: Optional[str] = None
+    toegewezen_aan: List[str] = []  # ← FIXED: Array van user UUIDs
     is_mijlpaal: bool = False
     is_verplicht: bool = True
     t_minus: int
@@ -175,15 +178,23 @@ class PlanningTaak(BaseModel):
     conflict: Optional[ConflictInfo] = None
 
 
+# Aliases voor backward compatibility met planning_router imports
+PlanningTaakResponse = PlanningTaak
+ChecklistItemResponse = PlanningTaak
+
+
 class WorkloadWarning(BaseModel):
-    """Workload waarschuwing"""
+    """
+    Workload waarschuwing.
+    
+    FIXED v2.0: Simplified - removed 'persoon' (naam) field.
+    Frontend resolved persoon_id naar naam via UserResolutionHelper.
+    """
     persoon_id: str
-    persoon: str
     datum: str
-    week: str
-    taken_count: int
-    severity: str
+    existing_count: int
     bericht: str
+    severity: str  # 'warning' of 'error'
 
 
 class PlanningMetadata(BaseModel):

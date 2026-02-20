@@ -20,18 +20,18 @@ const Icons = window.Icons || {};
 // ══════════════════════════════════════════════
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec'];
-const MONTHS_FULL  = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
-const DAYS_SHORT   = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+const MONTHS_FULL = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+const DAYS_SHORT = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
 
 const SIDEBAR_W = 240;
 
 /** Fase-kleuren: gradient start, gradient end, accent (uit mockup) */
 const FASE_COLORS = {
-    acquisitie:     { s: '#d97706', e: '#e5921a', a: '#ea580c' },
+    acquisitie: { s: '#d97706', e: '#e5921a', a: '#ea580c' },
     inschrijvingen: { s: '#6d5ccd', e: '#7c6fe0', a: '#7c3aed' },
-    ingediend:      { s: '#0d9263', e: '#10b981', a: '#16a34a' },
-    evaluatie:      { s: '#0d9488', e: '#14b8a6', a: '#0d9488' },
-    archief:        { s: '#475569', e: '#5a6b80', a: '#64748b' },
+    ingediend: { s: '#0d9263', e: '#10b981', a: '#16a34a' },
+    evaluatie: { s: '#0d9488', e: '#14b8a6', a: '#0d9488' },
+    archief: { s: '#475569', e: '#5a6b80', a: '#64748b' },
 };
 
 const FASE_LABELS = {
@@ -78,7 +78,7 @@ function weekNumber(d) {
 /** Alle maandagen van weken in maand (y, m) */
 function weeksInMonth(y, m) {
     const first = new Date(y, m, 1);
-    const last  = new Date(y, m + 1, 0);
+    const last = new Date(y, m + 1, 0);
     const weeks = [];
     let cursor = getMonday(first);
     while (cursor <= last) {
@@ -121,12 +121,12 @@ export class AgendaView extends BaseView {
         this.currentView = 'month';  // week | month | quarter | year
         this.offset = 0;             // Navigatie-offset t.o.v. vandaag
         this.filterMode = 'alle';    // alle | mijn
-        this.selectedTeamMemberId = null;
+        this.selectedUserId = null;
         this.selectedTenderId = null;
 
         // ── Data ──
         this.tenders = [];           // Array van tender objecten (met taken erin)
-        this.teamMembers = [];
+        this.vBureauTeam = [];
         this.nietGeplandeTenders = []; // Tenders zonder backplanning
         this.isLoading = false;
 
@@ -170,7 +170,7 @@ export class AgendaView extends BaseView {
 
         try {
             const { startDate, endDate } = this.getDateRange();
-            const teamMemberId = this.filterMode === 'mijn' ? this.selectedTeamMemberId : null;
+            const userId = this.filterMode === 'mijn' ? this.selectedUserId : null;
 
             console.log(`📅 loadData: ${startDate} → ${endDate}, view=${this.currentView}, offset=${this.offset}`);
 
@@ -181,7 +181,7 @@ export class AgendaView extends BaseView {
                 return;
             }
 
-            const data = await planningService.getAgendaData(startDate, endDate, teamMemberId);
+            const data = await planningService.getAgendaData(startDate, endDate, userId);
 
             // Bewaar ruwe data voor niet-gepland detectie
             this.rawTenders = data.tenders || {};
@@ -189,14 +189,14 @@ export class AgendaView extends BaseView {
 
             // Bouw tenders array op vanuit de API response
             this.tenders = this._buildTenderList(data);
-            this.teamMembers = data.team_members || [];
+            this.vBureauTeam = data.v_bureau_team || [];
 
             // Detecteer tenders zonder backplanning
             this._detectNietGepland();
 
             // Auto-select eerste teamlid
-            if (!this.selectedTeamMemberId && this.teamMembers.length > 0) {
-                this.selectedTeamMemberId = this.teamMembers[0].id;
+            if (!this.selectedUserId && this.vBureauTeam.length > 0) {
+                this.selectedUserId = this.vBureauTeam[0].user_id;
             }
 
             console.log(`📅 Loaded: ${this.tenders.length} tenders, ${this.nietGeplandeTenders.length} niet gepland`);
@@ -547,11 +547,11 @@ export class AgendaView extends BaseView {
                 ${this.renderFilterBar(stats)}
                 <div class="agenda-planning-container">
                     ${this.isLoading
-                        ? this.renderLoading()
-                        : this.tenders.length === 0 && this.nietGeplandeTenders.length === 0
-                            ? this.renderEmpty()
-                            : this.renderMainContent()
-                    }
+                ? this.renderLoading()
+                : this.tenders.length === 0 && this.nietGeplandeTenders.length === 0
+                    ? this.renderEmpty()
+                    : this.renderMainContent()
+            }
                 </div>
                 ${!this.isLoading ? this.renderLegend() : ''}
                 ${!this.isLoading && this.nietGeplandeTenders.length > 0 ? this.renderNietGepland() : ''}
@@ -615,14 +615,14 @@ export class AgendaView extends BaseView {
                <div class="agenda-team-selector">
                    Bekijk als:
                    ${this.teamMembers.map(m => {
-                       const sel = m.id === this.selectedTeamMemberId;
-                       const color = m.avatar_kleur || '#6366f1';
-                       const initials = m.initialen || m.naam?.substring(0, 2).toUpperCase() || '??';
-                       return `<span class="agenda-avatar-xs ${sel ? 'selected' : ''}"
+                const sel = m.id === this.selectedTeamMemberId;
+                const color = m.avatar_kleur || '#6366f1';
+                const initials = m.initialen || m.naam?.substring(0, 2).toUpperCase() || '??';
+                return `<span class="agenda-avatar-xs ${sel ? 'selected' : ''}"
                                      style="background:${color}"
                                      data-action="select-member"
                                      data-member-id="${m.id}">${initials}</span>`;
-                   }).join(' ')}
+            }).join(' ')}
                </div>`
             : '';
 
@@ -790,7 +790,7 @@ export class AgendaView extends BaseView {
         const faseLabel = FASE_LABELS[tender.fase] || tender.fase;
         const aiText = tender.ai_pitstop_status === 'ai_pro' ? '✦ AI Pro'
             : tender.ai_pitstop_status ? '✂ AI'
-            : '';
+                : '';
 
         return `
             <div class="agenda-bar-side">
@@ -833,9 +833,9 @@ export class AgendaView extends BaseView {
                     return `
                         <div class="agenda-bar-cols" style="grid-template-columns: repeat(${weeks.length}, 1fr); border-right: 1px solid rgba(255,255,255,.2)">
                             ${weeks.map(mon => {
-                                const isCW = isoDate(mon) === todayMonday;
-                                return `<div class="agenda-col-header ${isCW ? 'cw' : ''}">W${weekNumber(mon)}</div>`;
-                            }).join('')}
+                        const isCW = isoDate(mon) === todayMonday;
+                        return `<div class="agenda-col-header ${isCW ? 'cw' : ''}">W${weekNumber(mon)}</div>`;
+                    }).join('')}
                         </div>
                     `;
                 }).join('');
@@ -849,9 +849,9 @@ export class AgendaView extends BaseView {
                 return `
                     <div class="agenda-bar-cols" style="grid-template-columns: repeat(${weeks.length}, 1fr)">
                         ${weeks.map(mon => {
-                            const isCW = isoDate(mon) === todayMonday;
-                            return `<div class="agenda-col-header ${isCW ? 'cw' : ''}">W${weekNumber(mon)}</div>`;
-                        }).join('')}
+                    const isCW = isoDate(mon) === todayMonday;
+                    return `<div class="agenda-col-header ${isCW ? 'cw' : ''}">W${weekNumber(mon)}</div>`;
+                }).join('')}
                     </div>
                 `;
             }
@@ -865,9 +865,9 @@ export class AgendaView extends BaseView {
                 return `
                     <div class="agenda-bar-cols" style="grid-template-columns: repeat(7, 1fr)">
                         ${days.map((d, i) => {
-                            const isToday = isoDate(d) === todayStr;
-                            return `<div class="agenda-col-header ${isToday ? 'cd' : ''}">${DAYS_SHORT[i]} ${d.getDate()}</div>`;
-                        }).join('')}
+                    const isToday = isoDate(d) === todayStr;
+                    return `<div class="agenda-col-header ${isToday ? 'cd' : ''}">${DAYS_SHORT[i]} ${d.getDate()}</div>`;
+                }).join('')}
                     </div>
                 `;
             }
@@ -891,8 +891,8 @@ export class AgendaView extends BaseView {
                 <div class="agenda-sidebar-name">${escapeHtml(tender.naam)}</div>
                 <div class="agenda-sidebar-org">${orgSvg} ${escapeHtml(tender.organisatie)}</div>
                 ${tender.deadline
-                    ? `<span class="agenda-deadline-badge ${tender.deadlineUrgency}">⏰ ${escapeHtml(tender.deadlineDisplay)}</span>`
-                    : ''}
+                ? `<span class="agenda-deadline-badge ${tender.deadlineUrgency}">⏰ ${escapeHtml(tender.deadlineDisplay)}</span>`
+                : ''}
                 <div class="agenda-sidebar-footer">
                     <div class="agenda-sidebar-avatars">${avatarsHtml}</div>
                     <div class="agenda-sidebar-progress">
@@ -913,11 +913,11 @@ export class AgendaView extends BaseView {
 
     _renderTimeline(tender, fc) {
         switch (this.currentView) {
-            case 'year':    return this._renderTimelineYear(tender, fc);
+            case 'year': return this._renderTimelineYear(tender, fc);
             case 'quarter': return this._renderTimelineQuarter(tender, fc);
-            case 'month':   return this._renderTimelineMonth(tender, fc);
+            case 'month': return this._renderTimelineMonth(tender, fc);
             case 'week':
-            default:        return this._renderTimelineWeek(tender, fc);
+            default: return this._renderTimelineWeek(tender, fc);
         }
     }
 

@@ -194,23 +194,35 @@ async function fetchTccData(tenderId) {
     }
 
     // ── 5. Team data ophalen (bureau teamleden + tender toewijzingen) ──
-    // ⚠️ SECURITY: Altijd de tender's eigen tenderbureau_id meesturen
-    // zodat alleen teamleden van HET JUISTE bureau worden opgehaald.
     let bureauTeamMembers = [];
+    let tenderTeamAssignments = [];  // ⭐ NIEUW
+
     try {
         const tenderBureauId = tender.tenderbureau_id;
         if (!tenderBureauId) {
             console.warn('[TCC] ⚠️ Tender heeft geen tenderbureau_id — team members niet opgehaald');
         } else {
+            // Bureau teamleden (beschikbare pool)
             const teamResult = await tccApiCall(`/api/v1/team-members?tenderbureau_id=${tenderBureauId}`);
-            bureauTeamMembers = teamResult?.data || [];
+            bureauTeamMembers = (teamResult?.data || []).map(m => ({
+                user_id: m.user_id,
+                naam: m.naam,
+                bureau_rol: m.bureau_rol,
+                initialen: m.initialen,
+                email: m.email,
+                avatar_kleur: m.avatar_kleur
+            }));
             console.log(`[TCC] ${bureauTeamMembers.length} bureau teamleden geladen voor bureau ${tenderBureauId}`);
+            // ⭐ NIEUW: Tender-specifieke toewijzingen
+            const assignmentsResult = await tccApiCall(`/api/v1/tenders/${tenderId}/team-assignments`);
+            tenderTeamAssignments = assignmentsResult?.data || [];
+            console.log(`[TCC] ${tenderTeamAssignments.length} team assignments geladen voor tender`);
         }
     } catch (e) {
-        console.warn('[TCC] Team members niet beschikbaar:', e.message);
+        console.warn('[TCC] Team data niet beschikbaar:', e.message);
     }
 
-    return buildTccData(tender, smartImportData, aiDocuments, aiTemplates, bureauTeamMembers);
+    return buildTccData(tender, smartImportData, aiDocuments, aiTemplates, bureauTeamMembers, tenderTeamAssignments);
 }
 
 // ============================================
@@ -253,7 +265,7 @@ async function tccApiCall(endpoint, options = {}) {
 // DATA TRANSFORMATIE — Bouw TCC datastructuur
 // ============================================
 
-function buildTccData(tender, smartImportData, aiDocuments, aiTemplates = [], bureauTeamMembers = []) {
+function buildTccData(tender, smartImportData, aiDocuments, aiTemplates = [], bureauTeamMembers = [], tenderTeamAssignments = []) {
     const extractedData = smartImportData?.extracted_data || {};
     const uploadedFiles = smartImportData?.uploaded_files || [];
     const warnings = smartImportData?.warnings || [];
@@ -281,7 +293,12 @@ function buildTccData(tender, smartImportData, aiDocuments, aiTemplates = [], bu
     const checklistCounts = tender._checklistCounts || { done: 0, total: 0 };
 
     // ── Team tab ──
-    const team = transformTeam(tender, bureauTeamMembers);
+    // ⭐ Gebruik opgehaalde tenderTeamAssignments in plaats van tender property
+    const tenderWithAssignments = {
+        ...tender,
+        tender_team_assignments: tenderTeamAssignments
+    };
+    const team = transformTeam(tenderWithAssignments, bureauTeamMembers);
 
     // ── Workflow (voorlopig statisch, later uit DB) ──
     const workflow = buildWorkflowData(tender, smartImportData, aiDocuments);
@@ -676,7 +693,6 @@ function transformDocumenten(uploadedFiles, aiDocuments, smartImportData) {
 // ============================================
 // TRANSFORM — Team (tender toewijzingen + bureau leden)
 // ============================================
-
 function transformTeam(tender, bureauTeamMembers) {
     // Tender-specifieke toewijzingen
     const assignments = tender.tender_team_assignments || tender.team_members || [];
@@ -744,6 +760,18 @@ function transformTeam(tender, bureauTeamMembers) {
         requiredVacant: requiredVacant,
         totalUren: members.reduce((sum, m) => sum + (m.uren || 0), 0)
     };
+}
+
+// ⭐ Helper functie voor rol labels (gebruikt door renderTabTeam)
+function _rolLabel(rol) {
+    const labels = {
+        tendermanager: 'Tendermanager',
+        schrijver: 'Schrijver',
+        calculator: 'Calculator',
+        reviewer: 'Reviewer',
+        designer: 'Designer'
+    };
+    return labels[rol] || rol || 'Onbekend';
 }
 
 function buildWorkflowData(tender, smartImportData, aiDocuments) {
@@ -1370,7 +1398,7 @@ function renderCheckGroup(groep) {
 }
 
 // ============================================
-// RENDER — Tab: Team
+// RENDER — Tab: Team (VERBETERD)
 // ============================================
 
 function renderTabTeam(data) {
@@ -1433,9 +1461,13 @@ function renderTabTeam(data) {
             Dit beïnvloedt de backplanning toewijzingen.</span>
         </div>` : '';
 
-    // ── Teamlid toevoegen form ──
-    const addFormHtml = `
-        <div class="tcc-team-add" id="tcc-team-add-form" style="display:none;">
+    // ⭐ Teamlid toevoegen form (PERMANENT ZICHTBAAR bovenaan teamleden sectie)
+    const addFormHtml = available.length > 0 ? `
+        <div class="tcc-team-add-permanent">
+            <div class="tcc-team-add-header">
+                ${tccIcon('userPlus', 16, '#6366f1')}
+                <span>Teamlid toevoegen</span>
+            </div>
             <div class="tcc-team-add-row">
                 <select class="tcc-team-add-select" id="tcc-team-add-member">
                     <option value="">— Selecteer teamlid —</option>
@@ -1452,10 +1484,11 @@ function renderTabTeam(data) {
                 <button class="tcc-btn tcc-btn--primary tcc-btn--sm" data-action="team-add-confirm">
                     ${tccIcon('check', 12, '#ffffff')} Toevoegen
                 </button>
-                <button class="tcc-btn tcc-btn--ghost tcc-btn--sm" data-action="team-add-cancel">
-                    Annuleren
-                </button>
             </div>
+        </div>` : `
+        <div class="tcc-team-add-empty">
+            ${tccIcon('info', 14, '#94a3b8')}
+            <span>Alle beschikbare teamleden zijn al toegewezen</span>
         </div>`;
 
     return `
@@ -1474,10 +1507,10 @@ function renderTabTeam(data) {
                     <span class="tcc-section-chevron">${tccIcon('chevronDown', 14)}</span>
                 </div>
                 <div class="tcc-section-body">
+                    ${addFormHtml}
                     <div class="tcc-team-grid">
                         ${memberCardsHtml}
                     </div>
-                    ${addFormHtml}
                 </div>
             </div>
 
@@ -1559,16 +1592,174 @@ function renderTabTeam(data) {
     </div>`;
 }
 
-function _rolLabel(rol) {
-    const labels = {
-        tendermanager: 'Tendermanager',
-        schrijver: 'Schrijver',
-        calculator: 'Calculator',
-        reviewer: 'Reviewer',
-        designer: 'Designer'
-    };
-    return labels[rol] || rol || 'Onbekend';
+
+// ============================================
+// UPDATE FOOTER voor Team tab
+// ============================================
+
+// Voeg deze toe aan de updateTccFooter() functie binnen de 'configs' object:
+
+/*
+'team': {
+    left: `<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;">
+               ${tccIcon('users', 14)} ${teamMemberCount} teamleden toegewezen
+           </span>`,
+    right: `<button class="tcc-btn tcc-btn--ghost" data-action="close">${tccIcon('close', 14, '#64748b')} Sluiten</button>
+            <button class="tcc-btn tcc-btn--primary" data-action="team-save" id="tcc-team-save-btn" disabled>
+                ${tccIcon('save', 14, '#ffffff')} Opslaan
+            </button>`
 }
+*/
+
+
+// ============================================
+// EVENT HANDLER UPDATES
+// ============================================
+
+// In bindTccEvents(), voeg toe:
+/*
+case 'team-save':
+    await saveTeamChanges();
+    break;
+*/
+
+// Nieuwe functie voor opslaan:
+async function saveTeamChanges() {
+    const saveBtn = tccState.overlay?.querySelector('#tcc-team-save-btn');
+    if (!saveBtn || saveBtn.disabled) return;
+
+    try {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `<div class="tcc-spinner" style="width:14px;height:14px;border-width:2px;"></div> Opslaan...`;
+
+        // Hier komt de save logica (indien nodig - momenteel wordt alles direct opgeslagen via API)
+        // Voor nu: alleen de "unsaved changes" state resetten
+
+        showTccToast('Teamwijzigingen opgeslagen', 'success');
+
+        // Reset button state
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `${tccIcon('save', 14, '#ffffff')} Opgeslagen`;
+
+        setTimeout(() => {
+            saveBtn.innerHTML = `${tccIcon('save', 14, '#ffffff')} Opslaan`;
+        }, 2000);
+
+    } catch (e) {
+        console.error('[TCC] Team save error:', e);
+        showTccToast(`Opslaan mislukt: ${e.message}`, 'error');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = `${tccIcon('save', 14, '#ffffff')} Opslaan`;
+        }
+    }
+}
+
+// In handleTeamAddMember() en handleTeamRemoveMember(), activeer de save button:
+function enableTeamSaveButton() {
+    const saveBtn = tccState.overlay?.querySelector('#tcc-team-save-btn');
+    if (saveBtn) {
+        saveBtn.disabled = false;
+    }
+}
+
+// Voeg enableTeamSaveButton() toe aan het einde van:
+// - handleTeamAddMember() (na succesvolle toevoeging)
+// - handleTeamRemoveMember() (na succesvolle verwijdering)
+
+
+// ============================================
+// CSS ADDITIONS
+// ============================================
+
+const teamTabCSS = `
+/* Permanent toevoeg-formulier */
+.tcc-team-add-permanent {
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.tcc-team-add-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 12px;
+}
+
+.tcc-team-add-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.tcc-team-add-select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.tcc-team-add-select:focus {
+    border-color: #6366f1;
+}
+
+.tcc-team-add-select--rol {
+    flex: 0 0 160px;
+}
+
+.tcc-team-add-uren {
+    flex: 0 0 80px;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.tcc-team-add-uren:focus {
+    border-color: #6366f1;
+}
+
+.tcc-team-add-empty {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    color: #64748b;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+/* Opslaan button disabled state */
+.tcc-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Grid spacing met add form */
+.tcc-team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    /* Geen margin-top nodig - add form zit nu boven de grid */
+}
+`;
+
+// Injecteer deze CSS in de <head> of aan het einde van TCC stylesheet
 
 // ============================================
 // RENDER — Tab 4: Documenten

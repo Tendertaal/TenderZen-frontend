@@ -582,7 +582,7 @@ class DocumentGeneratieService:
             return 'Nog geen teamleden toegewezen.'
 
         try:
-            result = self.db.table('team_members') \
+            result = self.db.table('v_bureau_team') \
                 .select('user_id, naam, standaard_rol, rollen') \
                 .in_('user_id', user_ids) \
                 .execute()

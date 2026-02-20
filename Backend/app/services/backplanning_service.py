@@ -1,23 +1,30 @@
 # ================================================================
 # TenderZen — BackplanningService
 # Backend/app/services/backplanning_service.py
-# Datum: 2026-02-08
+# Bestandsnaam: backplanning_service_20260217_1730.py
+# Versie: 2.1 — FIX: 'planning' → 'planning_taken'
 # ================================================================
 #
-# Genereert een back-planning op basis van:
-# - Deadline (T-0)
-# - Template met taken en T-minus werkdagen
-# - Team toewijzingen (rol → persoon)
-# - Feestdagen van het bureau
+# WIJZIGINGEN v2.1 (2026-02-17 17:30):
+# - generate_backplanning(): return key 'planning' → 'planning_taken'
+#   → Frontend verwacht 'planning_taken', niet 'planning'
+# - Debug logging toegevoegd aan return statement
 #
-# Gebruikt door:
-# - Smart Import Wizard (Stap 5: ResultStep)
-# - Planning endpoints
+# WIJZIGINGEN v2.0:
+# - get_workload(): .contains('toegewezen_aan', ...) vervangen door
+#   RPC call naar get_workload_for_users() PostgreSQL-functie.
+#   → Omzeilt PostgREST jsonb-array bug volledig.
+# - _check_workload(): idem, nu via get_workload_per_dag() RPC.
+# - _get_team_details(): extra null-guard toegevoegd.
+# - Uitgebreide logging toegevoegd voor diagnose bij problemen.
+#
+# VEREIST:
+#   Migratie_WorkloadRPC_20260217_1100.sql moet zijn uitgevoerd
+#   in Supabase voordat deze service gebruikt kan worden.
 # ================================================================
 
 from datetime import date, timedelta
-from typing import Dict, List, Optional, Set, Tuple
-from collections import defaultdict
+from typing import Dict, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -25,537 +32,452 @@ logger = logging.getLogger(__name__)
 
 class BackplanningService:
     """
-    Genereert een back-planning door terug te tellen vanaf de deadline,
-    weekenden en feestdagen overslaand.
+    Genereert een back-planning en haalt workload-data op.
+
+    Gebruikt PostgreSQL RPC-functies voor alle queries op de
+    jsonb-kolom `toegewezen_aan` in planning_taken, om de
+    bekende PostgREST/supabase-py jsonb-array bug te vermijden.
     """
 
     def __init__(self, supabase_client):
         self.db = supabase_client
 
-    # ════════════════════════════════════════════════
-    # PUBLIEKE METHODES
-    # ════════════════════════════════════════════════
+    # ──────────────────────────────────────────────────────────────
+    # PUBLIEKE METHODEN
+    # ──────────────────────────────────────────────────────────────
 
     async def generate_backplanning(
         self,
         deadline: date,
         template_id: str,
-        team_assignments: Dict[str, str],  # rol → user_id
+        team_assignments: Dict[str, str],   # rol → user_id
         tenderbureau_id: str,
         tender_id: Optional[str] = None,
         include_checklist: bool = True
     ) -> dict:
-        """
-        Hoofdfunctie: genereer complete back-planning + optioneel checklist.
-
-        Args:
-            deadline: Indiendatum (T-0)
-            template_id: UUID van het planning template
-            team_assignments: Mapping van rol → user_id
-            tenderbureau_id: UUID van het bureau
-            tender_id: Optioneel, voor workload-check (exclude eigen tender)
-            include_checklist: Ook checklist template meenemen
-
-        Returns:
-            Dict met planning_taken, checklist_items, workload_warnings, metadata
-        """
-        logger.info(
-            f"Genereer backplanning: deadline={deadline}, "
-            f"template={template_id}, rollen={list(team_assignments.keys())}"
-        )
+        """Hoofdfunctie: genereer complete back-planning."""
 
         # 1. Haal template taken op
         template_taken = await self._get_template_taken(template_id)
-        if not template_taken:
-            logger.warning(f"Geen taken gevonden voor template {template_id}")
-            return self._empty_result()
 
-        # 2. Haal feestdagen op (huidig jaar + deadline jaar)
-        jaren = {date.today().year, deadline.year}
-        feestdagen = set()
-        for jaar in jaren:
-            feestdagen.update(
-                await self._get_feestdagen(tenderbureau_id, jaar)
-            )
+        # 2. Haal feestdagen op
+        feestdagen = await self._get_feestdagen(tenderbureau_id, deadline.year)
 
         # 3. Haal team member details op
-        unieke_user_ids = list(set(
-            uid for uid in team_assignments.values() if uid
-        ))
-        team_details = await self._get_team_details(unieke_user_ids)
-
-        # 4. Bereken datums (back-planning)
-        planning = self._bereken_planning(
-            deadline, template_taken, team_assignments, team_details, feestdagen
+        team_details = await self._get_team_details(
+            list(set(uid for uid in team_assignments.values() if uid))
         )
 
-        # 5. Optioneel: checklist genereren
+        # 4. Bereken datums (back-planning)
+        planning = []
+        for taak in template_taken:
+            taak_datum = self._bereken_werkdag(
+                deadline, taak['t_minus_werkdagen'], feestdagen
+            )
+            eind_datum = taak_datum
+            duur = taak.get('duur_werkdagen', 1) or 1
+            if duur > 1:
+                eind_datum = self._bereken_vooruit(
+                    taak_datum, duur - 1, feestdagen
+                )
+
+            user_id = team_assignments.get(taak['rol'])
+
+            planning.append({
+                'naam': taak['naam'],
+                'beschrijving': taak.get('beschrijving'),
+                'datum': taak_datum.isoformat(),
+                'eind_datum': eind_datum.isoformat(),
+                'duur_werkdagen': duur,
+                'rol': taak['rol'],
+                'categorie': taak.get('categorie', 'algemeen'),
+                'toegewezen_aan': [user_id] if user_id else [],  # Array van user IDs
+                'is_mijlpaal': taak.get('is_mijlpaal', False),
+                't_minus': taak['t_minus_werkdagen'],
+                'volgorde': taak.get('volgorde', 0)
+            })
+
+        # 5. Check workload conflicten
+        workload_warnings = []
+        if tender_id:
+            workload_warnings = await self._check_workload(
+                planning, tenderbureau_id, tender_id
+            )
+            for taak in planning:
+                if taak['toegewezen_aan']:
+                    for warning in workload_warnings:
+                        if (warning['persoon_id'] == taak['toegewezen_aan']['id']
+                                and warning['datum'] == taak['datum']):
+                            taak['conflict'] = {
+                                'type': 'workload',
+                                'bericht': warning['bericht'],
+                                'severity': warning['severity']
+                            }
+
+        # 6. Optioneel: checklist items genereren
         checklist_items = []
         if include_checklist:
             checklist_items = await self._generate_checklist(
-                deadline, tenderbureau_id, team_assignments,
-                team_details, feestdagen
+                template_id, deadline, feestdagen, team_assignments, team_details
             )
-
-        # 6. Check workload conflicten
-        workload_warnings = []
-        if tender_id and unieke_user_ids:
-            workload_warnings = await self._check_workload(
-                planning + checklist_items,
-                tenderbureau_id,
-                tender_id,
-                team_details
-            )
-            # Voeg conflict info toe aan individuele taken
-            self._attach_conflicts(planning, workload_warnings)
-            self._attach_conflicts(checklist_items, workload_warnings)
 
         # 7. Metadata berekenen
-        metadata = self._bereken_metadata(deadline, planning, feestdagen)
+        alle_datums = [
+            date.fromisoformat(t['datum'])
+            for t in planning
+            if t.get('datum')
+        ]
+        eerste = min(alle_datums).isoformat() if alle_datums else None
+        laatste = max(alle_datums).isoformat() if alle_datums else None
 
-        result = {
-            'planning_taken': planning,
+        # DEBUG v2.1: Log wat we gaan retourneren
+        logger.info("=" * 60)
+        logger.info("✅ BackplanningService.generate_backplanning RESULT:")
+        logger.info(f"   📊 {len(planning)} planning taken")
+        logger.info(f"   ✓ {len(checklist_items)} checklist items")
+        logger.info(f"   ⚠️ {len(workload_warnings)} workload warnings")
+        logger.info("=" * 60)
+
+        # FIX v2.1: Return key 'planning' → 'planning_taken'
+        return {
+            'planning_taken': planning,        # ← WAS: 'planning'
             'checklist_items': checklist_items,
             'workload_warnings': workload_warnings,
-            'metadata': metadata
+            'metadata': {
+                'eerste_taak': eerste,
+                'laatste_taak': laatste,
+                'deadline': deadline.isoformat(),
+                'doorlooptijd_werkdagen': len(alle_datums),
+                'doorlooptijd_kalenderdagen': (
+                    (date.fromisoformat(laatste) - date.fromisoformat(eerste)).days
+                    if eerste and laatste else 0
+                ),
+            }
         }
-
-        logger.info(
-            f"Backplanning gegenereerd: {len(planning)} taken, "
-            f"{len(checklist_items)} checklist items, "
-            f"{len(workload_warnings)} warnings"
-        )
-
-        return result
 
     async def get_workload(
         self,
         user_ids: List[str],
         start_date: date,
         end_date: date,
-        tenderbureau_id: str
+        tenderbureau_id: Optional[str] = None
     ) -> dict:
         """
-        Haal workload data op voor teamleden in een periode.
-        Groepeert op week en toont welke tenders actief zijn.
+        Haal workload op voor een lijst teamleden in een periode.
+
+        Gebruikt de PostgreSQL RPC-functie `get_workload_for_users`
+        om jsonb-array containment buiten PostgREST af te handelen.
 
         Returns:
-            Dict met per user_id: naam, weken met taken_count en tender namen
+            dict: { user_id: { week_key: taak_count, ... }, ... }
         """
+        # ── Input validatie ──────────────────────────────────────
         if not user_ids:
+            logger.warning("get_workload: geen user_ids meegegeven")
             return {}
 
-        team_details = await self._get_team_details(user_ids)
+        # Filter lege strings en None's
+        clean_ids = [uid.strip() for uid in user_ids if uid and uid.strip()]
+        if not clean_ids:
+            logger.warning("get_workload: alle user_ids waren leeg/None")
+            return {}
 
-        # Haal alle planning_taken op in deze periode voor deze gebruikers
-        result = self.db.table('planning_taken') \
-            .select('toegewezen_aan, datum, tender_id, tenders(naam)') \
-            .in_('toegewezen_aan', user_ids) \
-            .gte('datum', start_date.isoformat()) \
-            .lte('datum', end_date.isoformat()) \
-            .execute()
+        logger.info(
+            f"get_workload → {len(clean_ids)} users, "
+            f"{start_date} t/m {end_date}, bureau={tenderbureau_id}"
+        )
+        logger.debug(f"get_workload user_ids: {clean_ids}")
 
-        taken = result.data or []
-
-        # Groepeer per persoon per week
-        workload = {}
-        for user_id in user_ids:
-            details = team_details.get(user_id, {})
-            workload[user_id] = {
-                'naam': details.get('naam', 'Onbekend'),
-                'weken': {}
+        # ── RPC aanroep ──────────────────────────────────────────
+        try:
+            params = {
+                'p_user_ids': clean_ids,
+                'p_start':    start_date.isoformat(),
+                'p_end':      end_date.isoformat(),
+                'p_bureau_id': tenderbureau_id if tenderbureau_id else None
             }
+            logger.debug(f"RPC get_workload_for_users params: {params}")
 
-        for taak in taken:
-            uid = taak['toegewezen_aan']
-            if uid not in workload:
+            result = self.db.rpc('get_workload_for_users', params).execute()
+
+            rows = result.data or []
+            logger.info(f"get_workload → {len(rows)} rijen terug van RPC")
+
+        except Exception as e:
+            logger.error(
+                f"RPC get_workload_for_users mislukt: {e}", exc_info=True
+            )
+            # Geef lege dict terug i.p.v. crash — workload is informatief,
+            # niet functioneel-blokkerend voor de TeamStep.
+            return {}
+
+        # ── Resultaat transformeren naar frontend-formaat ────────
+        # { user_id: { "2026-W07": 3, "2026-W08": 1, ... }, ... }
+        workload: Dict[str, Dict[str, int]] = {}
+
+        for row in rows:
+            uid = row.get('user_id', '')
+            week = row.get('iso_week', '')
+            count = row.get('taak_count', 0)
+
+            if not uid or not week:
                 continue
 
-            taak_datum = date.fromisoformat(taak['datum'])
-            week_key = taak_datum.strftime('%G-W%V')  # ISO week
-            tender_naam = taak.get('tenders', {}).get('naam', 'Onbekend')
+            if uid not in workload:
+                workload[uid] = {}
+            workload[uid][week] = count
 
-            if week_key not in workload[uid]['weken']:
-                workload[uid]['weken'][week_key] = {
-                    'taken': 0,
-                    'tenders': []
-                }
-
-            week = workload[uid]['weken'][week_key]
-            week['taken'] += 1
-            if tender_naam not in week['tenders']:
-                week['tenders'].append(tender_naam)
-
+        logger.debug(f"get_workload resultaat: {workload}")
         return workload
 
-    # ════════════════════════════════════════════════
-    # PLANNING BEREKENING
-    # ════════════════════════════════════════════════
-
-    def _bereken_planning(
-        self,
-        deadline: date,
-        template_taken: list,
-        team_assignments: Dict[str, str],
-        team_details: dict,
-        feestdagen: Set[date]
-    ) -> list:
-        """Bereken concrete datums voor alle template-taken."""
-        planning = []
-
-        for taak in template_taken:
-            # Startdatum: T-minus werkdagen terug vanaf deadline
-            start_datum = self._bereken_werkdag_terug(
-                deadline, taak['t_minus_werkdagen'], feestdagen
-            )
-
-            # Einddatum: start + duur werkdagen vooruit
-            duur = taak.get('duur_werkdagen', 1)
-            if duur > 1:
-                eind_datum = self._bereken_werkdag_vooruit(
-                    start_datum, duur - 1, feestdagen
-                )
-            else:
-                eind_datum = start_datum
-
-            # Koppel persoon via rol
-            user_id = team_assignments.get(taak['rol'])
-            persoon = team_details.get(user_id) if user_id else None
-
-            planning.append({
-                'naam': taak['naam'],
-                'beschrijving': taak.get('beschrijving'),
-                'datum': start_datum.isoformat(),
-                'eind_datum': eind_datum.isoformat(),
-                'duur_werkdagen': duur,
-                'rol': taak['rol'],
-                'toegewezen_aan': persoon,
-                'is_mijlpaal': taak.get('is_mijlpaal', False),
-                'is_verplicht': taak.get('is_verplicht', True),
-                't_minus': taak['t_minus_werkdagen'],
-                'volgorde': taak.get('volgorde', 0)
-            })
-
-        return planning
-
-    async def _generate_checklist(
-        self,
-        deadline: date,
-        tenderbureau_id: str,
-        team_assignments: Dict[str, str],
-        team_details: dict,
-        feestdagen: Set[date]
-    ) -> list:
-        """Genereer checklist items op basis van het standaard checklist template."""
-        # Zoek het standaard checklist template voor dit bureau
-        result = self.db.table('planning_templates') \
-            .select('id') \
-            .eq('tenderbureau_id', tenderbureau_id) \
-            .eq('type', 'checklist') \
-            .eq('is_standaard', True) \
-            .eq('is_actief', True) \
-            .limit(1) \
-            .execute()
-
-        if not result.data:
-            logger.info("Geen standaard checklist template gevonden")
-            return []
-
-        checklist_template_id = result.data[0]['id']
-        checklist_taken = await self._get_template_taken(checklist_template_id)
-
-        return self._bereken_planning(
-            deadline, checklist_taken, team_assignments,
-            team_details, feestdagen
-        )
-
-    # ════════════════════════════════════════════════
-    # WERKDAG BEREKENING
-    # ════════════════════════════════════════════════
-
-    def _bereken_werkdag_terug(
-        self,
-        vanaf: date,
-        werkdagen: int,
-        feestdagen: Set[date]
-    ) -> date:
-        """
-        Tel werkdagen terug vanaf een datum.
-        Slaat weekenden (za/zo) en feestdagen over.
-
-        Args:
-            vanaf: Startdatum (deadline)
-            werkdagen: Aantal werkdagen terug (T-minus)
-            feestdagen: Set van feestdagen
-
-        Returns:
-            Berekende werkdag
-        """
-        if werkdagen == 0:
-            # T-0: als de deadline zelf geen werkdag is, zoek vorige werkdag
-            return self._dichtstbijzijnde_werkdag(vanaf, feestdagen, richting=-1)
-
-        current = vanaf
-        geteld = 0
-        while geteld < werkdagen:
-            current -= timedelta(days=1)
-            if self._is_werkdag(current, feestdagen):
-                geteld += 1
-
-        return current
-
-    def _bereken_werkdag_vooruit(
-        self,
-        vanaf: date,
-        werkdagen: int,
-        feestdagen: Set[date]
-    ) -> date:
-        """Tel werkdagen vooruit vanaf een datum."""
-        if werkdagen <= 0:
-            return vanaf
-
-        current = vanaf
-        geteld = 0
-        while geteld < werkdagen:
-            current += timedelta(days=1)
-            if self._is_werkdag(current, feestdagen):
-                geteld += 1
-
-        return current
-
-    def _is_werkdag(self, datum: date, feestdagen: Set[date]) -> bool:
-        """Check of een datum een werkdag is (geen weekend, geen feestdag)."""
-        return datum.weekday() < 5 and datum not in feestdagen
-
-    def _dichtstbijzijnde_werkdag(
-        self,
-        datum: date,
-        feestdagen: Set[date],
-        richting: int = -1
-    ) -> date:
-        """Zoek de dichtstbijzijnde werkdag (standaard: terug in de tijd)."""
-        current = datum
-        while not self._is_werkdag(current, feestdagen):
-            current += timedelta(days=richting)
-        return current
-
-    # ════════════════════════════════════════════════
-    # WORKLOAD CHECK
-    # ════════════════════════════════════════════════
+    # ──────────────────────────────────────────────────────────────
+    # PRIVÉ HELPERS
+    # ──────────────────────────────────────────────────────────────
 
     async def _check_workload(
         self,
         planning: list,
         tenderbureau_id: str,
-        exclude_tender_id: str,
-        team_details: dict
+        exclude_tender_id: str
     ) -> list:
         """
-        Check of teamleden workload-conflicten hebben door bestaande
-        taken in de planning te vergelijken.
+        Check of teamleden workload-conflicten hebben.
 
-        Drempels:
-        - >= 3 taken op één dag: warning
-        - >= 5 taken op één dag: danger
+        Gebruikt de PostgreSQL RPC-functie `get_workload_per_dag`
+        om jsonb-array containment buiten PostgREST af te handelen.
         """
         warnings = []
 
-        # Groepeer geplande taken per persoon + datum
-        persoon_datums = defaultdict(set)
+        # Verzamel unieke persoon → datums mapping
+        persoon_datums: Dict[str, set] = {}
         for taak in planning:
-            if taak.get('toegewezen_aan') and taak['toegewezen_aan'].get('id'):
+            if taak.get('toegewezen_aan'):
                 pid = taak['toegewezen_aan']['id']
-                persoon_datums[pid].add(taak['datum'])
+                persoon_datums.setdefault(pid, set()).add(taak['datum'])
 
-        for persoon_id, datums in persoon_datums.items():
-            for datum in datums:
-                try:
-                    result = self.db.table('planning_taken') \
-                        .select('id', count='exact') \
-                        .eq('toegewezen_aan', persoon_id) \
-                        .eq('datum', datum) \
-                        .neq('tender_id', exclude_tender_id) \
-                        .execute()
+        if not persoon_datums:
+            return []
 
-                    existing_count = result.count or 0
+        alle_user_ids = list(persoon_datums.keys())
+        alle_datums = list(
+            {d for datums in persoon_datums.values() for d in datums}
+        )
 
-                    if existing_count >= 3:
-                        persoon_info = team_details.get(persoon_id, {})
-                        persoon_naam = persoon_info.get('naam', 'Onbekend')
+        logger.debug(
+            f"_check_workload: {len(alle_user_ids)} users, "
+            f"{len(alle_datums)} datums"
+        )
 
-                        datum_obj = date.fromisoformat(datum)
-                        week_key = datum_obj.strftime('%G-W%V')
+        try:
+            result = self.db.rpc('get_workload_per_dag', {
+                'p_user_ids':       alle_user_ids,
+                'p_datums':         alle_datums,
+                'p_exclude_tender': exclude_tender_id
+            }).execute()
 
-                        warnings.append({
-                            'persoon_id': persoon_id,
-                            'persoon': persoon_naam,
-                            'datum': datum,
-                            'week': week_key,
-                            'taken_count': existing_count,
-                            'severity': 'danger' if existing_count >= 5 else 'warning',
-                            'bericht': (
-                                f"{persoon_naam} heeft al {existing_count} "
-                                f"taken op {datum}"
-                            )
-                        })
-                except Exception as e:
-                    logger.warning(
-                        f"Workload check mislukt voor {persoon_id} op {datum}: {e}"
-                    )
+            rows = result.data or []
+
+        except Exception as e:
+            logger.error(
+                f"RPC get_workload_per_dag mislukt: {e}", exc_info=True
+            )
+            return []   # Geen conflict-warnings bij fout, niet blokkerend
+
+        # Maak lookup: { user_id: { datum: count } }
+        dag_counts: Dict[str, Dict[str, int]] = {}
+        for row in rows:
+            uid = row.get('user_id', '')
+            dag = str(row.get('dag', ''))
+            cnt = row.get('taak_count', 0)
+            dag_counts.setdefault(uid, {})[dag] = cnt
+
+        # Bouw warnings op voor drempel ≥ 3
+        for taak in planning:
+            toegewezen = taak.get('toegewezen_aan')
+            if not toegewezen or not isinstance(toegewezen, list) or len(toegewezen) == 0:
+                continue
+            
+            pid = toegewezen[0]  # Eerste user_id uit array
+            datum = taak['datum']
+            bestaand = dag_counts.get(pid, {}).get(datum, 0)
+
+            if bestaand >= 3:
+                warnings.append({
+                    'persoon_id': pid,
+                    'datum': datum,
+                    'existing_count': bestaand,
+                    'bericht': (
+                        f"User heeft al {bestaand} taken op {datum}"
+                    ),
+                    'severity': 'error' if bestaand >= 5 else 'warning'
+                })
 
         return warnings
 
-    def _attach_conflicts(self, taken: list, warnings: list) -> None:
-        """Voeg conflict-info toe aan individuele taken."""
-        # Index warnings per persoon+datum voor snelle lookup
-        warning_index = {}
-        for w in warnings:
-            key = (w['persoon_id'], w['datum'])
-            warning_index[key] = w
+    async def _get_template_taken(self, template_id: str) -> list:
+        """Haal taken op uit een planning template."""
+        result = self.db.table('planning_template_taken') \
+            .select('*') \
+            .eq('template_id', template_id) \
+            .order('volgorde') \
+            .execute()
+        return result.data or []
 
-        for taak in taken:
-            persoon = taak.get('toegewezen_aan')
-            if not persoon or not persoon.get('id'):
-                continue
-
-            key = (persoon['id'], taak['datum'])
-            if key in warning_index:
-                w = warning_index[key]
-                taak['conflict'] = {
-                    'type': 'workload',
-                    'bericht': w['bericht'],
-                    'severity': w['severity']
-                }
-
-    # ════════════════════════════════════════════════
-    # METADATA
-    # ════════════════════════════════════════════════
-
-    def _bereken_metadata(
-        self,
-        deadline: date,
-        planning: list,
-        feestdagen: Set[date]
-    ) -> dict:
-        """Bereken samenvattende metadata voor de planning."""
-        if not planning:
-            return {
-                'eerste_taak': None,
-                'laatste_taak': None,
-                'doorlooptijd_werkdagen': 0,
-                'doorlooptijd_kalenderdagen': 0,
-                'feestdagen_overgeslagen': []
-            }
-
-        datums = [taak['datum'] for taak in planning]
-        eerste = min(datums)
-        laatste = max(datums)
-
-        eerste_date = date.fromisoformat(eerste)
-
-        # Welke feestdagen vallen in de planningsperiode?
-        overgeslagen = sorted([
-            d.isoformat() for d in feestdagen
-            if eerste_date <= d <= deadline
-        ])
-
-        # Bereken werkdagen in de periode
-        werkdagen = 0
-        current = eerste_date
-        while current <= deadline:
-            if self._is_werkdag(current, feestdagen):
-                werkdagen += 1
-            current += timedelta(days=1)
-
+    async def _get_feestdagen(self, tenderbureau_id: str, jaar: int) -> set:
+        """Haal feestdagen op voor het bureau in een bepaald jaar."""
+        result = self.db.table('bureau_feestdagen') \
+            .select('datum') \
+            .eq('tenderbureau_id', tenderbureau_id) \
+            .gte('datum', f'{jaar}-01-01') \
+            .lte('datum', f'{jaar}-12-31') \
+            .execute()
         return {
-            'eerste_taak': eerste,
-            'laatste_taak': laatste,
-            'deadline': deadline.isoformat(),
-            'doorlooptijd_werkdagen': werkdagen,
-            'doorlooptijd_kalenderdagen': (deadline - eerste_date).days,
-            'feestdagen_overgeslagen': overgeslagen
+            date.fromisoformat(row['datum'])
+            for row in (result.data or [])
         }
 
-    # ════════════════════════════════════════════════
-    # DATABASE QUERIES
-    # ════════════════════════════════════════════════
-
-    async def _get_template_taken(self, template_id: str) -> list:
-        """Haal alle taken op voor een template, gesorteerd op volgorde."""
-        try:
-            result = self.db.table('planning_template_taken') \
-                .select('*') \
-                .eq('template_id', template_id) \
-                .order('volgorde') \
-                .execute()
-            return result.data or []
-        except Exception as e:
-            logger.error(f"Fout bij ophalen template taken: {e}")
-            return []
-
-    async def _get_feestdagen(
-        self,
-        tenderbureau_id: str,
-        jaar: int
-    ) -> Set[date]:
-        """Haal feestdagen op voor een bureau en jaar."""
-        try:
-            result = self.db.table('bureau_feestdagen') \
-                .select('datum') \
-                .eq('tenderbureau_id', tenderbureau_id) \
-                .gte('datum', f'{jaar}-01-01') \
-                .lte('datum', f'{jaar}-12-31') \
-                .execute()
-            return {
-                date.fromisoformat(row['datum'])
-                for row in (result.data or [])
-            }
-        except Exception as e:
-            logger.error(f"Fout bij ophalen feestdagen: {e}")
-            return set()
-
     async def _get_team_details(self, user_ids: list) -> dict:
-        """
-        Haal team member details op.
-        Returns dict: user_id → {id, naam, initialen, avatar_kleur}
-        """
+        """Haal team member details op voor een lijst user IDs."""
         if not user_ids:
             return {}
 
-        try:
-            result = self.db.table('team_members') \
-                .select('id, user_id, naam, initialen, avatar_kleur, standaard_rol, rollen') \
-                .in_('user_id', user_ids) \
-                .execute()
+        result = self.db.table('v_bureau_team') \
+            .select('user_id, naam, initialen, avatar_kleur') \
+            .in_('user_id', user_ids) \
+            .execute()
 
-            return {
-                row['user_id']: {
-                    'id': row['user_id'],
-                    'naam': row['naam'],
-                    'initialen': row['initialen'],
-                    'avatar_kleur': row.get('avatar_kleur', '#6b7280')
-                }
-                for row in (result.data or [])
-            }
-        except Exception as e:
-            logger.error(f"Fout bij ophalen team details: {e}")
-            return {}
-
-    # ════════════════════════════════════════════════
-    # HELPERS
-    # ════════════════════════════════════════════════
-
-    def _empty_result(self) -> dict:
-        """Retourneer een leeg resultaat."""
         return {
-            'planning_taken': [],
-            'checklist_items': [],
-            'workload_warnings': [],
-            'metadata': {
-                'eerste_taak': None,
-                'laatste_taak': None,
-                'doorlooptijd_werkdagen': 0,
-                'doorlooptijd_kalenderdagen': 0,
-                'feestdagen_overgeslagen': []
+            row['user_id']: {
+                'id': row['user_id'],
+                'naam': row['naam'],
+                'initialen': row.get('initialen', '?'),
+                'avatar_kleur': row.get('avatar_kleur', '#6b7280')
             }
+            for row in (result.data or [])
+            if row.get('user_id')
         }
+
+    async def _generate_checklist(
+        self,
+        template_id: str,
+        deadline: date,
+        feestdagen: set,
+        team_assignments: dict = None,
+        team_details: dict = None
+    ) -> list:
+        """
+        Genereer checklist items op basis van checklist_templates tabel.
+        
+        FIX v2.2: Gebruikt checklist_templates (per bureau) i.p.v. 
+        planning_template_checklist (per planning template).
+        """
+        try:
+            # Haal bureau_id op uit het planning template
+            template_result = self.db.table('planning_templates') \
+                .select('tenderbureau_id') \
+                .eq('id', template_id) \
+                .single() \
+                .execute()
+            
+            if not template_result.data:
+                logger.warning(f"Template {template_id} niet gevonden voor checklist")
+                return []
+            
+            bureau_id = template_result.data.get('tenderbureau_id')
+            if not bureau_id:
+                logger.warning("Geen bureau_id in template voor checklist")
+                return []
+            
+            # Haal checklist items op voor dit bureau
+            result = self.db.table('checklist_templates') \
+                .select('*') \
+                .eq('tenderbureau_id', bureau_id) \
+                .eq('is_active', True) \
+                .order('volgorde') \
+                .execute()
+            
+            items = result.data or []
+            logger.info(f"📋 Checklist: {len(items)} items gevonden voor bureau {bureau_id}")
+            
+        except Exception as e:
+            logger.error(f"Fout bij ophalen checklist templates: {e}", exc_info=True)
+            return []
+
+        if not items:
+            logger.warning("Geen checklist items gevonden")
+            return []
+
+        checklist = []
+        for item in items:
+            # Spreidt items gelijkmatig over laatste 2 weken
+            dagen_voor_deadline = max(1, 14 - item.get('volgorde', 0))
+            item_datum = self._bereken_werkdag(deadline, dagen_voor_deadline, feestdagen)
+            
+            # Intelligente toewijzing op basis van sectie
+            user_id = None
+            sectie = item.get('sectie', '').lower()
+            
+            if team_assignments:
+                if 'financ' in sectie or 'budget' in sectie:
+                    user_id = team_assignments.get('calculator')
+                elif 'compliance' in sectie or 'juridisch' in sectie:
+                    user_id = team_assignments.get('schrijver')
+                elif 'kwaliteit' in sectie or 'review' in sectie:
+                    user_id = team_assignments.get('reviewer')
+                else:
+                    user_id = team_assignments.get('tendermanager')
+            
+            checklist.append({
+                'naam': item['taak_naam'],
+                'beschrijving': item.get('beschrijving'),
+                'datum': item_datum.isoformat(),
+                'eind_datum': item_datum.isoformat(),
+                'rol': sectie or 'algemeen',
+                'categorie': item.get('sectie', 'algemeen'),
+                'is_verplicht': item.get('is_verplicht', True),
+                'toegewezen_aan': [user_id] if user_id else [],  # Array van user IDs
+                't_minus': dagen_voor_deadline,
+                'volgorde': item.get('volgorde', 0)
+            })
+        
+        logger.info(f"✅ {len(checklist)} checklist items gegenereerd")
+        return checklist
+
+    # ──────────────────────────────────────────────────────────────
+    # DATUM BEREKENING HELPERS
+    # ──────────────────────────────────────────────────────────────
+
+    def _bereken_werkdag(
+        self,
+        deadline: date,
+        t_minus_werkdagen: int,
+        feestdagen: set
+    ) -> date:
+        """
+        Bereken een datum t_minus_werkdagen voor de deadline,
+        waarbij weekenden en feestdagen worden overgeslagen.
+        """
+        result = deadline
+        stappen = 0
+        while stappen < t_minus_werkdagen:
+            result -= timedelta(days=1)
+            if result.weekday() < 5 and result not in feestdagen:
+                stappen += 1
+        return result
+
+    def _bereken_vooruit(
+        self,
+        start: date,
+        werkdagen: int,
+        feestdagen: set
+    ) -> date:
+        """
+        Bereken een datum `werkdagen` werkdagen VOORUIT vanaf start.
+        """
+        result = start
+        stappen = 0
+        while stappen < werkdagen:
+            result += timedelta(days=1)
+            if result.weekday() < 5 and result not in feestdagen:
+                stappen += 1
+        return result

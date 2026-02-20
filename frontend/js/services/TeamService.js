@@ -1,19 +1,26 @@
 /**
  * TeamService - API service voor teamleden
- * TenderZen v2.0 - Multi-Tenancy Support
+ * TenderZen v3.0 - v_bureau_team Migration
  * 
- * Handles CRUD operations for team members.
+ * CRITICAL UPDATE v3.0 (2026-02-20):
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * ✅ MIGRATIE: team_members tabel → v_bureau_team view
+ * ✅ Single Source of Truth: user_bureau_access + users
+ * ✅ Field mapping: id → user_id, rol → bureau_rol
+ * ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ * 
  * Row Level Security (RLS) in Supabase ensures users only see
  * team members from their own tenderbureau.
  * 
  * MULTI-TENANCY:
  * - Alle queries worden gefilterd op tenderbureau_id via RLS
  * - Extra client-side filtering op huidig bureau (defense in depth)
- * - Bij CREATE wordt automatisch de juiste tenderbureau_id toegevoegd
+ * - v_bureau_team view filtert automatisch op is_active = true
  * 
  * CHANGELOG:
  * - v1.0: Initial version with full CRUD
- * - v2.0: Multi-tenancy fix - explicit bureau filtering + BureauAccessService
+ * - v2.0: Multi-tenancy fix - explicit bureau filtering
+ * - v3.0: Migration to v_bureau_team view (team_members removed)
  */
 
 import { supabase } from '/js/config.js';
@@ -21,7 +28,8 @@ import { bureauAccessService } from '/js/services/BureauAccessService.js';
 
 class TeamService {
     constructor() {
-        this.tableName = 'team_members';
+        // ✅ v3.0: Use view instead of table
+        this.tableName = 'v_bureau_team';
         this._cache = null;
         this._cacheTimestamp = null;
         this._cacheDuration = 5 * 60 * 1000; // 5 minuten cache
@@ -33,13 +41,16 @@ class TeamService {
 
     /**
      * Get all team members for current user's tenderbureau
-     * RLS automatically filters by tenderbureau_id
+     * Uses v_bureau_team view (automatically filters on is_active)
      * 
      * @param {boolean} forceRefresh - Skip cache
      * @returns {Promise<Array>}
      */
     async getAllTeamMembers(forceRefresh = false) {
         try {
+            if (forceRefresh) {
+                console.log('🚨 forceRefresh=true: Ignoring cache, fetching fresh team members');
+            }
             // Check cache
             if (!forceRefresh && this._cache && this._cacheTimestamp) {
                 const age = Date.now() - this._cacheTimestamp;
@@ -52,13 +63,10 @@ class TeamService {
             // Get current bureau for explicit filtering (defense in depth)
             const currentBureau = bureauAccessService.getCurrentBureau();
 
+            // ✅ v3.0: Simplified query - view provides all needed data
             let query = supabase
                 .from(this.tableName)
-                .select(`
-                    *,
-                    user:users(email, naam, avatar_url),
-                    tenderbureau:tenderbureaus(id, naam)
-                `)
+                .select('*')
                 .order('naam', { ascending: true });
 
             // Extra filter op huidig bureau
@@ -74,7 +82,7 @@ class TeamService {
             this._cache = data || [];
             this._cacheTimestamp = Date.now();
 
-            console.log(`✅ Loaded ${this._cache.length} team members`);
+            console.log(`✅ Loaded ${this._cache.length} team members from v_bureau_team`);
             return this._cache;
 
         } catch (error) {
@@ -100,20 +108,18 @@ class TeamService {
     }
 
     /**
-     * Get team member by ID
-     * @param {string} id - UUID
+     * Get team member by user_id
+     * ✅ v3.0: Uses user_id instead of id
+     * 
+     * @param {string} userId - User UUID
      * @returns {Promise<Object|null>}
      */
-    async getTeamMemberById(id) {
+    async getTeamMemberById(userId) {
         try {
             const { data, error } = await supabase
                 .from(this.tableName)
-                .select(`
-                    *,
-                    user:users(email, naam, avatar_url),
-                    tenderbureau:tenderbureaus(id, naam)
-                `)
-                .eq('id', id)
+                .select('*')
+                .eq('user_id', userId)  // ← Changed from 'id' to 'user_id'
                 .single();
 
             if (error) {
@@ -132,6 +138,8 @@ class TeamService {
 
     /**
      * Get team members by role
+     * ✅ v3.0: Uses bureau_rol instead of rol
+     * 
      * @param {string} rol - Role name
      * @returns {Promise<Array>}
      */
@@ -142,7 +150,7 @@ class TeamService {
             let query = supabase
                 .from(this.tableName)
                 .select('*')
-                .eq('rol', rol)
+                .eq('bureau_rol', rol)  // ← Changed from 'rol' to 'bureau_rol'
                 .order('naam', { ascending: true });
 
             if (currentBureau?.bureau_id) {
@@ -177,7 +185,7 @@ class TeamService {
             let query = supabase
                 .from(this.tableName)
                 .select('*')
-                .or(`naam.ilike.${search},email.ilike.${search},rol.ilike.${search}`)
+                .or(`naam.ilike.${search},email.ilike.${search},bureau_rol.ilike.${search}`)  // ← bureau_rol
                 .order('naam', { ascending: true });
 
             if (currentBureau?.bureau_id) {
@@ -196,202 +204,69 @@ class TeamService {
     }
 
     // =========================================================
-    // CREATE OPERATIONS
+    // CREATE OPERATIONS - NOT SUPPORTED via VIEW
     // =========================================================
 
     /**
      * Create new team member
-     * tenderbureau_id is automatically set based on current bureau
-     * 
-     * @param {Object} teamMemberData - Team member data
-     * @returns {Promise<Object>}
+     * ⚠️ v3.0: Use user_bureau_access table instead
+     * This method is deprecated - use backend API or direct user_bureau_access insert
      */
     async createTeamMember(teamMemberData) {
-        try {
-            // Get current user
-            const { data: { user }, error: authError } = await supabase.auth.getUser();
-            if (authError || !user) throw new Error('Niet ingelogd');
-
-            // Get current bureau
-            const currentBureau = bureauAccessService.getCurrentBureau();
-            if (!currentBureau?.bureau_id) {
-                throw new Error('Geen tenderbureau geselecteerd');
-            }
-
-            const newMember = {
-                ...teamMemberData,
-                tenderbureau_id: currentBureau.bureau_id,
-                is_active: true,
-                created_at: new Date().toISOString()
-            };
-
-            // Generate initialen if not provided
-            if (!newMember.initialen && newMember.naam) {
-                newMember.initialen = this.generateInitials(newMember.naam);
-            }
-
-            // Set default avatar color if not provided
-            if (!newMember.avatar_kleur) {
-                newMember.avatar_kleur = this.getRandomAvatarColor();
-            }
-
-            const { data, error } = await supabase
-                .from(this.tableName)
-                .insert([newMember])
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            // Invalidate cache
-            this._cache = null;
-            this._cacheTimestamp = null;
-
-            console.log('✅ Team member created:', data.naam);
-            return data;
-
-        } catch (error) {
-            console.error('❌ Error creating team member:', error);
-            throw error;
-        }
+        console.error('❌ createTeamMember is deprecated in v3.0');
+        console.error('ℹ️ Use user_bureau_access table or backend API instead');
+        throw new Error(
+            'Creating team members via v_bureau_team view is not supported. ' +
+            'Use user_bureau_access table or backend API.'
+        );
     }
 
     // =========================================================
-    // UPDATE OPERATIONS
+    // UPDATE OPERATIONS - NOT SUPPORTED via VIEW
     // =========================================================
 
     /**
      * Update team member
-     * @param {string} id - UUID
-     * @param {Object} updates - Fields to update
-     * @returns {Promise<Object>}
+     * ⚠️ v3.0: Update user_bureau_access or users table instead
      */
     async updateTeamMember(id, updates) {
-        try {
-            // Regenerate initialen if naam changed
-            if (updates.naam && !updates.initialen) {
-                updates.initialen = this.generateInitials(updates.naam);
-            }
-
-            // Remove fields that shouldn't be updated
-            const updateData = { ...updates };
-            delete updateData.id;
-            delete updateData.tenderbureau_id;
-            delete updateData.created_at;
-
-            const { data, error } = await supabase
-                .from(this.tableName)
-                .update(updateData)
-                .eq('id', id)
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            // Invalidate cache
-            this._cache = null;
-            this._cacheTimestamp = null;
-
-            console.log('✅ Team member updated:', data.naam);
-            return data;
-
-        } catch (error) {
-            console.error('❌ Error updating team member:', error);
-            throw error;
-        }
+        console.error('❌ updateTeamMember is deprecated in v3.0');
+        console.error('ℹ️ Update user_bureau_access or users table instead');
+        throw new Error(
+            'Updating team members via v_bureau_team view is not supported. ' +
+            'Update user_bureau_access or users table directly.'
+        );
     }
 
     // =========================================================
-    // DELETE OPERATIONS
+    // DELETE OPERATIONS - NOT SUPPORTED via VIEW
     // =========================================================
 
     /**
-     * Soft delete team member (set is_active = false)
-     * We don't hard delete to preserve history
-     * 
-     * @param {string} id - UUID
-     * @returns {Promise<Object>}
+     * Soft delete team member
+     * ⚠️ v3.0: Update user_bureau_access.is_active instead
      */
     async deleteTeamMember(id) {
-        try {
-            const { data, error } = await supabase
-                .from(this.tableName)
-                .update({ is_active: false })
-                .eq('id', id)
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            // Invalidate cache
-            this._cache = null;
-            this._cacheTimestamp = null;
-
-            console.log('✅ Team member deactivated:', data.naam);
-            return data;
-
-        } catch (error) {
-            console.error('❌ Error deleting team member:', error);
-            throw error;
-        }
+        console.error('❌ deleteTeamMember is deprecated in v3.0');
+        console.error('ℹ️ Set is_active = false in user_bureau_access instead');
+        throw new Error(
+            'Deleting team members via v_bureau_team view is not supported. ' +
+            'Update user_bureau_access.is_active instead.'
+        );
     }
 
     /**
-     * Hard delete team member (permanent)
-     * Use with caution - only for cleanup
-     * 
-     * @param {string} id - UUID
-     * @returns {Promise<boolean>}
+     * Hard delete - NOT SUPPORTED
      */
     async permanentDeleteTeamMember(id) {
-        try {
-            const { error } = await supabase
-                .from(this.tableName)
-                .delete()
-                .eq('id', id);
-
-            if (error) throw error;
-
-            // Invalidate cache
-            this._cache = null;
-            this._cacheTimestamp = null;
-
-            console.log('✅ Team member permanently deleted');
-            return true;
-
-        } catch (error) {
-            console.error('❌ Error permanently deleting team member:', error);
-            throw error;
-        }
+        throw new Error('Hard delete not supported via v_bureau_team view');
     }
 
     /**
-     * Restore a deleted team member
-     * @param {string} id - UUID
-     * @returns {Promise<Object>}
+     * Restore - NOT SUPPORTED
      */
     async restoreTeamMember(id) {
-        try {
-            const { data, error } = await supabase
-                .from(this.tableName)
-                .update({ is_active: true })
-                .eq('id', id)
-                .select()
-                .single();
-
-            if (error) throw error;
-
-            // Invalidate cache
-            this._cache = null;
-            this._cacheTimestamp = null;
-
-            console.log('✅ Team member restored:', data.naam);
-            return data;
-
-        } catch (error) {
-            console.error('❌ Error restoring team member:', error);
-            throw error;
-        }
+        throw new Error('Restore not supported via v_bureau_team view');
     }
 
     // =========================================================
@@ -406,10 +281,10 @@ class TeamService {
         try {
             const members = await this.getAllTeamMembers();
 
-            // Count by role
+            // Count by role (using bureau_rol)
             const byRole = {};
             members.forEach(m => {
-                const rol = m.rol || 'Onbekend';
+                const rol = m.bureau_rol || 'Onbekend';
                 byRole[rol] = (byRole[rol] || 0) + 1;
             });
 
@@ -433,6 +308,8 @@ class TeamService {
 
     /**
      * Get team workload for a specific week
+     * ✅ v3.0: Updated to use user_id
+     * 
      * @param {string} weekStart - ISO date string
      * @returns {Promise<Array>}
      */
@@ -440,12 +317,11 @@ class TeamService {
         try {
             const currentBureau = bureauAccessService.getCurrentBureau();
 
-            // Get assignments with tender info
+            // ✅ v3.0: Query tender_team_assignments with user info
             let query = supabase
                 .from('tender_team_assignments')
                 .select(`
                     *,
-                    team_member:team_members(id, naam, initialen, avatar_kleur, capaciteit_uren_per_week, tenderbureau_id),
                     tender:tenders(id, naam, fase, tenderbureau_id)
                 `)
                 .eq('week_start', weekStart);
@@ -454,15 +330,34 @@ class TeamService {
 
             if (error) throw error;
 
-            // Filter on current bureau (via team_member's bureau)
-            let filtered = data || [];
+            // Get user IDs
+            const userIds = [...new Set((data || []).map(a => a.user_id).filter(Boolean))];
+
+            // Fetch user details separately
+            let users = {};
+            if (userIds.length > 0) {
+                const { data: userData } = await supabase
+                    .from('v_bureau_team')
+                    .select('*')
+                    .in('user_id', userIds);
+
+                users = Object.fromEntries((userData || []).map(u => [u.user_id, u]));
+            }
+
+            // Combine data
+            let enriched = (data || []).map(item => ({
+                ...item,
+                team_member: users[item.user_id] || null
+            }));
+
+            // Filter on current bureau
             if (currentBureau?.bureau_id) {
-                filtered = filtered.filter(item =>
+                enriched = enriched.filter(item =>
                     item.team_member?.tenderbureau_id === currentBureau.bureau_id
                 );
             }
 
-            return filtered;
+            return enriched;
 
         } catch (error) {
             console.error('❌ Error getting team workload:', error);
@@ -472,10 +367,12 @@ class TeamService {
 
     /**
      * Get tender assignments for a team member
-     * @param {string} teamMemberId - UUID
+     * ✅ v3.0: Uses user_id
+     * 
+     * @param {string} userId - User UUID
      * @returns {Promise<Array>}
      */
-    async getTeamMemberAssignments(teamMemberId) {
+    async getTeamMemberAssignments(userId) {
         try {
             const { data, error } = await supabase
                 .from('tender_team_assignments')
@@ -483,7 +380,7 @@ class TeamService {
                     *,
                     tender:tenders(id, naam, fase, deadline_indiening)
                 `)
-                .eq('team_member_id', teamMemberId)
+                .eq('user_id', userId)  // ← Changed from team_member_id to user_id
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -512,7 +409,6 @@ class TeamService {
             return parts[0].substring(0, 2).toUpperCase();
         }
 
-        // First letter of first name + first letter of last name
         return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
 

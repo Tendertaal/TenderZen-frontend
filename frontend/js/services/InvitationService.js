@@ -11,7 +11,7 @@ class InvitationService {
         // Supabase Edge Function URL
         this.supabaseUrl = window.CONFIG?.SUPABASE_URL || 'https://ayamyedredynntdaldlu.supabase.co';
         this.edgeFunctionUrl = `${this.supabaseUrl}/functions/v1/send-invite-email`;
-        
+
         // Accept invitation page URL
         this.acceptInvitationBaseUrl = window.location.origin + '/accept-invitation.html';
     }
@@ -43,7 +43,7 @@ class InvitationService {
      */
     async callEdgeFunction(payload) {
         const token = await this.getAuthToken();
-        
+
         if (!token) {
             throw new Error('Not authenticated');
         }
@@ -96,7 +96,7 @@ class InvitationService {
         console.log('📧 Sending invitation to:', email, 'as', role);
         console.log('📧 teamMemberId:', teamMemberId);
         console.log('📧 extraInfo:', extraInfo);
-        
+
         // Get current user
         const currentUser = await this.getCurrentUser();
         if (!currentUser) {
@@ -110,23 +110,19 @@ class InvitationService {
 
         console.log('📧 Initial tenderbureauId from extraInfo:', tenderbureauId);
 
-        // Als we geen tenderbureau_id hebben, haal het op van het teamlid
+        // Als we geen tenderbureau_id hebben, haal het op van het teamlid (v_bureau_team)
         if (!tenderbureauId && teamMemberId) {
             console.log('📧 Fetching team member details for:', teamMemberId);
-            
             const { data: member, error } = await supabase
-                .from('team_members')
-                .select('naam, tenderbureau_id, tenderbureaus(naam)')
-                .eq('id', teamMemberId)
+                .from('v_bureau_team')
+                .select('user_id, naam, tenderbureau_id, tenderbureaus(naam)')
+                .eq('user_id', teamMemberId)
                 .single();
-
             if (error) {
                 console.error('❌ Could not fetch team member:', error);
                 throw new Error('Team member not found: ' + error.message);
             }
-
             console.log('📧 Team member found:', member);
-
             tenderbureauId = member.tenderbureau_id;
             bureauName = member.tenderbureaus?.naam || '';
             memberName = member.naam || '';
@@ -151,7 +147,7 @@ class InvitationService {
             .from('bureau_invites')
             .insert({
                 tenderbureau_id: tenderbureauId,
-                team_member_id: teamMemberId,
+                user_id: teamMemberId,
                 email: email,
                 role: role,
                 invite_token: inviteToken,
@@ -170,16 +166,15 @@ class InvitationService {
 
         console.log('✅ Invitation record created:', invitation);
 
-        // Step 2: Update team_members status
+        // Step 2: Update v_bureau_team status
         if (teamMemberId) {
             const { error: updateError } = await supabase
-                .from('team_members')
+                .from('v_bureau_team')
                 .update({
                     invitation_status: 'pending',
                     invited_at: new Date().toISOString()
                 })
-                .eq('id', teamMemberId);
-
+                .eq('user_id', teamMemberId);
             if (updateError) {
                 console.warn('⚠️ Failed to update team member status:', updateError);
             }
@@ -188,9 +183,9 @@ class InvitationService {
         // Step 3: Send email via Edge Function
         try {
             const inviteUrl = `${this.acceptInvitationBaseUrl}?token=${inviteToken}`;
-            const inviterName = currentUser?.user_metadata?.full_name || 
-                               currentUser?.email || 
-                               'Een beheerder';
+            const inviterName = currentUser?.user_metadata?.full_name ||
+                currentUser?.email ||
+                'Een beheerder';
 
             await this.callEdgeFunction({
                 email: email,
@@ -220,7 +215,7 @@ class InvitationService {
      */
     async sendBulkInvitations(teamMemberIds, role = 'schrijver') {
         console.log('📧 Sending bulk invitations to:', teamMemberIds.length, 'members as', role);
-        
+
         const results = {
             sent: [],
             skipped: [],
@@ -231,9 +226,9 @@ class InvitationService {
             try {
                 // Get team member
                 const { data: member, error } = await supabase
-                    .from('team_members')
-                    .select('id, naam, email, tenderbureau_id, invitation_status, tenderbureaus(naam)')
-                    .eq('id', teamMemberId)
+                    .from('v_bureau_team')
+                    .select('user_id, naam, email, tenderbureau_id, invitation_status, tenderbureaus(naam)')
+                    .eq('user_id', teamMemberId)
                     .single();
 
                 if (error || !member) {
@@ -296,7 +291,7 @@ class InvitationService {
             .from('bureau_invites')
             .select(`
                 *,
-                team_members(naam, email),
+                v_bureau_team(naam, email),
                 users:invited_by(naam)
             `)
             .eq('tenderbureau_id', tenderbureauId)
@@ -321,7 +316,7 @@ class InvitationService {
             .from('bureau_invites')
             .select(`
                 *,
-                team_members(naam),
+                v_bureau_team(naam),
                 tenderbureaus(naam),
                 users:invited_by(naam)
             `)
@@ -340,11 +335,11 @@ class InvitationService {
                 .update({ status: 'expired' })
                 .eq('id', data.id);
 
-            if (data.team_member_id) {
+            if (data.user_id) {
                 await supabase
-                    .from('team_members')
+                    .from('v_bureau_team')
                     .update({ invitation_status: 'expired' })
-                    .eq('id', data.team_member_id);
+                    .eq('user_id', data.user_id);
             }
 
             throw new Error('Invitation has expired');
@@ -362,7 +357,7 @@ class InvitationService {
             valid: true,
             email: data.email,
             role: data.role,
-            team_member_name: data.team_members?.naam,
+            team_member_name: data.v_bureau_team?.naam,
             bureau_name: data.tenderbureaus?.naam,
             invited_by: data.users?.naam || 'Unknown',
             personal_message: data.personal_message,
@@ -462,7 +457,7 @@ class InvitationService {
      */
     async resendInvitation(invitationId, memberInfo = {}) {
         console.log('📧 Resending invitation:', invitationId);
-        
+
         // Get existing invitation
         const { data: invitation, error } = await supabase
             .from('bureau_invites')
@@ -512,9 +507,9 @@ class InvitationService {
         try {
             const currentUser = await this.getCurrentUser();
             const inviteUrl = `${this.acceptInvitationBaseUrl}?token=${newToken}`;
-            const inviterName = currentUser?.user_metadata?.full_name || 
-                               currentUser?.email || 
-                               'Een beheerder';
+            const inviterName = currentUser?.user_metadata?.full_name ||
+                currentUser?.email ||
+                'Een beheerder';
 
             await this.callEdgeFunction({
                 email: invitation.email,
@@ -545,7 +540,7 @@ class InvitationService {
      */
     async cancelInvitation(invitationId) {
         console.log('❌ Cancelling invitation:', invitationId);
-        
+
         // Get invitation
         const { data: invitation, error } = await supabase
             .from('bureau_invites')
@@ -593,7 +588,7 @@ class InvitationService {
             'accepted': '<span class="badge badge-success">Actief</span>',
             'expired': '<span class="badge badge-danger">Verlopen</span>'
         };
-        
+
         return badges[status] || badges['not_invited'];
     }
 
@@ -604,7 +599,7 @@ class InvitationService {
      */
     getActionButtons(member) {
         const status = member.invitation_status || 'not_invited';
-        
+
         switch (status) {
             case 'not_invited':
                 return `
@@ -618,7 +613,7 @@ class InvitationService {
                         Uitnodigen
                     </button>
                 `;
-            
+
             case 'pending':
                 return `
                     <button class="btn btn-sm btn-outline resend-btn" 
@@ -631,7 +626,7 @@ class InvitationService {
                         Opnieuw versturen
                     </button>
                 `;
-            
+
             case 'accepted':
                 return `
                     <span class="text-success">
@@ -642,7 +637,7 @@ class InvitationService {
                         Account actief
                     </span>
                 `;
-            
+
             case 'expired':
                 return `
                     <button class="btn btn-sm btn-warning resend-btn" 
@@ -654,7 +649,7 @@ class InvitationService {
                         Opnieuw uitnodigen
                     </button>
                 `;
-            
+
             default:
                 return '';
         }
@@ -667,14 +662,14 @@ class InvitationService {
      */
     formatTimeSince(invitedAt) {
         if (!invitedAt) return '';
-        
+
         const now = new Date();
         const invited = new Date(invitedAt);
         const diffMs = now - invited;
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
         const diffMinutes = Math.floor(diffMs / (1000 * 60));
-        
+
         if (diffDays > 0) {
             return `${diffDays} dag${diffDays > 1 ? 'en' : ''} geleden`;
         } else if (diffHours > 0) {

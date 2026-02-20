@@ -721,15 +721,14 @@ class PlanningService:
                     tenders[tender_id]['planning_total'] = len(p_items)
                     tenders[tender_id]['planning_done'] = sum(1 for i in p_items if i['status'] == 'done')
         
-        # ── 7. Team members ──
-        team_query = self.db.table('team_members')\
-            .select('id, naam, email, initialen, avatar_kleur, rol')\
-            .eq('is_active', True)\
+       # ── 7. Team members ──
+        team_query = self.db.table('v_bureau_team')\
+            .select('user_id, naam, email, initialen, avatar_kleur, bureau_rol')\
             .order('naam')
-        
+
         if bureau_id:
             team_query = team_query.eq('tenderbureau_id', bureau_id)
-        
+
         team_result = team_query.execute()
         team_members = team_result.data or []
         

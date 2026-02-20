@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Team Members API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2em;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 0.5em 1em;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .json-block {
+      background: #f9f9f9;
+      border: 1px solid #eee;
+      padding: 1em;
+      margin-top: 2em;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Test: /team-members API</h1>
+  <label for="bureauId">tenderbureau_id:</label>
+  <input id="bureauId" value="b542d006-de2a-4492-a2bb-0ecc83eda8bd" size="40">
+  <button onclick="fetchTeamMembers()">Ophalen</button>
+  <div id="result"></div>
+  <div id="json" class="json-block"></div>
+  <script>
+    async function fetchTeamMembers() {
+      const bureauId = document.getElementById('bureauId').value.trim();
+      const url = `http://localhost:3000/api/v1/planning/team-members?tenderbureau_id=${bureauId}`;
+      document.getElementById('result').innerHTML = '⏳ Laden...';
+      document.getElementById('json').innerHTML = '';
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (!data.success) throw new Error('API error');
+        if (!Array.isArray(data.data) || data.data.length === 0) {
+          document.getElementById('result').innerHTML = '<span class="error">Geen teamleden gevonden.</span>';
+        } else {
+          let html = `<table><tr><th>user_id</th><th>naam</th><th>email</th><th>bureau_rol</th></tr>`;
+          for (const m of data.data) {
+            html += `<tr><td>${m.user_id}</td><td>${m.naam}</td><td>${m.email}</td><td>${m.bureau_rol}</td></tr>`;
+          }
+          html += '</table>';
+          document.getElementById('result').innerHTML = html;
+        }
+        document.getElementById('json').textContent = JSON.stringify(data, null, 2);
+      } catch (e) {
+        document.getElementById('result').innerHTML = `<span class="error">Fout: ${e.message}</span>`;
+      }
+    }
+  </script>
+</body>
+
+</html>

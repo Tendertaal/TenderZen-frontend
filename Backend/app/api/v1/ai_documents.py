@@ -1,4 +1,6 @@
-﻿"""
+# -*- coding: utf-8 -*-
+
+"""
 AI Documents API Router
 FastAPI endpoints for AI document generation  
 TenderPlanner v3.0 - AI Features
@@ -26,7 +28,7 @@ def get_user_id_from_request(request: Request) -> Optional[str]:
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
-            print("⚠️ No valid Authorization header")
+            print("?? No valid Authorization header")
             return None
         
         token = auth_header.replace('Bearer ', '')
@@ -34,7 +36,7 @@ def get_user_id_from_request(request: Request) -> Optional[str]:
         # JWT tokens have 3 parts: header.payload.signature
         parts = token.split('.')
         if len(parts) != 3:
-            print("⚠️ Invalid JWT format")
+            print("?? Invalid JWT format")
             return None
         
         # Decode the payload (second part)
@@ -50,11 +52,11 @@ def get_user_id_from_request(request: Request) -> Optional[str]:
         
         user_id = payload.get('sub')
         
-        print(f"✅ Extracted user_id from JWT: {user_id}")
+        print(f"? Extracted user_id from JWT: {user_id}")
         return user_id
         
     except Exception as e:
-        print(f"⚠️ Could not extract user_id from JWT: {e}")
+        print(f"?? Could not extract user_id from JWT: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -76,7 +78,7 @@ def map_template_row(row):
         "id": row.get("id"),
         "template_key": template_key,
         "template_name": row.get("naam"),
-        "template_icon": row.get("icon", "📄"),
+        "template_icon": row.get("icon", "??"),
         "beschrijving": row.get("beschrijving", ""),
         "prompt_template": row.get("prompt_template"),
         "default_prompt": row.get("default_prompt"),
@@ -204,7 +206,7 @@ async def get_ai_document(
 # TENDER DOCUMENTS UPLOAD ENDPOINTS
 # ============================================
 
-# ⚠️ BELANGRIJK: Deze route MOET VOOR /tenders/{tender_id}/documents komen!
+# ?? BELANGRIJK: Deze route MOET VOOR /tenders/{tender_id}/documents komen!
 @router.get("/tenders/{tender_id}/generated")
 async def get_generated_documents(
     tender_id: str,
@@ -215,7 +217,7 @@ async def get_generated_documents(
     These are documents created by AI (stored in ai_documents table).
     """
     try:
-        print(f"📋 Fetching generated documents for tender: {tender_id}")
+        print(f"?? Fetching generated documents for tender: {tender_id}")
         
         result = db.table('ai_documents')\
             .select('*')\
@@ -226,7 +228,7 @@ async def get_generated_documents(
         
         documents = result.data or []
         
-        print(f"✅ Found {len(documents)} generated documents")
+        print(f"? Found {len(documents)} generated documents")
         
         return {
             'success': True,
@@ -235,7 +237,7 @@ async def get_generated_documents(
         }
         
     except Exception as e:
-        print(f"❌ Error fetching generated documents: {e}")
+        print(f"? Error fetching generated documents: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -257,7 +259,7 @@ async def upload_tender_document(
     - file: The file to upload
     """
     try:
-        print(f"📤 Uploading document for tender {tender_id}: {file.filename}")
+        print(f"?? Uploading document for tender {tender_id}: {file.filename}")
         
         # Validate file size (10MB max)
         max_size = 10 * 1024 * 1024  # 10MB
@@ -284,7 +286,7 @@ async def upload_tender_document(
         # Storage path: tenders/{tender_id}/{filename}
         storage_path = f"tenders/{tender_id}/{unique_filename}"
         
-        print(f"📁 Storage path: {storage_path}")
+        print(f"?? Storage path: {storage_path}")
         
         # Upload to Supabase Storage (ai-documents bucket)
         try:
@@ -297,16 +299,16 @@ async def upload_tender_document(
                     'upsert': 'false'
                 }
             )
-            print(f"✅ File uploaded to storage: {storage_path}")
+            print(f"? File uploaded to storage: {storage_path}")
         except Exception as storage_error:
-            print(f"❌ Storage upload error: {storage_error}")
+            print(f"? Storage upload error: {storage_error}")
             raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(storage_error)}")
         
         # Get current user ID from JWT token
         user_id = get_user_id_from_request(request)
         
         if not user_id:
-            print("⚠️ Warning: Could not extract user_id, using None")
+            print("?? Warning: Could not extract user_id, using None")
         
         # Save metadata to database
         document_data = {
@@ -326,7 +328,7 @@ async def upload_tender_document(
         if not db_result.data:
             raise HTTPException(status_code=500, detail="Failed to save document metadata")
         
-        print(f"✅ Document metadata saved: {db_result.data[0]['id']}")
+        print(f"? Document metadata saved: {db_result.data[0]['id']}")
         
         return {
             'success': True,
@@ -337,7 +339,7 @@ async def upload_tender_document(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error uploading document: {e}")
+        print(f"? Error uploading document: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -357,7 +359,7 @@ async def get_tender_documents(
     - document_type: Optional filter by document type
     """
     try:
-        print(f"📋 Fetching documents for tender: {tender_id}")
+        print(f"?? Fetching documents for tender: {tender_id}")
         
         query = db.table('tender_documents')\
             .select('*')\
@@ -372,7 +374,7 @@ async def get_tender_documents(
         
         documents = [map_tender_document_row(row) for row in result.data]
         
-        print(f"✅ Found {len(documents)} documents")
+        print(f"? Found {len(documents)} documents")
         
         return {
             'success': True,
@@ -381,7 +383,7 @@ async def get_tender_documents(
         }
         
     except Exception as e:
-        print(f"❌ Error fetching documents: {e}")
+        print(f"? Error fetching documents: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -412,7 +414,7 @@ async def get_tender_document(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error fetching document: {e}")
+        print(f"? Error fetching document: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -425,7 +427,7 @@ async def delete_tender_document(
 ):
     """Soft delete a tender document."""
     try:
-        print(f"🗑️ Deleting document: {document_id}")
+        print(f"??? Deleting document: {document_id}")
         
         # Get document
         doc_result = db.table('tender_documents')\
@@ -452,7 +454,7 @@ async def delete_tender_document(
             .eq('id', document_id)\
             .execute()
         
-        print(f"✅ Document soft deleted: {document_id}")
+        print(f"? Document soft deleted: {document_id}")
         
         # Note: We don't delete from storage for recovery purposes
         
@@ -464,7 +466,7 @@ async def delete_tender_document(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error deleting document: {e}")
+        print(f"? Error deleting document: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     
 
@@ -488,7 +490,7 @@ async def fill_prompt_template(
     4. Return filled prompt ready for Claude.ai
     """
     try:
-        print(f"📝 Filling prompt for tender {tender_id}, template {template_key}")
+        print(f"?? Filling prompt for tender {tender_id}, template {template_key}")
         
         # 1. Get tender info (including bureau)
         tender_result = db.table('tenders')\
@@ -523,7 +525,7 @@ async def fill_prompt_template(
         prompt = prompt_result.data[0]
         prompt_content = prompt.get('prompt_content', '')
         
-        print(f"✅ Using prompt: {prompt.get('prompt_title')} (version {prompt.get('version')})")
+        print(f"? Using prompt: {prompt.get('prompt_title')} (version {prompt.get('version')})")
         
         # 3. Get uploaded documents
         docs_result = db.table('tender_documents')\
@@ -541,7 +543,7 @@ async def fill_prompt_template(
             'opdrachtgever': tender.get('opdrachtgever', 'Onbekende opdrachtgever'),
             'aanbestedende_dienst': tender.get('aanbestedende_dienst', tender.get('opdrachtgever', 'Onbekend')),
             'locatie': tender.get('locatie', 'Niet opgegeven'),
-            'tender_waarde': f"€ {tender.get('tender_waarde', 0):,.2f}" if tender.get('tender_waarde') else 'Niet opgegeven',
+            'tender_waarde': f"� {tender.get('tender_waarde', 0):,.2f}" if tender.get('tender_waarde') else 'Niet opgegeven',
             'deadline': str(tender.get('deadline_indiening', 'Niet opgegeven')),
             'omschrijving': tender.get('omschrijving', 'Geen beschrijving'),
             'fase': tender.get('fase', 'onbekend'),
@@ -565,7 +567,7 @@ async def fill_prompt_template(
             variables['documenten_lijst'] = '\n'.join(doc_list)
             variables['aantal_documenten'] = str(len(documents))
         else:
-            variables['documenten_lijst'] = '(Nog geen documenten geüpload)'
+            variables['documenten_lijst'] = '(Nog geen documenten ge�pload)'
             variables['aantal_documenten'] = '0'
         
         # 6. Fill template with variables
@@ -574,7 +576,7 @@ async def fill_prompt_template(
             placeholder = f"{{{{{key}}}}}"  # {{variable}}
             filled_prompt = filled_prompt.replace(placeholder, str(value))
         
-        print(f"✅ Prompt filled successfully ({len(filled_prompt)} characters)")
+        print(f"? Prompt filled successfully ({len(filled_prompt)} characters)")
         
         return {
             'success': True,
@@ -593,7 +595,7 @@ async def fill_prompt_template(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error filling prompt: {e}")
+        print(f"? Error filling prompt: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -632,11 +634,11 @@ async def get_prompts(
         }
         
     except Exception as e:
-        print(f"❌ Error fetching prompts: {e}")
+        print(f"? Error fetching prompts: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ⚠️ BELANGRIJK: Deze route MOET VOOR /prompts/{prompt_id} komen!
+# ?? BELANGRIJK: Deze route MOET VOOR /prompts/{prompt_id} komen!
 @router.get("/prompts/active/{template_key}")
 async def get_active_prompt(
     template_key: str,
@@ -647,7 +649,7 @@ async def get_active_prompt(
     Returns the global active prompt (where tenderbureau_id is null).
     """
     try:
-        print(f"📋 Fetching active prompt for template: {template_key}")
+        print(f"?? Fetching active prompt for template: {template_key}")
         
         # Find active prompt for this template (global = tenderbureau_id is null)
         result = db.table('ai_prompts')\
@@ -664,7 +666,7 @@ async def get_active_prompt(
                 detail=f"Geen actieve prompt gevonden voor template '{template_key}'"
             )
         
-        print(f"✅ Found active prompt: {result.data.get('prompt_title')} (v{result.data.get('version')})")
+        print(f"? Found active prompt: {result.data.get('prompt_title')} (v{result.data.get('version')})")
         
         return {
             'success': True,
@@ -674,11 +676,11 @@ async def get_active_prompt(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error fetching active prompt: {e}")
+        print(f"? Error fetching active prompt: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ⬇️ Daarna komt pas @router.get("/prompts/{prompt_id}")
+# ?? Daarna komt pas @router.get("/prompts/{prompt_id}")
 
 
 
@@ -706,7 +708,7 @@ async def get_prompt(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error fetching prompt: {e}")
+        print(f"? Error fetching prompt: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -727,7 +729,7 @@ async def create_prompt(
     - description (optional)
     """
     try:
-        print(f"📝 Creating new prompt for template: {prompt_data.get('template_key')}")
+        print(f"?? Creating new prompt for template: {prompt_data.get('template_key')}")
         
         # Get user ID
         user_id = get_user_id_from_request(request)
@@ -769,7 +771,7 @@ async def create_prompt(
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to create prompt")
         
-        print(f"✅ Created prompt version {next_version}")
+        print(f"? Created prompt version {next_version}")
         
         return {
             'success': True,
@@ -780,7 +782,7 @@ async def create_prompt(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error creating prompt: {e}")
+        print(f"? Error creating prompt: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -799,7 +801,7 @@ async def update_prompt(
     Active prompts require creating a new version.
     """
     try:
-        print(f"📝 Updating prompt: {prompt_id}")
+        print(f"?? Updating prompt: {prompt_id}")
         
         # Get current prompt
         current = db.table('ai_prompts')\
@@ -835,7 +837,7 @@ async def update_prompt(
             .eq('id', prompt_id)\
             .execute()
         
-        print(f"✅ Prompt updated")
+        print(f"? Prompt updated")
         
         return {
             'success': True,
@@ -846,7 +848,7 @@ async def update_prompt(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error updating prompt: {e}")
+        print(f"? Error updating prompt: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -863,7 +865,7 @@ async def activate_prompt(
     Deactivates the currently active prompt for this template + bureau.
     """
     try:
-        print(f"✅ Activating prompt: {prompt_id}")
+        print(f"? Activating prompt: {prompt_id}")
         
         # Get prompt to activate
         prompt_result = db.table('ai_prompts')\
@@ -909,7 +911,7 @@ async def activate_prompt(
             .eq('id', prompt_id)\
             .execute()
         
-        print(f"✅ Prompt activated (version {prompt.get('version')})")
+        print(f"? Prompt activated (version {prompt.get('version')})")
         
         return {
             'success': True,
@@ -920,7 +922,7 @@ async def activate_prompt(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Error activating prompt: {e}")
+        print(f"? Error activating prompt: {e}")
         import traceback
         traceback.print_exc()
 

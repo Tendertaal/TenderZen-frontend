@@ -69,11 +69,11 @@ async def get_current_user(
     # Database lookup voor volledige user data
     # ⚠️ Hier gebruiken we get_supabase() (anon) omdat de user
     # lookup in get_current_user een bootstrap-operatie is.
-    # De 'gebruikers' tabel moet accessible zijn met anon key
+    # De 'users' tabel moet accessible zijn met anon key
     # OF via een permissive RLS policy voor authenticated users.
     db = get_supabase()
     try:
-        result = db.table('gebruikers') \
+        result = db.table('users') \
             .select('*') \
             .eq('id', user_id) \
             .execute()
@@ -139,12 +139,17 @@ async def get_user_db(
     
     Voorbeeld:
         @router.get("/team-members")
-        async def get_team_members(
-            current_user: dict = Depends(get_current_user),
-            db: Client = Depends(get_user_db)       # ← RLS-compatible
-        ):
-            result = db.table('team_members').select('*').execute()
-            # auth.uid() = user's UUID → RLS filtert correct
+async def get_team_members(
+    db: Client = Depends(get_user_db),
+    current_user: dict = Depends(get_current_user)
+):
+    # Get bureau_id from current user
+    bureau_id = current_user.get('tenderbureau_id')
+    query = db.table('v_bureau_team').select('*')
+    if bureau_id:
+        query = query.eq('tenderbureau_id', bureau_id)
+    result = query.execute()
+    return result.data or []
     """
     token = credentials.credentials
     return get_supabase_with_token(token)

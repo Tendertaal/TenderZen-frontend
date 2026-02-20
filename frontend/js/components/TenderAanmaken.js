@@ -2129,10 +2129,9 @@ export class TenderAanmaken {
 
             // Load team members for this bureau
             const { data: members, error } = await supabase
-                .from('team_members')
-                .select('id, naam, rol, initialen')
+                .from('v_bureau_team')
+                .select('user_id, naam, bureau_rol, initialen')
                 .eq('tenderbureau_id', activeBureauId)
-                .eq('is_active', true)
                 .order('naam', { ascending: true });
 
             if (error) {
@@ -2403,7 +2402,7 @@ export class TenderAanmaken {
             // Only include if member is selected
             if (memberId) {
                 teamData.push({
-                    team_member_id: memberId,
+                    user_id: memberId,
                     naam: memberNaam,
                     rol: rol,
                     uren: uren
@@ -2442,7 +2441,7 @@ export class TenderAanmaken {
             teamData.forEach(function (member) {
                 self.addTeamRow({
                     rol: member.rol,
-                    member_id: member.team_member_id,
+                    user_id: member.user_id,
                     uren: member.uren
                 });
             });
@@ -2492,7 +2491,7 @@ export class TenderAanmaken {
             var { supabase } = await import('/js/config.js');
 
             var { data: members, error } = await supabase
-                .from('team_members')
+                .from('v_bureau_team')
                 .select('id, naam, rol, initialen')
                 .eq('tenderbureau_id', activeBureauId)
                 .eq('is_active', true)
