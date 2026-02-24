@@ -76,7 +76,9 @@ export class App {
             zoekresultaten: null,
             bedrijven: null,
             tenderbureaus: null,
-            team: null
+            team: null,
+            templatebeheer: null,
+            profiel: null
         };
 
         // AgendaView (apart beheerd)
@@ -319,7 +321,7 @@ export class App {
             await view.setBedrijven(bedrijven);
         }
         else if (this.currentView === 'team') {
-            const members = await teamService.getAllTeamMembers();
+            const members = await teamService.getAllTeamMembers(true);
             await view.setTeamMembers(members);
         }
         else if (this.currentView === 'tenderbureaus') {
@@ -965,7 +967,7 @@ export class App {
             }
             else if (viewName === 'team') {
                 this.header.setContext('team', { count: 0 });
-                const members = await teamService.getAllTeamMembers();
+                const members = await teamService.getAllTeamMembers(true);
                 await view.setTeamMembers(members);
             }
             else if (viewName === 'templatebeheer') {

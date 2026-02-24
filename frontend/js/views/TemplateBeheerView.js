@@ -32,7 +32,9 @@ export class TemplateBeheerView {
 
     constructor(options = {}) {
         this.container = null;
-        this.baseURL = options.baseURL || window.API_CONFIG?.baseURL || '/api/v1';
+        // Use baseURL from config.js and append /api/v1 only once
+        this.baseURL = (options.baseURL || window.API_CONFIG?.baseURL || 'http://localhost:3000') + '/api/v1';
+        this.apiPath = '/planning-templates';
         this.authToken = options.authToken || '';
 
         // State
@@ -69,14 +71,31 @@ export class TemplateBeheerView {
         this._renderList();
 
         try {
-            const resp = await fetch(`${this.baseURL}/planning-templates`, {
+            // Get current bureau ID from global app state
+            const bureauId = window.app?.currentBureau?.bureau_id;
+            let url = `${this.baseURL}${this.apiPath}`;
+            if (bureauId) {
+                url += `?tenderbureau_id=${encodeURIComponent(bureauId)}`;
+            }
+            const resp = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${this.authToken}` }
             });
 
             if (!resp.ok) throw new Error('Templates laden mislukt');
 
             const data = await resp.json();
-            this.templates = data.templates || data || [];
+            // Ensure templates is always an array
+            let templatesArr = [];
+            if (Array.isArray(data)) {
+                templatesArr = data;
+            } else if (Array.isArray(data.data)) {
+                templatesArr = data.data;
+            } else if (Array.isArray(data.templates)) {
+                templatesArr = data.templates;
+            } else {
+                templatesArr = [];
+            }
+            this.templates = templatesArr;
             this.templates.sort((a, b) => (a.naam || '').localeCompare(b.naam || ''));
 
         } catch (err) {
@@ -90,7 +109,7 @@ export class TemplateBeheerView {
 
     async loadTemplateDetail(templateId) {
         try {
-            const resp = await fetch(`${this.baseURL}/planning-templates/${templateId}`, {
+            const resp = await fetch(`${this.baseURL}${this.apiPath}/${templateId}`, {
                 headers: { 'Authorization': `Bearer ${this.authToken}` }
             });
 
@@ -127,7 +146,7 @@ export class TemplateBeheerView {
         if (!type) return;
 
         try {
-            const resp = await fetch(`${this.baseURL}/planning-templates`, {
+            const resp = await fetch(`${this.baseURL}${this.apiPath}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.authToken}`,
@@ -159,7 +178,7 @@ export class TemplateBeheerView {
         try {
             // 1. Update template metadata
             const resp1 = await fetch(
-                `${this.baseURL}/planning-templates/${this.editingTemplate.id}`,
+                `${this.baseURL}${this.apiPath}/${this.editingTemplate.id}`,
                 {
                     method: 'PUT',
                     headers: {
@@ -189,7 +208,7 @@ export class TemplateBeheerView {
             }));
 
             const resp2 = await fetch(
-                `${this.baseURL}/planning-templates/${this.editingTemplate.id}/taken`,
+                `${this.baseURL}${this.apiPath}/${this.editingTemplate.id}/taken`,
                 {
                     method: 'PUT',
                     headers: {
@@ -228,7 +247,7 @@ export class TemplateBeheerView {
         if (!ok) return;
 
         try {
-            const resp = await fetch(`${this.baseURL}/planning-templates/${templateId}`, {
+            const resp = await fetch(`${this.baseURL}${this.apiPath}/${templateId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${this.authToken}` }
             });
@@ -253,7 +272,7 @@ export class TemplateBeheerView {
     async duplicateTemplate(templateId) {
         try {
             const resp = await fetch(
-                `${this.baseURL}/planning-templates/${templateId}/duplicate`,
+                `${this.baseURL}${this.apiPath}/${templateId}/duplicate`,
                 {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${this.authToken}` }

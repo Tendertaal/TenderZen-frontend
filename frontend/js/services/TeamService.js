@@ -176,7 +176,7 @@ class TeamService {
     async searchTeamMembers(searchQuery) {
         try {
             if (!searchQuery || searchQuery.length < 2) {
-                return this._cache || await this.getAllTeamMembers();
+                return this._cache || await this.getAllTeamMembers(true);
             }
 
             const currentBureau = bureauAccessService.getCurrentBureau();
@@ -279,7 +279,7 @@ class TeamService {
      */
     async getTeamStats() {
         try {
-            const members = await this.getAllTeamMembers();
+            const members = await this.getAllTeamMembers(true);
 
             // Count by role (using bureau_rol)
             const byRole = {};

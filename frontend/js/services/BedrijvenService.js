@@ -1,18 +1,25 @@
 /**
  * BedrijvenService - CRM functionaliteit voor bedrijvenbeheer
- * TenderZen v3.1 - Met Bureau Switch Fix
+ * TenderZen v3.2 - Async Duplicate Check Migration
  * 
  * ✅ Multi-tenancy ready: RLS automatically filters by tenderbureau_id
  * ✅ Multi-bureau support: Uses current selected bureau for create operations
- * ✅ Duplicaat detectie: KvK, BTW, en fuzzy naam matching
+ * ✅ Duplicaat detectie: Database-based async checks (KvK, BTW)
+ * 
+ * DEPRECATION NOTICE v3.2:
+ * - checkDuplicaatKvK() → Use checkDuplicaat({ kvk_nummer })
+ * - checkDuplicaatBTW() → Use checkDuplicaat({ btw_nummer })
+ * - checkDuplicaatNaamExact() → Not available (returns null)
+ * - findSimilarBedrijven() → Not available (returns [])
+ * 
+ * Deprecated methods will be removed in v4.0
  * 
  * CHANGELOG:
- * - v1.0: Initial version
- * - v2.0: Multi-tenancy via RLS
- * - v2.1: Multi-bureau support via BureauAccessService
- * - v3.0: Duplicaat detectie (KvK, BTW, fuzzy naam matching)
- * - v3.1: ⭐ FIX: _getActiveBureauIdSync() gebruikt nu correcte localStorage key
- *         ⭐ FIX: BureauAccessService integratie verbeterd
+ * - v3.2: ⭐ Async duplicate check with database queries
+ *         ⭐ Deprecated client-side checks
+ *         ⭐ Backward compatibility wrappers
+ * - v3.1: Bureau switch fix
+ * - v3.0: Initial duplicate detection
  */
 
 import { supabase } from '/js/config.js';
@@ -134,234 +141,212 @@ class BedrijvenService {
     // DUPLICAAT DETECTIE
     // ============================================
 
+    // ════════════════════════════════════════════════════════════
+    // DEPRECATED METHODS (Backward Compatibility)
+    // These methods are kept for backward compatibility but wrap
+    // the new async checkDuplicaat() method. They will be removed in v4.0.
+    // For new code, use checkDuplicaat() directly.
+    // ════════════════════════════════════════════════════════════
+
     /**
-     * Check of KvK nummer al bestaat binnen dit bureau
-     * @param {string} kvkNummer - Het te checken KvK nummer
-     * @param {string|null} excludeId - Bedrijf ID om uit te sluiten (bij bewerken)
-     * @returns {Object|null} - Bestaand bedrijf of null
+     * @deprecated Since v3.2 - Use checkDuplicaat({ kvk_nummer }) instead
      */
-    checkDuplicaatKvK(kvkNummer, excludeId = null) {
+    async checkDuplicaatKvK(kvkNummer, excludeId = null) {
+        console.warn('⚠️ checkDuplicaatKvK() is deprecated. Use checkDuplicaat({ kvk_nummer }) instead.');
         if (!kvkNummer || kvkNummer.trim() === '') return null;
-
-        const cleanKvK = kvkNummer.trim();
-
-        return this.bedrijven.find(b =>
-            b.kvk_nummer === cleanKvK &&
-            b.id !== excludeId
-        ) || null;
+        const result = await this.checkDuplicaat({ kvk_nummer: kvkNummer }, excludeId);
+        if (result.isDuplicate && result.field === 'kvk_nummer') {
+            const bedrijfsnaam = result.message.match(/"([^"]+)"/)?.[1] || 'Unknown';
+            return { bedrijfsnaam, kvk_nummer: kvkNummer };
+        }
+        return null;
     }
 
     /**
-     * Check of BTW nummer al bestaat binnen dit bureau
-     * @param {string} btwNummer - Het te checken BTW nummer
-     * @param {string|null} excludeId - Bedrijf ID om uit te sluiten (bij bewerken)
-     * @returns {Object|null} - Bestaand bedrijf of null
+     * @deprecated Since v3.2 - Use checkDuplicaat({ btw_nummer }) instead
      */
-    checkDuplicaatBTW(btwNummer, excludeId = null) {
+    async checkDuplicaatBTW(btwNummer, excludeId = null) {
+        console.warn('⚠️ checkDuplicaatBTW() is deprecated. Use checkDuplicaat({ btw_nummer }) instead.');
         if (!btwNummer || btwNummer.trim() === '') return null;
-
-        const cleanBTW = btwNummer.trim().toUpperCase();
-
-        return this.bedrijven.find(b =>
-            b.btw_nummer?.toUpperCase() === cleanBTW &&
-            b.id !== excludeId
-        ) || null;
+        const result = await this.checkDuplicaat({ btw_nummer: btwNummer }, excludeId);
+        if (result.isDuplicate && result.field === 'btw_nummer') {
+            const bedrijfsnaam = result.message.match(/"([^"]+)"/)?.[1] || 'Unknown';
+            return { bedrijfsnaam, btw_nummer: btwNummer };
+        }
+        return null;
     }
 
     /**
-     * Check of bedrijfsnaam al bestaat (exact match)
-     * @param {string} naam - De te checken bedrijfsnaam
-     * @param {string|null} excludeId - Bedrijf ID om uit te sluiten (bij bewerken)
-     * @returns {Object|null} - Bestaand bedrijf of null
+     * @deprecated Since v3.2 - Naam duplicate check not supported in async version
      */
     checkDuplicaatNaamExact(naam, excludeId = null) {
-        if (!naam || naam.trim() === '') return null;
-
-        const cleanNaam = this._normalizeBedrijfsnaam(naam);
-
-        return this.bedrijven.find(b =>
-            this._normalizeBedrijfsnaam(b.bedrijfsnaam) === cleanNaam &&
-            b.id !== excludeId
-        ) || null;
+        console.warn('⚠️ checkDuplicaatNaamExact() is deprecated. Naam duplicate check not available in database-based validation.');
+        return null;
     }
 
     /**
-     * Vind vergelijkbare bedrijfsnamen (fuzzy matching)
-     * @param {string} naam - De te checken bedrijfsnaam
-     * @param {string|null} excludeId - Bedrijf ID om uit te sluiten
-     * @param {number} threshold - Minimum similarity score (0-1), default 0.7
-     * @returns {Array} - Array van {bedrijf, score} objecten
+     * @deprecated Since v3.2 - Fuzzy matching removed
      */
     findSimilarBedrijven(naam, excludeId = null, threshold = 0.7) {
-        if (!naam || naam.trim().length < 3) return [];
-
-        const cleanNaam = this._normalizeBedrijfsnaam(naam);
-        const results = [];
-
-        for (const bedrijf of this.bedrijven) {
-            if (bedrijf.id === excludeId) continue;
-
-            const bedrijfNaam = this._normalizeBedrijfsnaam(bedrijf.bedrijfsnaam);
-            const score = this._calculateSimilarity(cleanNaam, bedrijfNaam);
-
-            if (score >= threshold) {
-                results.push({
-                    bedrijf,
-                    score,
-                    percentage: Math.round(score * 100)
-                });
-            }
-        }
-
-        // Sorteer op score (hoogste eerst)
-        return results.sort((a, b) => b.score - a.score).slice(0, 5);
+        console.warn('⚠️ findSimilarBedrijven() is deprecated. Fuzzy matching not available in database-based check.');
+        return [];
     }
 
+    // ════════════════════════════════════════════════════════════
+    // PRIMARY DUPLICATE CHECK (Database-based, Async)
+    // ════════════════════════════════════════════════════════════
+
+    // ════════════════════════════════════════════════════════════
+    // PRIMARY DUPLICATE CHECK (Database-based, Async)
+    // ════════════════════════════════════════════════════════════
+
     /**
-     * Volledige duplicaat check
-     * @param {Object} data - {bedrijfsnaam, kvk_nummer, btw_nummer}
-     * @param {string|null} excludeId - Bedrijf ID om uit te sluiten
-     * @returns {Object} - {isValid, errors[], warnings[]}
+     * Check for duplicate KVK/BTW numbers (async, Supabase)
+     * 
+     * @param {Object} bedrijfData - Must contain { kvk_nummer?, btw_nummer? }
+     * @param {string|null} excludeId - ID to exclude from check (for updates)
+     * @returns {Promise<Object>} { isDuplicate, message, skipped, field }
      */
-    checkDuplicaat(data, excludeId = null) {
-        const result = {
-            isValid: true,
-            errors: [],      // Blokkerend (KvK, BTW, exacte naam)
-            warnings: [],    // Waarschuwing (fuzzy match)
-            duplicates: {
-                kvk: null,
-                btw: null,
-                exactNaam: null,
-                similarNamen: []
-            }
-        };
+    async checkDuplicaat(bedrijfData, excludeId = null) {
+        console.log('🔍 checkDuplicaat called with:', { bedrijfData, excludeId });
+        // Validate input
+        if (!bedrijfData || typeof bedrijfData !== 'object') {
+            console.error('❌ checkDuplicaat: bedrijfData is not an object!', bedrijfData);
+            return {
+                isDuplicate: false,
+                message: 'Validatie overgeslagen: geen data',
+                skipped: true,
+                field: null
+            };
+        }
 
-        // 1. Check KvK (blokkerend)
-        if (data.kvk_nummer) {
-            const kvkDup = this.checkDuplicaatKvK(data.kvk_nummer, excludeId);
-            if (kvkDup) {
-                result.isValid = false;
-                result.errors.push({
+        const skippedChecks = [];
+
+        // KVK Number Check
+        if (bedrijfData.kvk_nummer && bedrijfData.kvk_nummer.trim()) {
+            console.log('🔍 Checking KVK:', bedrijfData.kvk_nummer);
+            const { data: existingKvk, error } = await supabase
+                .from('bedrijven')
+                .select('id, bedrijfsnaam, kvk_nummer')
+                .eq('kvk_nummer', bedrijfData.kvk_nummer.trim())
+                .neq('id', excludeId || '00000000-0000-0000-0000-000000000000')
+                .maybeSingle();
+            if (error) {
+                console.error('❌ KVK duplicate check error:', error);
+            }
+            if (existingKvk) {
+                console.log('⚠️ KVK duplicate found:', existingKvk);
+                return {
+                    isDuplicate: true,
                     field: 'kvk_nummer',
-                    message: `KvK nummer bestaat al: "${kvkDup.bedrijfsnaam}"`,
-                    existingBedrijf: kvkDup
-                });
-                result.duplicates.kvk = kvkDup;
+                    message: `KVK-nummer ${bedrijfData.kvk_nummer} is al in gebruik bij "${existingKvk.bedrijfsnaam}"`,
+                    skipped: false
+                };
             }
+        } else {
+            skippedChecks.push('KVK-nummer');
         }
 
-        // 2. Check BTW (blokkerend)
-        if (data.btw_nummer) {
-            const btwDup = this.checkDuplicaatBTW(data.btw_nummer, excludeId);
-            if (btwDup) {
-                result.isValid = false;
-                result.errors.push({
+        // BTW Number Check
+        if (bedrijfData.btw_nummer && bedrijfData.btw_nummer.trim()) {
+            console.log('🔍 Checking BTW:', bedrijfData.btw_nummer);
+            const { data: existingBtw, error } = await supabase
+                .from('bedrijven')
+                .select('id, bedrijfsnaam, btw_nummer')
+                .eq('btw_nummer', bedrijfData.btw_nummer.trim())
+                .neq('id', excludeId || '00000000-0000-0000-0000-000000000000')
+                .maybeSingle();
+            if (error) {
+                console.error('❌ BTW duplicate check error:', error);
+            }
+            if (existingBtw) {
+                console.log('⚠️ BTW duplicate found:', existingBtw);
+                return {
+                    isDuplicate: true,
                     field: 'btw_nummer',
-                    message: `BTW nummer bestaat al: "${btwDup.bedrijfsnaam}"`,
-                    existingBedrijf: btwDup
-                });
-                result.duplicates.btw = btwDup;
+                    message: `BTW-nummer ${bedrijfData.btw_nummer} is al in gebruik bij "${existingBtw.bedrijfsnaam}"`,
+                    skipped: false
+                };
             }
+        } else {
+            skippedChecks.push('BTW-nummer');
         }
 
-        // 3. Check exacte naam (blokkerend)
-        if (data.bedrijfsnaam) {
-            const naamDup = this.checkDuplicaatNaamExact(data.bedrijfsnaam, excludeId);
-            if (naamDup) {
-                result.isValid = false;
-                result.errors.push({
-                    field: 'bedrijfsnaam',
-                    message: `Bedrijfsnaam bestaat al: "${naamDup.bedrijfsnaam}"`,
-                    existingBedrijf: naamDup
-                });
-                result.duplicates.exactNaam = naamDup;
-            }
-        }
-
-        // 4. Check fuzzy naam match (waarschuwing - alleen als geen exacte match)
-        if (data.bedrijfsnaam && !result.duplicates.exactNaam) {
-            const similar = this.findSimilarBedrijven(data.bedrijfsnaam, excludeId, 0.7);
-            if (similar.length > 0) {
-                result.warnings.push({
-                    field: 'bedrijfsnaam',
-                    message: `Vergelijkbaar bedrijf gevonden: "${similar[0].bedrijf.bedrijfsnaam}" (${similar[0].percentage}% match)`,
-                    similarBedrijven: similar
-                });
-                result.duplicates.similarNamen = similar;
-            }
-        }
-
-        return result;
+        // No Duplicates Found
+        console.log('✅ No duplicates found, skipped:', skippedChecks);
+        return {
+            isDuplicate: false,
+            message: skippedChecks.length > 0
+                ? `Niet gecontroleerd: ${skippedChecks.join(', ')}`
+                : 'Alle controles geslaagd',
+            skipped: skippedChecks.length > 0,
+            field: null
+        };
     }
 
     /**
      * Real-time validatie voor een specifiek veld
-     * @param {string} field - 'kvk_nummer', 'btw_nummer', of 'bedrijfsnaam'
-     * @param {string} value - De waarde om te checken
-     * @param {string|null} excludeId - Bedrijf ID om uit te sluiten
-     * @returns {Object} - {isValid, error, warning, existingBedrijf}
+     * Updated to use new async checkDuplicaat()
+     * 
+     * @param {string} field - 'kvk_nummer' or 'btw_nummer'
+     * @param {string} value - Value to validate
+     * @param {string|null} excludeId - ID to exclude from duplicate check
+     * @returns {Promise<Object>} { isValid, error, warning }
      */
-    validateField(field, value, excludeId = null) {
+    async validateField(field, value, excludeId = null) {
         const result = {
             isValid: true,
             error: null,
-            warning: null,
-            existingBedrijf: null,
-            similarBedrijven: []
+            warning: null
         };
 
         if (!value || value.trim() === '') {
             return result;
         }
 
+        // Build data object for checkDuplicaat
+        const bedrijfData = {};
+
         switch (field) {
             case 'kvk_nummer':
-                // Format validatie (alleen waarschuwing, niet blokkerend)
+                // Format validation (warning only, not blocking)
                 if (!this.validateKvK(value)) {
                     result.warning = 'KvK nummer is meestal 8 cijfers';
-                    // geen return, want mag niet blokkerend zijn
                 }
-                // Duplicaat check
-                const kvkDup = this.checkDuplicaatKvK(value, excludeId);
-                if (kvkDup) {
-                    result.isValid = false;
-                    result.error = `KvK nummer bestaat al: "${kvkDup.bedrijfsnaam}"`;
-                    result.existingBedrijf = kvkDup;
-                }
+                bedrijfData.kvk_nummer = value;
                 break;
 
             case 'btw_nummer':
-                // Format validatie
+                // Format validation (blocking)
                 if (!this.validateBTW(value)) {
                     result.isValid = false;
                     result.error = 'BTW nummer moet formaat NL123456789B01 hebben';
                     return result;
                 }
-                // Duplicaat check
-                const btwDup = this.checkDuplicaatBTW(value, excludeId);
-                if (btwDup) {
-                    result.isValid = false;
-                    result.error = `BTW nummer bestaat al: "${btwDup.bedrijfsnaam}"`;
-                    result.existingBedrijf = btwDup;
-                }
+                bedrijfData.btw_nummer = value;
                 break;
 
             case 'bedrijfsnaam':
-                // Exacte match check
-                const naamDup = this.checkDuplicaatNaamExact(value, excludeId);
-                if (naamDup) {
-                    result.isValid = false;
-                    result.error = `Bedrijfsnaam bestaat al`;
-                    result.existingBedrijf = naamDup;
-                    return result;
-                }
-                // Fuzzy match check (alleen waarschuwing)
-                const similar = this.findSimilarBedrijven(value, excludeId, 0.7);
-                if (similar.length > 0) {
-                    result.warning = `Vergelijkbaar: "${similar[0].bedrijf.bedrijfsnaam}" (${similar[0].percentage}%)`;
-                    result.similarBedrijven = similar;
-                }
-                break;
+                // Naam duplicate check not implemented in async version
+                console.warn('⚠️ Bedrijfsnaam duplicate check not available in database-based validation');
+                return result;
+
+            default:
+                // Unknown field - no validation
+                return result;
+        }
+
+        // Perform async duplicate check
+        try {
+            const duplicateCheck = await this.checkDuplicaat(bedrijfData, excludeId);
+
+            if (duplicateCheck.isDuplicate) {
+                result.isValid = false;
+                result.error = duplicateCheck.message;
+            }
+        } catch (error) {
+            console.error('❌ validateField error:', error);
+            // Don't block on validation errors
         }
 
         return result;
@@ -477,11 +462,13 @@ class BedrijvenService {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Niet ingelogd');
 
-            // Valideer op duplicaten EERST
-            const validation = this.checkDuplicaat(bedrijfData);
-            if (!validation.isValid) {
-                const errorMessages = validation.errors.map(e => e.message).join(', ');
-                throw new Error(`Duplicaat gevonden: ${errorMessages}`);
+            // Nieuwe async duplicaat check
+            const duplicateCheck = await this.checkDuplicaat(bedrijfData, null);
+            if (duplicateCheck.isDuplicate) {
+                throw new Error(duplicateCheck.message);
+            }
+            if (duplicateCheck.skipped) {
+                console.warn('⚠️ Duplicate check skipped:', duplicateCheck.message);
             }
 
             // ⭐ Gebruik doorgegeven tenderbureau_id, of probeer zelf te bepalen
@@ -533,7 +520,11 @@ class BedrijvenService {
             );
 
             console.log('✅ Bedrijf created:', data);
-            return data;
+            return {
+                success: true,
+                data: data,
+                warning: duplicateCheck.skipped ? duplicateCheck.message : null
+            };
 
         } catch (error) {
             console.error('❌ Error creating bedrijf:', error);
@@ -547,12 +538,26 @@ class BedrijvenService {
      */
     async updateBedrijf(id, updates) {
         try {
-            // Valideer op duplicaten (exclude current bedrijf)
-            const validation = this.checkDuplicaat(updates, id);
-            if (!validation.isValid) {
-                const errorMessages = validation.errors.map(e => e.message).join(', ');
-                throw new Error(`Duplicaat gevonden: ${errorMessages}`);
+            // ════════════════════════════════════════════════════════════
+            // Input Validation
+            // ════════════════════════════════════════════════════════════
+            if (!id || typeof id !== 'string') {
+                throw new Error(`Invalid id parameter: expected string UUID, got ${typeof id}`);
             }
+            if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+                throw new Error(`Invalid updates parameter: expected object, got ${typeof updates}`);
+            }
+            console.log('🔄 Updating bedrijf:', id, 'with updates:', updates);
+
+            // Nieuwe async duplicaat check
+            const duplicateCheck = await this.checkDuplicaat(updates, id);
+            if (duplicateCheck.isDuplicate) {
+                throw new Error(duplicateCheck.message);
+            }
+            if (duplicateCheck.skipped) {
+                console.warn('⚠️ Duplicate check skipped:', duplicateCheck.message);
+            }
+
 
             // Remove fields that shouldn't be updated
             const cleanUpdates = { ...updates };
@@ -560,7 +565,14 @@ class BedrijvenService {
             delete cleanUpdates.tenderbureau_id;
             delete cleanUpdates.created_by;
             delete cleanUpdates.created_at;
-            delete cleanUpdates.tenderbureau;  // v3.2: Verwijder join-object voor update
+            delete cleanUpdates.tenderbureau;
+
+            // Sanitize: lege strings → null (voorkomt unique constraint conflicts)
+            for (const key of Object.keys(cleanUpdates)) {
+                if (cleanUpdates[key] === '') {
+                    cleanUpdates[key] = null;
+                }
+            }
 
             const { data, error } = await supabase
                 .from('bedrijven')
@@ -572,13 +584,17 @@ class BedrijvenService {
             if (error) throw error;
 
             // Update cache
-            const index = this.bedrijven.findIndex(b => b.id === id);
-            if (index !== -1) {
-                this.bedrijven[index] = data;
+            const idx = this.bedrijven.findIndex(b => b.id === id);
+            if (idx !== -1) {
+                this.bedrijven[idx] = data;
             }
 
             console.log('✅ Bedrijf updated:', data);
-            return data;
+            return {
+                success: true,
+                data: data,
+                warning: duplicateCheck.skipped ? duplicateCheck.message : null
+            };
 
         } catch (error) {
             console.error('❌ Error updating bedrijf:', error);

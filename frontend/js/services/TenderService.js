@@ -20,22 +20,56 @@ class TeamService {
 
     /**
      * Get all team members for current user's tenderbureau
-     * RLS automatically filters by tenderbureau_id
+     * Uses v_bureau_team view (automatically filters on is_active)
+     * 
+     * @param {boolean} forceRefresh - Skip cache
+     * @returns {Promise<Array>}
      */
-    async getAllTeamMembers() {
+    async getAllTeamMembers(forceRefresh = false) {
         try {
-            const { data, error } = await supabase
+            // ✅ FIX: Clear cache FIRST if forceRefresh
+            if (forceRefresh) {
+                console.log('🗑️ forceRefresh=true: Clearing cache');
+                this._cache = null;
+                this._cacheTimestamp = null;
+            }
+            
+            // Check cache
+            if (this._cache && this._cacheTimestamp) {
+                const age = Date.now() - this._cacheTimestamp;
+                if (age < this._cacheDuration) {
+                    console.log('📦 Returning cached team members');
+                    return this._cache;
+                }
+            }
+
+            console.log('🔄 Loading team members from v_bureau_team...');
+
+            // Get current bureau for explicit filtering (defense in depth)
+            const currentBureau = bureauAccessService.getCurrentBureau();
+
+            // ✅ v3.0: Simplified query - view provides all needed data
+            let query = supabase
                 .from(this.tableName)
-                .select(`
-                    *,
-                    users(email, naam),
-                    tenderbureaus(naam)
-                `)
-                .eq('is_active', true)
+                .select('*')
                 .order('naam', { ascending: true });
 
+            // Extra filter op huidig bureau
+            if (currentBureau?.bureau_id) {
+                query = query.eq('tenderbureau_id', currentBureau.bureau_id);
+            }
+
+            const { data, error } = await query;
+
             if (error) throw error;
-            return data || [];
+
+            // Update cache
+            this._cache = data || [];
+            this._cacheTimestamp = Date.now();
+
+            console.log(`✅ Loaded ${this._cache.length} team members from v_bureau_team`);
+            return this._cache;
+
         } catch (error) {
             console.error('❌ Error fetching team members:', error);
             throw error;

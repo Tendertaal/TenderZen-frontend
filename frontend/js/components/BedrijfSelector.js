@@ -951,15 +951,26 @@ export class BedrijfSelector {
             };
         }
 
-        // Check duplicaten
-        const duplicateCheck = bedrijvenService.checkDuplicaat(data);
-        if (!duplicateCheck.isValid) {
-            const errorMsg = duplicateCheck.errors.map(e => e.message).join(', ');
-            return {
-                isValid: false,
-                error: errorMsg
-            };
-        }
+        // Check duplicaten (async)
+        // Nieuwe drie-staten-patroon
+        // NB: validateForm moet nu async worden!
+        // Callers moeten await gebruiken
+        return (async () => {
+            const duplicateCheck = await bedrijvenService.checkDuplicaat(data);
+            if (duplicateCheck.isDuplicate) {
+                return {
+                    isValid: false,
+                    error: duplicateCheck.message
+                };
+            }
+            if (duplicateCheck.skipped) {
+                return {
+                    isValid: true,
+                    warning: duplicateCheck.message
+                };
+            }
+            return { isValid: true };
+        })();
 
         return { isValid: true };
     }

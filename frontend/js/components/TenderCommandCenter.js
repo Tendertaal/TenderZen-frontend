@@ -128,6 +128,38 @@ async function openCommandCenter(tenderId, preloadData = null) {
  * Sluit het Tender Command Center.
  */
 function closeCommandCenter() {
+    // ⭐ NIEUW: Auto-save indicator voor Planning tab
+    function showAutoSaveIndicator(status = 'saved') {
+        const indicator = document.getElementById('pm-autosave-indicator');
+        const text      = document.getElementById('pm-autosave-text');
+        const icon      = document.getElementById('pm-autosave-icon');
+        if (!indicator || !text) return;
+
+        if (status === 'saving') {
+            indicator.style.opacity = '1';
+            if (icon) icon.style.display = 'none';
+            text.textContent       = 'Opslaan...';
+            indicator.style.color  = '#94a3b8';
+
+        } else if (status === 'saved') {
+            indicator.style.opacity = '1';
+            if (icon) icon.style.display = 'block';
+            text.textContent       = 'Opgeslagen';
+            indicator.style.color  = '#16a34a';
+            // Fade out na 3 seconden
+            setTimeout(() => { indicator.style.opacity = '0'; }, 3000);
+
+        } else if (status === 'error') {
+            indicator.style.opacity = '1';
+            if (icon) icon.style.display = 'none';
+            text.textContent       = 'Opslaan mislukt';
+            indicator.style.color  = '#dc2626';
+            // Blijft zichtbaar tot volgende actie
+        }
+    }
+
+    // Globaal beschikbaar voor PlanningEventHandlers
+    window.showAutoSaveIndicator = showAutoSaveIndicator;
     if (tccState.overlay) {
         tccState.overlay.classList.add('tcc-closing');
         setTimeout(() => {
@@ -485,13 +517,20 @@ function transformAnalyse(extractedData, smartImportData, warnings) {
 
 function _extractFields(sectionData, fieldMap) {
     const velden = [];
+    const CURRENCY_KEYS = ['geraamde_waarde', 'contractwaarde', 'budget', 'waarde', 'bedrag'];
     for (const [key, label] of Object.entries(fieldMap)) {
         const field = sectionData[key];
         if (field !== undefined) {
             const value = typeof field === 'object' ? (field.value || '') : String(field || '');
             const rawConf = typeof field === 'object' ? (field.confidence || 0) : 1;
             const confidence = rawConf >= 0.85 ? 'high' : rawConf >= 0.5 ? 'medium' : 'low';
-            velden.push({ label, value: value || '—', confidence });
+
+            // Currency formatting voor financiële velden
+            const displayValue = CURRENCY_KEYS.includes(key) 
+                ? _formatCurrency(value) 
+                : (value || '—');
+
+            velden.push({ label, value: displayValue, confidence });
         }
     }
     return velden;
@@ -878,6 +917,14 @@ function _formatDateNL(dateStr) {
     } catch { return dateStr; }
 }
 
+function _formatCurrency(value) {
+    if (!value || value === '—') return '—';
+    const num = typeof value === 'string' 
+        ? parseFloat(value.replace(/[^0-9.-]/g, '')) 
+        : value;
+    if (isNaN(num)) return value;
+    return '€ ' + num.toLocaleString('nl-NL');
+}
 function _formatFileSize(bytes) {
     if (!bytes || bytes === 0) return '';
     if (bytes < 1024) return bytes + ' B';
@@ -2010,9 +2057,17 @@ function updateTccFooter(ctx) {
                     <button class="tcc-btn tcc-btn--secondary" data-action="download-all">${tccIcon('download', 14)} Alles downloaden</button>`
         },
         'planning': {
-            left: `<button class="tcc-btn tcc-btn--secondary" data-action="backplannen">${tccIcon('calendarView', 14)} Backplannen</button>`,
-            right: `<button class="tcc-btn tcc-btn--ghost" data-action="close">${tccIcon('close', 14, '#64748b')} Sluiten</button>
-                    <button class="tcc-btn tcc-btn--ghost" data-action="open-fullscreen-planning" data-pm-tab="planning">${tccIcon('maximize', 14)} Volledig scherm</button>`
+            left: ``,
+            right: `
+                <button class="tcc-btn tcc-btn--ghost" data-action="close">
+                    ${tccIcon('close', 14, '#64748b')} Sluiten
+                </button>
+                <button class="tcc-btn tcc-btn--ghost"
+                        data-action="open-fullscreen-planning"
+                        data-pm-tab="planning">
+                    ${tccIcon('maximize', 14)} Volledig scherm
+                </button>
+            `
         },
         'checklist': {
             left: `<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#94a3b8;">
@@ -2276,6 +2331,60 @@ async function bridgePlanningToTcc(tabName) {
     // Vervang loading placeholder door body container
     host.innerHTML = '';
     host.appendChild(body);
+
+    // ⭐ NIEUW: Backplannen-knop + auto-save indicator in toolbar
+    // MutationObserver to inject Backplannen button immediately when toolbar appears
+    if (tabName === 'planning') {
+        const observer = new MutationObserver(() => {
+            const toolbar = host.querySelector('.planning-toolbar-left');
+            if (toolbar && !toolbar.querySelector('[data-pm-action="backplannen"]')) {
+                const btn = document.createElement('button');
+                btn.className        = 'btn-planning-add';
+                btn.dataset.pmAction = 'backplannen';
+                btn.style.background = '#6366f1';
+                btn.style.marginLeft = '4px';
+                btn.innerHTML = `
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8"  y1="2" x2="8"  y2="6"/>
+                        <line x1="3"  y1="10" x2="21" y2="10"/>
+                    </svg>
+                    Backplannen
+                `;
+                btn.addEventListener('click', handleBackplanning);
+                toolbar.appendChild(btn);
+                observer.disconnect(); // Stop observing once injected
+            }
+        });
+        observer.observe(host, { childList: true, subtree: true });
+    }
+
+    // Auto-save indicator rechts in toolbar (in beide tabs)
+    setTimeout(() => {
+        const toolbarRight = host.querySelector('.planning-toolbar-right');
+        if (toolbarRight && !toolbarRight.querySelector('#pm-autosave-indicator')) {
+            const indicator = document.createElement('span');
+            indicator.id = 'pm-autosave-indicator';
+            indicator.style.cssText = `
+                font-size: 11px; color: #94a3b8;
+                display: flex; align-items: center; gap: 4px;
+                opacity: 0; transition: opacity 0.3s ease;
+                margin-right: 8px;
+            `;
+            indicator.innerHTML = `
+                <svg id="pm-autosave-icon" width="12" height="12"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                <span id="pm-autosave-text">Opgeslagen</span>
+            `;
+            toolbarRight.prepend(indicator);
+        }
+    }, 350);
 
     // ⭐ Wijs PlanningModal's modal referentie naar het PANEL (niet host)
     // Zo vindt pm.querySelector('#planning-modal-body') het als descendant,

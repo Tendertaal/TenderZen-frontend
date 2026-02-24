@@ -412,27 +412,65 @@ export class BedrijfModal {
 
         try {
             console.log('💾 Saving bedrijf:', data);
+            let result;
             if (this.mode === 'create') {
-                await bedrijvenService.createBedrijf(data);
-                // Na create altijd bedrijvenlijst verversen
+                result = await bedrijvenService.createBedrijf(data);
                 await bedrijvenService.loadBedrijven();
                 console.log('✅ Bedrijf created');
             } else {
-                data.id = this.bedrijf.id;
-                await bedrijvenService.updateBedrijf(data);
-                // Na update altijd bedrijvenlijst verversen
+                if (!this.bedrijf || !this.bedrijf.id) {
+                    throw new Error('Geen bedrijf ID gevonden voor update');
+                }
+                result = await bedrijvenService.updateBedrijf(this.bedrijf.id, data);
                 await bedrijvenService.loadBedrijven();
                 console.log('✅ Bedrijf updated');
             }
 
             if (this.onSave) {
-                this.onSave();
+                this.onSave(result?.data);
             }
 
             this.close();
+
+            // Toon notificatie afhankelijk van warning
+            if (typeof showNotification === 'function') {
+                if (result?.warning) {
+                    showNotification(
+                        `⚠️ ${data.bedrijfsnaam} opgeslagen\n${result.warning}`,
+                        'warning'
+                    );
+                } else {
+                    showNotification(
+                        `✅ ${data.bedrijfsnaam} ${this.mode === 'create' ? 'toegevoegd' : 'bijgewerkt'}`,
+                        'success'
+                    );
+                }
+            }
         } catch (error) {
             console.error('Error saving bedrijf:', error);
-            alert('Fout bij opslaan: ' + error.message);
+            // Toon foutmelding in modal ipv alert
+            let errorDiv = this.modal.querySelector('.modal-error-message');
+            if (!errorDiv) {
+                errorDiv = document.createElement('div');
+                errorDiv.className = 'modal-error-message';
+                errorDiv.style.cssText = `
+                    background: #fef2f2;
+                    border: 1px solid #fecaca;
+                    color: #dc2626;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    margin-bottom: 16px;
+                    font-size: 14px;
+                    line-height: 1.5;
+                `;
+                const footer = this.modal.querySelector('.modal-footer');
+                footer.parentNode.insertBefore(errorDiv, footer);
+            }
+            errorDiv.textContent = error.message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                if (errorDiv) errorDiv.style.display = 'none';
+            }, 5000);
         }
     }
 }

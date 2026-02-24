@@ -1,6 +1,6 @@
 """
 Planning & Checklist API Router - 100% COMPLETE UNIFIED VERSION
-TenderZen v4.1 - Single Professional Planning Router
+TenderZen v4.2 - Single Professional Planning Router
 
 ════════════════════════════════════════════════════════════════════
 VOLLEDIGE MERGE van:
@@ -8,8 +8,11 @@ VOLLEDIGE MERGE van:
 - Backend/app/routers/planning_router.py (backplanning, templates, workload)
 ════════════════════════════════════════════════════════════════════
 
-KRITIEKE WIJZIGINGEN v4.1:
+KRITIEKE WIJZIGINGEN v4.2:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Template detail endpoints toegevoegd (GET/PUT/DELETE/{id}, duplicate, taken)
+✅ get_planning_templates: bureau-eigen + generieke (tenderbureau_id IS NULL)
+✅ Twee aparte queries i.p.v. .or_() voor betrouwbare NULL handling
 ✅ team_members tabel VOLLEDIG VERWIJDERD
 ✅ v_bureau_team view overal gebruikt (user_bureau_access + users)
 ✅ Single Source of Truth - geen data duplicatie
@@ -50,7 +53,7 @@ VIEWS & AGGREGATES:
   GET  /tenders/{id}/planning-counts         — Tellingen per tender
 
 TEMPLATES:
-  GET    /planning-templates                 — Templates lijst
+  GET    /planning-templates                 — Templates lijst (bureau + generiek)
   GET    /planning-templates/{id}            — Specifiek template
   POST   /planning-templates                 — Nieuw template
   PUT    /planning-templates/{id}            — Update template
@@ -204,9 +207,6 @@ def get_backplanning_service(db: Client = Depends(get_user_db)) -> BackplanningS
 # ════════════════════════════════════════════════════════
 # 1. TEAM MEMBERS — Bureau teamleden (v_bureau_team)
 # ════════════════════════════════════════════════════════
-# ⚠️ KRITIEK: v_bureau_team view gebruikt (GEEN team_members tabel!)
-# View combineert: user_bureau_access JOIN users
-# Velden: user_id, naam, email, bureau_rol, initialen, avatar_kleur
 
 @router.get(
     "/team-members",
@@ -219,25 +219,15 @@ async def get_team_members(
     current_user: dict = Depends(get_current_user),
     db: Client = Depends(get_user_db)
 ):
-    """
-    Haal bureau teamleden op via v_bureau_team view.
-    
-    ARCHITECTUUR:
-    - Bron: v_bureau_team (view op user_bureau_access + users)
-    - Velden: user_id, naam, email, bureau_rol, initialen, avatar_kleur
-    - Filter: Altijd op bureau (SECURITY)
-    - RLS: auth.uid() via get_user_db
-    """
     try:
         bureau_id = await resolve_bureau_id(
-            current_user, 
-            explicit_bureau_id=tenderbureau_id, 
+            current_user,
+            explicit_bureau_id=tenderbureau_id,
             db=db
         )
 
         logger.info(f"📋 Team members ophalen voor bureau: {bureau_id}")
 
-        # Query v_bureau_team view
         result = db.table('v_bureau_team') \
             .select('*') \
             .eq('tenderbureau_id', bureau_id) \
@@ -245,10 +235,8 @@ async def get_team_members(
             .execute()
 
         members = result.data or []
-        
         logger.info(f"✅ {len(members)} team members via v_bureau_team")
 
-        # Convert to TeamMemberOut for OpenAPI compatibility
         try:
             members_out = [TeamMemberOut(**m) for m in members]
         except Exception as e:
@@ -265,10 +253,7 @@ async def get_team_members(
         raise
     except Exception as e:
         logger.error(f"❌ Team members error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail="Fout bij ophalen teamleden"
-        )
+        raise HTTPException(status_code=500, detail="Fout bij ophalen teamleden")
 
 
 # ════════════════════════════════════════════════════════
@@ -288,12 +273,8 @@ async def get_workload(
     current_user: dict = Depends(get_current_user),
     service: BackplanningService = Depends(get_backplanning_service)
 ):
-    """Haal workload data op voor teamleden in een periode."""
     if start > end:
-        raise HTTPException(
-            status_code=400,
-            detail="Startdatum mag niet na einddatum"
-        )
+        raise HTTPException(status_code=400, detail="Startdatum mag niet na einddatum")
 
     user_id_list = [uid.strip() for uid in user_ids.split(',') if uid.strip()]
     if not user_id_list:
@@ -335,13 +316,7 @@ async def get_agenda_data(
     user: dict = Depends(get_current_user),
     db: Client = Depends(get_user_db)
 ):
-    """
-    Agenda view: alle taken over alle tenders voor het bureau.
-    
-    Returns: planning_taken + checklist_items + tender info + team_members
-    """
     try:
-        # Planning taken
         planning_query = db.table('planning_taken') \
             .select('*') \
             .gte('datum', start_date) \
@@ -353,7 +328,6 @@ async def get_agenda_data(
         planning_result = planning_query.execute()
         planning_taken = planning_result.data or []
 
-        # Checklist items
         checklist_query = db.table('checklist_items') \
             .select('*') \
             .gte('deadline', start_date) \
@@ -362,7 +336,6 @@ async def get_agenda_data(
         checklist_result = checklist_query.execute()
         checklist_items = checklist_result.data or []
 
-        # Combineer
         taken = []
         for t in planning_taken:
             t['item_type'] = 'planning'
@@ -372,7 +345,6 @@ async def get_agenda_data(
             c['datum'] = c.get('deadline')
             taken.append(c)
 
-        # Tender info
         tender_ids = list(set(t.get('tender_id') for t in taken if t.get('tender_id')))
         tenders = {}
         if tender_ids:
@@ -382,11 +354,10 @@ async def get_agenda_data(
                 .execute()
             tenders = {t['id']: t for t in (tender_result.data or [])}
 
-        # Team members via v_bureau_team
         team_members = []
         bureau_id = await resolve_bureau_id(
-            user, 
-            explicit_bureau_id=tenderbureau_id, 
+            user,
+            explicit_bureau_id=tenderbureau_id,
             db=db,
             required=False
         )
@@ -426,15 +397,6 @@ async def generate_backplanning(
     current_user: dict = Depends(get_current_user),
     service: BackplanningService = Depends(get_backplanning_service)
 ):
-    """
-    Genereer automatisch planning + checklist vanaf deadline.
-    
-    Gebruikt AI (Claude) om taken te genereren op basis van:
-    - Tender beschrijving
-    - Deadline
-    - Template
-    - Team assignments
-    """
     try:
         result = await service.generate_backplanning(
             deadline=request.deadline,
@@ -444,7 +406,6 @@ async def generate_backplanning(
             tender_id=str(request.tender_id) if request.tender_id else None,
             include_checklist=request.include_checklist
         )
-
         return result
 
     except HTTPException:
@@ -461,51 +422,31 @@ async def generate_backplanning(
 # 5. PLANNING SAVE — BackplanningService integration
 # ════════════════════════════════════════════════════════
 
-@router.post(
-    "/planning/save",
-    summary="Opslaan planning taken en checklist"
-)
+@router.post("/planning/save", summary="Opslaan planning taken en checklist")
 async def save_planning(
     request: Dict[str, Any],
     current_user: dict = Depends(get_current_user),
     db: Client = Depends(get_user_db)
 ):
-    """
-    Sla planning taken en checklist items op voor een tender.
-    
-    Gebruikt door BackplanningService na AI generatie.
-    
-    Request body:
-    {
-        "tender_id": "uuid",
-        "taken": [...],
-        "checklist": [...],
-        "team_assignments": {...},
-        "tenderbureau_id": "uuid"
-    }
-    """
     try:
         tender_id = request.get('tender_id')
         taken = request.get('taken', [])
         checklist = request.get('checklist', [])
         team_assignments = request.get('team_assignments', {})
         tenderbureau_id = request.get('tenderbureau_id')
-        
+
         if not tender_id:
             raise HTTPException(status_code=400, detail="tender_id is verplicht")
-        
-        logger.info(
-            f"💾 Planning opslaan: {len(taken)} taken, "
-            f"{len(checklist)} checklist, {len(team_assignments)} team"
-        )
-        
+
+        logger.info(f"💾 Planning opslaan: {len(taken)} taken, {len(checklist)} checklist, {len(team_assignments)} team")
+
         # ── Planning taken ──
         planning_inserts = []
         for taak in taken:
             toegewezen = taak.get('toegewezen_aan')
             if not isinstance(toegewezen, list):
                 toegewezen = [toegewezen] if toegewezen else []
-            
+
             planning_inserts.append({
                 'tender_id': tender_id,
                 'taak_naam': taak.get('naam'),
@@ -529,7 +470,7 @@ async def save_planning(
             toegewezen = item.get('toegewezen_aan')
             if not isinstance(toegewezen, list):
                 toegewezen = [toegewezen] if toegewezen else []
-            
+
             checklist_inserts.append({
                 'tender_id': tender_id,
                 'taak_naam': item.get('naam'),
@@ -546,7 +487,7 @@ async def save_planning(
         if checklist_inserts:
             db.table('checklist_items').insert(checklist_inserts).execute()
             logger.info(f"✅ {len(checklist_inserts)} checklist items opgeslagen")
-                      
+
         # ── Team assignments met validatie ──
         team_saved = 0
         if team_assignments:
@@ -554,8 +495,6 @@ async def save_planning(
             for rol, user_id in team_assignments.items():
                 if not user_id:
                     continue
-                
-                # Validate user exists
                 try:
                     user_check = db.table('users').select('id').eq('id', user_id).execute()
                     if not user_check.data:
@@ -564,42 +503,34 @@ async def save_planning(
                 except Exception as check_err:
                     logger.warning(f"⚠️ User validatie gefaald: {check_err}")
                     continue
-                
+
                 team_inserts.append({
                     'tender_id': tender_id,
                     'user_id': user_id,
                     'rol_in_tender': rol
                 })
-            
+
             if team_inserts:
                 try:
-                    # Verwijder bestaande eerst
-                    db.table('tender_team_assignments') \
-                        .delete() \
-                        .eq('tender_id', tender_id) \
-                        .execute()
-                    
+                    db.table('tender_team_assignments').delete().eq('tender_id', tender_id).execute()
                     db.table('tender_team_assignments').insert(team_inserts).execute()
                     team_saved = len(team_inserts)
                     logger.info(f"✅ {team_saved} team assignments opgeslagen")
                 except Exception as team_err:
                     logger.error(f"❌ Team assignments error: {team_err}")
-        
+
         return {
             "success": True,
             "planning_count": len(planning_inserts),
             "checklist_count": len(checklist_inserts),
             "team_count": team_saved
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"❌ Planning save error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Fout bij opslaan planning: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Fout bij opslaan planning: {str(e)}")
 
 
 # ════════════════════════════════════════════════════════
@@ -612,7 +543,6 @@ async def get_planning_taken(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Haal alle planning taken op voor een tender."""
     data = await service.get_planning_taken(tender_id)
     return {"success": True, "data": data}
 
@@ -624,11 +554,10 @@ async def create_planning_taak(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Maak een nieuwe planning taak."""
     try:
         data = await service.create_planning_taak(
-            tender_id, 
-            user['id'], 
+            tender_id,
+            user['id'],
             taak.model_dump(exclude_unset=True)
         )
         return {"success": True, "data": data}
@@ -643,11 +572,7 @@ async def update_planning_taak(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Update een planning taak."""
-    data = await service.update_planning_taak(
-        taak_id, 
-        taak.model_dump(exclude_unset=True)
-    )
+    data = await service.update_planning_taak(taak_id, taak.model_dump(exclude_unset=True))
     return {"success": True, "data": data}
 
 
@@ -657,7 +582,6 @@ async def delete_planning_taak(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Verwijder een planning taak."""
     await service.delete_planning_taak(taak_id)
     return {"success": True, "data": None}
 
@@ -672,7 +596,6 @@ async def get_checklist_items(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Haal alle checklist items op voor een tender."""
     data = await service.get_checklist_items(tender_id)
     return {"success": True, "data": data}
 
@@ -684,7 +607,6 @@ async def create_checklist_item(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Maak een nieuw checklist item."""
     try:
         data = await service.create_checklist_item(
             tender_id,
@@ -703,11 +625,7 @@ async def update_checklist_item(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Update een checklist item."""
-    data = await service.update_checklist_item(
-        item_id,
-        item.model_dump(exclude_unset=True)
-    )
+    data = await service.update_checklist_item(item_id, item.model_dump(exclude_unset=True))
     return {"success": True, "data": data}
 
 
@@ -717,7 +635,6 @@ async def delete_checklist_item(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Verwijder een checklist item."""
     await service.delete_checklist_item(item_id)
     return {"success": True, "data": None}
 
@@ -733,11 +650,6 @@ async def bulk_save_planning(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """
-    Bulk opslaan backplanning (SmartImport wizard).
-    
-    Vervangt 26+ individuele API calls door 1 enkele call.
-    """
     try:
         bureau_id = await service._get_tender_bureau_id(tender_id)
         if not bureau_id:
@@ -746,13 +658,11 @@ async def bulk_save_planning(
         planning_count = 0
         checklist_count = 0
 
-        # Verwijder bestaande indien overwrite
         if request.overwrite:
             service.db.table('planning_taken').delete().eq('tender_id', tender_id).execute()
             service.db.table('checklist_items').delete().eq('tender_id', tender_id).execute()
             logger.info(f"🗑️ Bestaande data verwijderd voor tender {tender_id}")
 
-        # Bulk insert planning taken
         if request.planning_taken:
             planning_rows = [{
                 'tender_id': tender_id,
@@ -771,7 +681,6 @@ async def bulk_save_planning(
             planning_count = len(planning_rows)
             logger.info(f"✅ {planning_count} planning taken bulk-inserted")
 
-        # Bulk insert checklist items
         if request.checklist_items:
             checklist_rows = [{
                 'tender_id': tender_id,
@@ -815,7 +724,6 @@ async def get_planning_counts(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Tellingen voor alle tenders in het bureau."""
     data = await service.get_planning_counts(user['id'], tenderbureau_id)
     return {"success": True, "data": data}
 
@@ -826,7 +734,6 @@ async def get_tender_planning_counts(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Tellingen voor één tender."""
     data = await service.get_tender_counts(tender_id)
     return {"success": True, "data": data}
 
@@ -834,57 +741,59 @@ async def get_tender_planning_counts(
 # ════════════════════════════════════════════════════════
 # 10. TEMPLATES — Planning templates beheer
 # ════════════════════════════════════════════════════════
+
 @router.get("/planning-templates")
 async def get_planning_templates(
     type: Optional[str] = Query(None, pattern='^(planning|checklist)$'),
-    tenderbureau_id: Optional[str] = Query(None, description="Bureau filter (verplicht voor niet-admins)"),
+    tenderbureau_id: Optional[str] = Query(None),
     user: dict = Depends(get_current_user),
     db: Client = Depends(get_user_db)
 ):
     """
-    Haal planning templates op.
-    
+    Haal planning templates op: bureau-eigen + generieke (tenderbureau_id IS NULL).
+
     SECURITY & FALLBACK:
-    - Normale users: Vereist tenderbureau_id (via resolve_bureau_id)
-    - Super-admins: Zonder bureau_id → alle templates
-    - Met bureau_id: Gefilterd op bureau
+    - Met bureau_id: eigen templates + generieke (twee aparte queries)
+    - Super-admin zonder bureau: alle templates
     """
     try:
-        # Probeer bureau context te resolven (niet verplicht)
         bureau_id = await resolve_bureau_id(
-            user, 
-            explicit_bureau_id=tenderbureau_id, 
+            user,
+            explicit_bureau_id=tenderbureau_id,
             db=db,
-            required=False  # ← KRITIEK: Graceful degradation
+            required=False
         )
-        
-        # Build query based on bureau context
+
         if bureau_id:
-            # Gefilterd op bureau
-            query = db.table('planning_templates') \
+            # Bureau geselecteerd: eigen templates + generieke
+            bureau_result = db.table('planning_templates') \
                 .select('*, planning_template_taken(*)') \
                 .eq('tenderbureau_id', bureau_id) \
                 .eq('is_actief', True) \
-                .order('naam')
-            
-            logger.info(f"📋 Templates voor bureau: {bureau_id}")
+                .execute()
+
+            generic_result = db.table('planning_templates') \
+                .select('*, planning_template_taken(*)') \
+                .is_('tenderbureau_id', 'null') \
+                .eq('is_actief', True) \
+                .execute()
+
+            templates = (bureau_result.data or []) + (generic_result.data or [])
+            templates.sort(key=lambda t: t.get('naam', ''))
+            logger.info(f"📋 {len(templates)} templates voor bureau {bureau_id} (incl. generiek)")
         else:
             # Super-admin zonder bureau: alle templates
-            query = db.table('planning_templates') \
+            result = db.table('planning_templates') \
                 .select('*, planning_template_taken(*)') \
                 .eq('is_actief', True) \
-                .order('naam')
-            
-            logger.warning(f"⚠️ Super-admin {user.get('id')} haalt alle templates op (geen bureau filter)")
+                .order('naam') \
+                .execute()
+            templates = result.data or []
+            logger.warning(f"⚠️ Super-admin {user.get('id')} haalt alle temmplates op (geen bureau filter)")
 
-        # Type filter (optioneel)
         if type:
-            query = query.eq('type', type)
+            templates = [t for t in templates if t.get('type') == type]
 
-        result = query.execute()
-        templates = result.data or []
-
-        # Transform response
         response_data = []
         for tmpl in templates:
             taken = tmpl.pop('planning_template_taken', [])
@@ -894,26 +803,261 @@ async def get_planning_templates(
             })
 
         return {
-            "success": True, 
-            "data": response_data, 
+            "success": True,
+            "data": response_data,
             "total": len(response_data),
-            "bureau_id": bureau_id  # ← Voor debugging
+            "bureau_id": bureau_id
         }
 
     except Exception as e:
         logger.error(f"❌ Templates error: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Fout bij ophalen templates: {str(e)}"
-        )
-    
+        raise HTTPException(status_code=500, detail=f"Fout bij ophalen templates: {str(e)}")
+
+
+@router.get("/planning-templates/{template_id}")
+async def get_planning_template(
+    template_id: str,
+    user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
+):
+    """Haal één template op met alle taken."""
+    logger.info(f"🔍 get_template aangeroepen voor: {template_id}")
+    try:
+        result = db.table('planning_templates') \
+            .select('*, planning_template_taken(*)') \
+            .eq('id', template_id) \
+            .execute()
+
+        logger.info(f"🔍 Query result count: {len(result.data or [])}")
+
+        data = result.data
+        if not data or len(data) == 0:
+            raise HTTPException(status_code=404, detail="Template niet gevonden")
+
+        tmpl = data[0]
+        taken = tmpl.pop('planning_template_taken', [])
+
+        return {
+            **tmpl,
+            'taken': sorted(taken, key=lambda t: t.get('volgorde', 0))
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ get_template error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Fout bij ophalen template")
+
+
+@router.post("/planning-templates", status_code=201)
+async def create_planning_template(
+    request: TemplateCreateRequest,
+    tenderbureau_id: Optional[str] = Query(None),
+    user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
+):
+    """Maak een nieuw template aan."""
+    bureau_id = await resolve_bureau_id(user, explicit_bureau_id=tenderbureau_id, db=db, required=False)
+
+    try:
+        result = db.table('planning_templates').insert({
+            'tenderbureau_id': bureau_id,
+            'naam': request.naam,
+            'beschrijving': request.beschrijving,
+            'type': request.type,
+            'is_standaard': request.is_standaard,
+            'created_by': user.get('id')
+        }).execute()
+
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Template aanmaken mislukt")
+
+        return {**result.data[0], 'taken': []}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ create_template error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Fout bij aanmaken template")
+
+
+@router.put("/planning-templates/{template_id}")
+async def update_planning_template(
+    template_id: str,
+    request: TemplateUpdateRequest,
+    user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
+):
+    """Update een bestaand template."""
+    try:
+        update_data = {k: v for k, v in request.model_dump().items() if v is not None}
+        if not update_data:
+            raise HTTPException(status_code=400, detail="Geen velden om te updaten")
+
+        result = db.table('planning_templates') \
+            .update(update_data) \
+            .eq('id', template_id) \
+            .execute()
+
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Template niet gevonden")
+
+        taken_result = db.table('planning_template_taken') \
+            .select('*') \
+            .eq('template_id', template_id) \
+            .order('volgorde') \
+            .execute()
+
+        return {**result.data[0], 'taken': taken_result.data or []}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ update_template error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Fout bij updaten template")
+
+
+@router.delete("/planning-templates/{template_id}", status_code=204)
+async def delete_planning_template(
+    template_id: str,
+    user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
+):
+    """Verwijder een template (CASCADE verwijdert taken mee)."""
+    try:
+        result = db.table('planning_templates') \
+            .delete() \
+            .eq('id', template_id) \
+            .execute()
+
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Template niet gevonden")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ delete_template error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Fout bij verwijderen template")
+
+
+@router.post("/planning-templates/{template_id}/duplicate", status_code=201)
+async def duplicate_planning_template(
+    template_id: str,
+    tenderbureau_id: Optional[str] = Query(None),
+    user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
+):
+    """Dupliceer een template inclusief alle taken."""
+    bureau_id = await resolve_bureau_id(user, explicit_bureau_id=tenderbureau_id, db=db, required=False)
+
+    try:
+        original_result = db.table('planning_templates') \
+            .select('*, planning_template_taken(*)') \
+            .eq('id', template_id) \
+            .execute()
+
+        if not original_result.data:
+            raise HTTPException(status_code=404, detail="Template niet gevonden")
+
+        orig = original_result.data[0]
+        taken = orig.pop('planning_template_taken', [])
+
+        new_result = db.table('planning_templates').insert({
+            'tenderbureau_id': bureau_id,
+            'naam': f"{orig['naam']} (kopie)",
+            'beschrijving': orig.get('beschrijving'),
+            'type': orig['type'],
+            'is_standaard': False,
+            'created_by': user.get('id')
+        }).execute()
+
+        if not new_result.data:
+            raise HTTPException(status_code=500, detail="Dupliceren mislukt")
+
+        new_id = new_result.data[0]['id']
+        new_taken = []
+
+        if taken:
+            taken_inserts = [{
+                'template_id': new_id,
+                'naam': t['naam'],
+                'beschrijving': t.get('beschrijving'),
+                'rol': t['rol'],
+                't_minus_werkdagen': t['t_minus_werkdagen'],
+                'duur_werkdagen': t.get('duur_werkdagen', 1),
+                'is_mijlpaal': t.get('is_mijlpaal', False),
+                'is_verplicht': t.get('is_verplicht', True),
+                'volgorde': t.get('volgorde', 0)
+            } for t in sorted(taken, key=lambda x: x.get('volgorde', 0))]
+
+            taken_result = db.table('planning_template_taken').insert(taken_inserts).execute()
+            new_taken = taken_result.data or []
+
+        return {**new_result.data[0], 'taken': new_taken}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ duplicate_template error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Fout bij dupliceren template")
+
+
+@router.put("/planning-templates/{template_id}/taken")
+async def replace_planning_template_taken(
+    template_id: str,
+    request: TemplateTakenBulkRequest,
+    user: dict = Depends(get_current_user),
+    db: Client = Depends(get_user_db)
+):
+    """Vervang alle taken van een template (bulk replace)."""
+    try:
+        tmpl_result = db.table('planning_templates') \
+            .select('id, tenderbureau_id, naam, beschrijving, type, is_standaard, is_actief') \
+            .eq('id', template_id) \
+            .execute()
+
+        if not tmpl_result.data:
+            raise HTTPException(status_code=404, detail="Template niet gevonden")
+
+        db.table('planning_template_taken') \
+            .delete() \
+            .eq('template_id', template_id) \
+            .execute()
+
+        taken_inserts = [{
+            'template_id': template_id,
+            'naam': t.naam,
+            'beschrijving': t.beschrijving,
+            'rol': t.rol,
+            't_minus_werkdagen': t.t_minus_werkdagen,
+            'duur_werkdagen': t.duur_werkdagen,
+            'is_mijlpaal': t.is_mijlpaal,
+            'is_verplicht': t.is_verplicht,
+            'volgorde': t.volgorde,
+            'afhankelijk_van': str(t.afhankelijk_van) if t.afhankelijk_van else None
+        } for t in request.taken]
+
+        taken_result = db.table('planning_template_taken').insert(taken_inserts).execute()
+
+        return {**tmpl_result.data[0], 'taken': taken_result.data or []}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ replace_taken error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Fout bij updaten template taken")
+
+
+# ════════════════════════════════════════════════════════
+# 11. LEGACY TEMPLATE ENDPOINTS
+# ════════════════════════════════════════════════════════
+
 @router.get("/checklist-templates")
 async def get_checklist_templates(
     template_naam: str = Query('Standaard'),
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Haal checklist templates op."""
     data = await service.get_checklist_templates(user['id'], template_naam)
     return {"success": True, "data": data}
 
@@ -923,7 +1067,6 @@ async def get_template_names(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Beschikbare template namen."""
     data = await service.get_template_names(user['id'])
     return {"success": True, "data": data}
 
@@ -935,7 +1078,6 @@ async def populate_from_templates(
     user: dict = Depends(get_current_user),
     service: PlanningService = Depends(get_planning_service)
 ):
-    """Kopieer template naar tender."""
     try:
         data = await service.populate_from_templates(
             tender_id,
@@ -943,11 +1085,11 @@ async def populate_from_templates(
             template_naam=request.template_naam,
             overwrite=request.overwrite
         )
-        
+
         message = f"Template '{request.template_naam}' toegepast"
         if data.get('skipped'):
             message = data.get('message', 'Overgeslagen')
-        
+
         return {"success": True, "data": data, "message": message}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -956,7 +1098,7 @@ async def populate_from_templates(
 
 
 # ════════════════════════════════════════════════════════
-# 11. TEAM ASSIGNMENTS — Tender team beheer
+# 12. TEAM ASSIGNMENTS — Tender team beheer
 # ════════════════════════════════════════════════════════
 
 @router.get("/tenders/{tender_id}/team-assignments")
@@ -965,9 +1107,7 @@ async def get_team_assignments(
     current_user: dict = Depends(get_current_user),
     supabase: Client = Depends(get_supabase_async)
 ):
-    """Haal tender team op (met user details)."""
     try:
-        # Haal assignments op
         result = supabase.table('tender_team_assignments') \
             .select('*') \
             .eq('tender_id', tender_id) \
@@ -978,10 +1118,8 @@ async def get_team_assignments(
         if not assignments:
             return {"status": "success", "data": [], "count": 0}
 
-        # Haal user IDs
         user_ids = [a['user_id'] for a in assignments if a.get('user_id')]
 
-        # Haal user details
         users_map = {}
         if user_ids:
             users_result = supabase.table('users') \
@@ -990,25 +1128,20 @@ async def get_team_assignments(
                 .execute()
             users_map = {u['id']: u for u in (users_result.data or [])}
 
-        # Combineer
         enriched = []
         for a in assignments:
             user_id = a.get('user_id')
-            user = users_map.get(user_id, {})
+            u = users_map.get(user_id, {})
             enriched.append({
                 **a,
-                'naam': user.get('naam', ''),
-                'email': user.get('email', ''),
-                'avatar_kleur': user.get('avatar_kleur', '#667eea'),
-                'functie_titel': user.get('functie', ''),
+                'naam': u.get('naam', ''),
+                'email': u.get('email', ''),
+                'avatar_kleur': u.get('avatar_kleur', '#667eea'),
+                'functie_titel': u.get('functie', ''),
                 'user_id': user_id
             })
 
-        return {
-            "status": "success",
-            "data": enriched,
-            "count": len(enriched)
-        }
+        return {"status": "success", "data": enriched, "count": len(enriched)}
 
     except Exception as e:
         logger.error(f"❌ Team assignments error: {e}")
@@ -1022,7 +1155,6 @@ async def add_team_assignment(
     current_user: dict = Depends(get_current_user),
     supabase: Client = Depends(get_supabase_async)
 ):
-    """Voeg teamlid toe aan tender."""
     try:
         tender_check = supabase.table('tenders').select('id').eq('id', tender_id).execute()
         if not tender_check.data:
@@ -1057,7 +1189,6 @@ async def remove_team_assignment(
     current_user: dict = Depends(get_current_user),
     supabase: Client = Depends(get_supabase_async)
 ):
-    """Verwijder teamlid van tender."""
     try:
         result = supabase.table('tender_team_assignments') \
             .delete() \
@@ -1077,10 +1208,7 @@ async def remove_team_assignment(
 
         logger.info(f"🗑️ Team assignment verwijderd: {tender_id}")
 
-        return {
-            "status": "success",
-            "deleted": len(result.data)
-        }
+        return {"status": "success", "deleted": len(result.data)}
 
     except HTTPException:
         raise

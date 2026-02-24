@@ -108,6 +108,7 @@ export class PlanningEventHandlers {
     
     async handleToggleTaak(taakId, currentStatus) {
         try {
+            window.showAutoSaveIndicator?.('saving');
             await planningService.togglePlanningTaakStatus(taakId, currentStatus);
 
             const taak = this.modal.planningTaken.find(t => t.id === taakId);
@@ -116,9 +117,11 @@ export class PlanningEventHandlers {
                 taak.updated_at = new Date().toISOString();
             }
 
+            window.showAutoSaveIndicator?.('saved');
             this.modal.refresh();
             this.modal.notifyUpdate();
         } catch (error) {
+            window.showAutoSaveIndicator?.('error');
             console.error('❌ Toggle taak error:', error);
             PlanningHelpers.showAlert('Fout bij bijwerken: ' + error.message);
         }
@@ -126,6 +129,7 @@ export class PlanningEventHandlers {
 
     async handleToggleChecklist(itemId, currentStatus) {
         try {
+            window.showAutoSaveIndicator?.('saving');
             await planningService.toggleChecklistItemStatus(itemId, currentStatus);
 
             const item = this.modal.checklistItems.find(i => i.id === itemId);
@@ -134,9 +138,11 @@ export class PlanningEventHandlers {
                 item.updated_at = new Date().toISOString();
             }
 
+            window.showAutoSaveIndicator?.('saved');
             this.modal.refresh();
             this.modal.notifyUpdate();
         } catch (error) {
+            window.showAutoSaveIndicator?.('error');
             console.error('❌ Toggle checklist error:', error);
             PlanningHelpers.showAlert('Fout bij bijwerken: ' + error.message);
         }
@@ -227,6 +233,7 @@ export class PlanningEventHandlers {
 
     async _saveTaakDate(taakId, dateStr) {
         try {
+            window.showAutoSaveIndicator?.('saving');
             await planningService.updatePlanningTaak(taakId, {
                 datum: dateStr ? `${dateStr}T00:00:00` : null
             });
@@ -237,9 +244,11 @@ export class PlanningEventHandlers {
                 taak.updated_at = new Date().toISOString();
             }
 
+            window.showAutoSaveIndicator?.('saved');
             this.modal.refresh();
             this.modal.notifyUpdate();
         } catch (error) {
+            window.showAutoSaveIndicator?.('error');
             console.error('❌ Date update error:', error);
             PlanningHelpers.showAlert('Fout bij opslaan datum: ' + error.message);
         }
@@ -313,6 +322,7 @@ export class PlanningEventHandlers {
 
     async _saveChecklistDate(itemId, dateStr) {
         try {
+            window.showAutoSaveIndicator?.('saving');
             await planningService.updateChecklistItem(itemId, {
                 deadline: dateStr || null
             });
@@ -323,9 +333,11 @@ export class PlanningEventHandlers {
                 item.updated_at = new Date().toISOString();
             }
 
+            window.showAutoSaveIndicator?.('saved');
             this.modal.refresh();
             this.modal.notifyUpdate();
         } catch (error) {
+            window.showAutoSaveIndicator?.('error');
             console.error('❌ Checklist date update error:', error);
             PlanningHelpers.showAlert('Fout bij opslaan datum: ' + error.message);
         }
@@ -430,14 +442,17 @@ export class PlanningEventHandlers {
             : [...currentIds, memberId];
 
         try {
+            window.showAutoSaveIndicator?.('saving');
             await planningService.updatePlanningTaak(taakId, {
                 toegewezen_aan: newIds
             });
 
             taak.toegewezen_aan = newIds;
             taak.updated_at = new Date().toISOString();
+            window.showAutoSaveIndicator?.('saved');
             this.modal.notifyUpdate();
         } catch (error) {
+            window.showAutoSaveIndicator?.('error');
             console.error('❌ Assignee update error:', error);
             PlanningHelpers.showAlert('Fout bij toewijzen: ' + error.message);
         }
@@ -532,6 +547,7 @@ export class PlanningEventHandlers {
         const newIds = memberId ? [memberId] : [];
 
         try {
+            window.showAutoSaveIndicator?.('saving');
             await planningService.updateChecklistItem(itemId, {
                 verantwoordelijke_data: newIds
             });
@@ -539,9 +555,11 @@ export class PlanningEventHandlers {
             item.verantwoordelijke_data = newIds;
             item.updated_at = new Date().toISOString();
 
+            window.showAutoSaveIndicator?.('saved');
             this.modal.refresh();
             this.modal.notifyUpdate();
         } catch (error) {
+            window.showAutoSaveIndicator?.('error');
             console.error('❌ Checklist assignee error:', error);
             PlanningHelpers.showAlert('Fout bij toewijzen: ' + error.message);
         }

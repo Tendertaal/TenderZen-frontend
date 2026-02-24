@@ -294,6 +294,8 @@ export class Header {
     setSuperAdmin(isSuperAdmin) {
         this.isSuperAdmin = isSuperAdmin;
         this.updateMenuVisibility();
+        // Extra: Specifieke admin e-mail
+        this.isMehmetAdmin = (this.userProfile && this.userProfile.email === 'mehmet@tendertaal.nl');
     }
 
     /**
@@ -408,11 +410,11 @@ export class Header {
     updateMenuVisibility() {
         const tenderbureausMenuItem = document.querySelector('[data-action="tenderbureaus"]');
         if (tenderbureausMenuItem) {
-            tenderbureausMenuItem.style.display = this.isSuperAdmin ? 'flex' : 'none';
+            tenderbureausMenuItem.style.display = (this.isSuperAdmin && this.isMehmetAdmin) ? 'flex' : 'none';
         }
         const iconenMenuItem = document.querySelector('[data-action="iconen"]');
         if (iconenMenuItem) {
-            iconenMenuItem.style.display = this.isSuperAdmin ? 'flex' : 'none';
+            iconenMenuItem.style.display = (this.isSuperAdmin && this.isMehmetAdmin) ? 'flex' : 'none';
         }
     }
 
@@ -732,6 +734,11 @@ export class Header {
                             </a>
                             ${this.isSuperAdmin ? `
                             <div class="menu-divider"></div>
+                            <a class="menu-item menu-item--admin" data-action="templates">
+                                <span class="menu-item-icon">${Icons.fileText ? Icons.fileText({ size: 18, color: '#d97706' }) : ''}</span>
+                                <span class="menu-item-label">Templatebeheer</span>
+                                <span class="admin-badge">Admin</span>
+                            </a>
                             <a class="menu-item menu-item--admin" data-action="tenderbureaus">
                                 <span class="menu-item-icon">${Icons.briefcase ? Icons.briefcase({ size: 18, color: '#d97706' }) : ''}</span>
                                 <span class="menu-item-label">Tenderbureaus</span>

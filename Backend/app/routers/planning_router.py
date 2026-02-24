@@ -455,11 +455,20 @@ async def list_templates(
     )
 
     try:
-        query = db.table('planning_templates') \
-            .select('*, planning_template_taken(*)') \
-            .eq('tenderbureau_id', resolved_bureau) \
-            .eq('is_actief', True) \
-            .order('naam')
+        # Super-admin zonder bureau: alleen generieke templates
+        if current_user.get('is_super_admin') and resolved_bureau is None:
+            query = db.table('planning_templates') \
+                .select('*, planning_template_taken(*)') \
+                .is_('tenderbureau_id', None) \
+                .eq('is_actief', True) \
+                .order('naam')
+        else:
+            # Bureau: eigen + generieke templates
+            query = db.table('planning_templates') \
+                .select('*, planning_template_taken(*)') \
+                .or_(f"tenderbureau_id.eq.{resolved_bureau},tenderbureau_id.is.null") \
+                .eq('is_actief', True) \
+                .order('naam')
 
         if type:
             query = query.eq('type', type)
@@ -496,17 +505,22 @@ async def get_template(
     db: Client = Depends(get_user_db)
 ):
     """Haal een specifiek template op inclusief alle taken."""
+
+    logger.info(f"🔍 get_template aangeroepen voor: {template_id}")
     try:
+        # Probeer eerst direct op te halen
         result = db.table('planning_templates') \
             .select('*, planning_template_taken(*)') \
             .eq('id', template_id) \
-            .single() \
             .execute()
+        logger.info(f"🔍 Query result: {result.data}")
 
-        if not result.data:
+        # Gebruik .execute() zonder .single() — dan krijg je een lijst
+        data = result.data
+        if not data or len(data) == 0:
             raise HTTPException(status_code=404, detail="Template niet gevonden")
 
-        tmpl = result.data
+        tmpl = data[0]
         taken = tmpl.pop('planning_template_taken', [])
 
         return {

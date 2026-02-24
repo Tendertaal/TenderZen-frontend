@@ -72,7 +72,7 @@ export class TeamledenView extends BaseView {
 
     async reload() {
         try {
-            const members = await teamService.getAllTeamMembers();
+            const members = await teamService.getAllTeamMembers(true);
             await this.setTeamMembers(members);
         } catch (error) {
             console.error('Error reloading team members:', error);
