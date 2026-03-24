@@ -1,6 +1,6 @@
 """
 Tender business logic - with team assignments support
-TenderZen v2.2 - Multi-Tenancy Support + Bedrijven Refactor
+TenderZen v2.3 - Milestone Enrichment voor Timeline
 
 FIXES:
 - Filter op tenderbureau_id ipv alleen created_by
@@ -12,6 +12,7 @@ CHANGELOG:
 - v2.0: Multi-tenancy fix - filter op tenderbureau_id
 - v2.1: Bedrijfsvelden verwijderd uit tenders (nu via bedrijf_id JOIN)
 - v2.2: Fix Decimal serialization for JSON (geraamde_waarde, minimale_omzet, etc.)
+- v2.3: Milestone enrichment — timeline-velden worden gevuld vanuit milestones tabel
 """
 from typing import List, Optional
 from decimal import Decimal
@@ -33,6 +34,37 @@ REMOVED_TENDER_FIELDS = {
     'bedrijfs_adres',
     'bedrijfs_postcode',
     'bedrijfs_plaats'
+}
+
+# ============================================
+# MILESTONE TYPE → TENDER VELD MAPPING
+# Gebruikt om geëxtraheerde milestones terug
+# te mappen naar de timeline-kolommen op tenders
+# ============================================
+MILESTONE_FIELD_MAP = {
+    # milestone_type           → tender kolom
+    'publicatie':               'publicatie_datum',
+    'aankondiging':             'publicatie_datum',
+    'schouw':                   'schouw_datum',
+    'locatiebezoek':            'schouw_datum',
+    'vragen_ronde_1':           'nvi1_datum',
+    'nvi_1_deadline':           'nvi1_datum',
+    'nota_inlichtingen_1':      'nvi1_datum',
+    'nvi_1_publicatie':         'nvi1_datum',
+    'vragen_ronde_2':           'nvi2_datum',
+    'nvi_2_deadline':           'nvi2_datum',
+    'nota_inlichtingen_2':      'nvi2_datum',
+    'nvi_2_publicatie':         'nvi2_datum',
+    'presentatie':              'presentatie_datum',
+    'interview':                'presentatie_datum',
+    'interne_deadline':         'interne_deadline',
+    'sluitingsdatum':           'deadline_indiening',
+    'deadline_indiening':       'deadline_indiening',
+    'opening_inschrijving':     'deadline_indiening',
+    'voorlopige_gunning':       'voorlopige_gunning',
+    'definitieve_gunning':      'definitieve_gunning',
+    'start_opdracht':           'start_uitvoering',
+    'startdatum':               'start_uitvoering',
 }
 
 
@@ -66,7 +98,7 @@ class TenderService:
         # Log if we filtered anything
         removed = set(data.keys()) & REMOVED_TENDER_FIELDS
         if removed:
-            print(f"â„¹ï¸ Filtered removed bedrijf fields: {removed}")
+            print(f"ℹ️ Filtered removed bedrijf fields: {removed}")
         
         return filtered
     
@@ -82,7 +114,6 @@ class TenderService:
         """
         try:
             # Try user_bureau_access first (for multi-bureau support)
-            # Get the most recently accessed bureau
             result = self.db.table('user_bureau_access')\
                 .select('tenderbureau_id')\
                 .eq('user_id', user_id)\
@@ -107,7 +138,7 @@ class TenderService:
             return None
             
         except Exception as e:
-            print(f"âš ï¸ Error getting user tenderbureau_id: {e}")
+            print(f"⚠️ Error getting user tenderbureau_id: {e}")
             return None
     
     async def _is_super_admin(self, user_id: str) -> bool:
@@ -138,21 +169,20 @@ class TenderService:
                 .eq('tender_id', tender_id)\
                 .execute()
             
-            print(f"ðŸ—‘ï¸ Deleted existing team assignments for tender {tender_id}")
+            print(f"🗑️ Deleted existing team assignments for tender {tender_id}")
             
             # Insert new assignments
             if team_assignments and len(team_assignments) > 0:
                 assignments_to_insert = []
                 
                 for assignment in team_assignments:
-                    # Map frontend data to database columns
                     if assignment.get('team_member_id'):
                         assignments_to_insert.append({
                             'tender_id': tender_id,
                             'team_member_id': assignment.get('team_member_id'),
                             'rol_in_tender': assignment.get('rol', ''),
                             'geplande_uren': assignment.get('uren', 0),
-                            'werkelijke_uren': 0  # Default to 0
+                            'werkelijke_uren': 0
                         })
                 
                 if assignments_to_insert:
@@ -160,16 +190,14 @@ class TenderService:
                         .insert(assignments_to_insert)\
                         .execute()
                     
-                    print(f"âœ… Saved {len(assignments_to_insert)} team assignments for tender {tender_id}")
+                    print(f"✅ Saved {len(assignments_to_insert)} team assignments for tender {tender_id}")
             
         except Exception as e:
-            print(f"âŒ Error saving team assignments: {e}")
-            # Don't raise - we don't want to fail the whole tender save
+            print(f"❌ Error saving team assignments: {e}")
     
     async def _get_team_assignments(self, tender_id: str) -> List[dict]:
         """Get team assignments for a tender"""
         try:
-            # Haal tender_team_assignments op
             result = self.db.table('tender_team_assignments')\
                 .select('*')\
                 .eq('tender_id', tender_id)\
@@ -178,13 +206,11 @@ class TenderService:
             if not result.data:
                 return []
             
-            # Haal user IDs
             user_ids = [row['user_id'] for row in result.data if row.get('user_id')]
             
             if not user_ids:
                 return []
             
-            # Haal user details apart op
             users_result = self.db.table('users')\
                 .select('id, naam, initialen')\
                 .in_('id', user_ids)\
@@ -192,7 +218,6 @@ class TenderService:
             
             users_map = {u['id']: u for u in (users_result.data or [])}
             
-            # Combineer data
             assignments = []
             for row in result.data:
                 user_id = row.get('user_id')
@@ -212,6 +237,80 @@ class TenderService:
         except Exception as e:
             print(f"❌ Error getting team assignments: {e}")
             return []
+
+    # ============================================
+    # MILESTONE SYNC
+    # ============================================
+
+    async def sync_milestones_to_tender(self, tender_id: str) -> int:
+        """
+        Schrijft milestone-datums direct naar de corresponderende kolommen op de tenders tabel.
+        Wordt aangeroepen na succesvolle AI-extractie.
+        Returns: aantal bijgewerkte velden.
+        """
+        MILESTONE_TO_COLUMN = {
+            'publicatie': 'publicatie_datum',
+            'aankondiging': 'publicatie_datum',
+            'schouw': 'schouw_datum',
+            'locatiebezoek': 'schouw_datum',
+            'vragen_ronde_1': 'nvi1_datum',
+            'nvi_1_deadline': 'nvi1_datum',
+            'nota_inlichtingen_1': 'nvi1_datum',
+            'vragen_ronde_2': 'nvi2_datum',
+            'nvi_2_deadline': 'nvi2_datum',
+            'nota_inlichtingen_2': 'nvi2_datum',
+            'presentatie': 'presentatie_datum',
+            'interview': 'presentatie_datum',
+            'interne_deadline': 'interne_deadline',
+            'sluitingsdatum': 'deadline_indiening',
+            'deadline_indiening': 'deadline_indiening',
+            'voorlopige_gunning': 'voorlopige_gunning',
+            'definitieve_gunning': 'definitieve_gunning',
+            'start_opdracht': 'start_uitvoering',
+            'startdatum': 'start_uitvoering',
+        }
+
+        try:
+            result = self.db.table('milestones')\
+                .select('milestone_type, datum, tijd')\
+                .eq('tender_id', tender_id)\
+                .execute()
+
+            milestones = result.data or []
+            if not milestones:
+                return 0
+
+            update_data = {}
+            for m in milestones:
+                if not m.get('datum'):
+                    continue
+                mt = (m.get('milestone_type') or '').lower()
+                column = MILESTONE_TO_COLUMN.get(mt)
+                if column and column not in update_data:
+                    tijd = m.get('tijd')
+                    if tijd:
+                        update_data[column] = f"{m['datum']}T{tijd}"
+                    else:
+                        update_data[column] = f"{m['datum']}T00:00:00"
+
+            if not update_data:
+                return 0
+
+            self.db.table('tenders')\
+                .update(update_data)\
+                .eq('id', tender_id)\
+                .execute()
+
+            print(f"📅 Synced {len(update_data)} milestone velden naar tender {tender_id}: {list(update_data.keys())}")
+            return len(update_data)
+
+        except Exception as e:
+            print(f"⚠️ sync_milestones_to_tender fout: {e}")
+            return 0
+
+    # ============================================
+    # GET ALL TENDERS
+    # ============================================
     
     async def get_all_tenders(self, user_id: str, tenderbureau_id: Optional[str] = None) -> List[dict]:
         """
@@ -222,42 +321,30 @@ class TenderService:
         - Super-admins kunnen optioneel alle bureaus zien
         
         v2.1: Nu met JOIN naar bedrijven tabel voor bedrijfsgegevens
-        
-        Args:
-            user_id: UUID van de ingelogde user
-            tenderbureau_id: Optioneel - specifiek bureau (voor super-admins)
-        
-        Returns:
-            List van tenders binnen het tenderbureau
+        v2.3: Milestone enrichment — timeline-velden worden gevuld vanuit milestones
         """
         try:
-            # Bepaal het tenderbureau
             if tenderbureau_id:
-                # Expliciet meegegeven (bijv. door super-admin)
                 bureau_id = tenderbureau_id
             else:
-                # Haal op van de user
                 bureau_id = await self._get_user_tenderbureau_id(user_id)
             
             if not bureau_id:
-                print(f"âš ï¸ No tenderbureau found for user {user_id}")
+                print(f"⚠️ No tenderbureau found for user {user_id}")
                 return []
             
-            # Query alle tenders van dit bureau (met tenderbureau naam EN bedrijf)
             result = self.db.table('tenders')\
-                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, tenderbureaus(*), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .eq('tenderbureau_id', bureau_id)\
                 .order('created_at', desc=True)\
                 .execute()
             
-            print(f"âœ… Found {len(result.data)} tenders for bureau {bureau_id}")
+            print(f"✅ Found {len(result.data)} tenders for bureau {bureau_id}")
             
-            # Add team_assignments and flatten bedrijf data
             tenders = []
             for tender in result.data:
                 tender['team_assignments'] = await self._get_team_assignments(tender['id'])
                 
-                # Flatten bedrijf data for backward compatibility
                 bedrijf = tender.pop('bedrijven', None) or {}
                 tender['bedrijfsnaam'] = bedrijf.get('bedrijfsnaam')
                 tender['kvk_nummer'] = bedrijf.get('kvk_nummer')
@@ -266,43 +353,39 @@ class TenderService:
                 tender['contact_email'] = bedrijf.get('contact_email')
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
-                # ⭐ v2.7: Flatten tenderbureau naam
                 tenderbureau = tender.pop('tenderbureaus', None) or {}
-                tender['tenderbureau_naam'] = tenderbureau.get('naam')
+                tender['tenderbureau'] = tenderbureau
                 
                 tenders.append(tender)
-            
+
             return tenders
             
         except Exception as e:
-            print(f"âŒ Error getting tenders: {e}")
+            print(f"❌ Error getting tenders: {e}")
             raise
     
     async def get_all_tenders_all_bureaus(self, user_id: str) -> List[dict]:
         """
         Get all tenders across all bureaus (super-admin only).
+        v2.3: Milestone enrichment toegevoegd.
         """
         try:
-            # Check if super admin
             is_super = await self._is_super_admin(user_id)
             if not is_super:
-                print(f"âš ï¸ User {user_id} is not super admin")
+                print(f"⚠️ User {user_id} is not super admin")
                 return []
             
-            # Query alle tenders (met tenderbureau naam EN bedrijf)
             result = self.db.table('tenders')\
-                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, tenderbureaus(*), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .order('created_at', desc=True)\
                 .execute()
             
-            print(f"âœ… Found {len(result.data)} tenders across all bureaus")
+            print(f"✅ Found {len(result.data)} tenders across all bureaus")
             
-            # Add team_assignments and flatten bedrijf data
             tenders = []
             for tender in result.data:
                 tender['team_assignments'] = await self._get_team_assignments(tender['id'])
                 
-                # Flatten bedrijf data
                 bedrijf = tender.pop('bedrijven', None) or {}
                 tender['bedrijfsnaam'] = bedrijf.get('bedrijfsnaam')
                 tender['kvk_nummer'] = bedrijf.get('kvk_nummer')
@@ -311,35 +394,30 @@ class TenderService:
                 tender['contact_email'] = bedrijf.get('contact_email')
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
-                # ⭐ v2.7: Flatten tenderbureau naam
                 tenderbureau = tender.pop('tenderbureaus', None) or {}
-                tender['tenderbureau_naam'] = tenderbureau.get('naam')
+                tender['tenderbureau'] = tenderbureau
                 
                 tenders.append(tender)
-            
+
             return tenders
             
         except Exception as e:
-            print(f"âŒ Error getting all tenders: {e}")
+            print(f"❌ Error getting all tenders: {e}")
             raise
     
     async def get_tender_by_id(self, tender_id: str, user_id: str) -> Optional[dict]:
         """
         Get a single tender by ID.
-        
-        MULTI-TENANCY:
-        - User moet in hetzelfde tenderbureau zitten als de tender
-        - Of super-admin zijn
+        v2.3: Milestone enrichment toegevoegd.
         """
         try:
             user_bureau_id = await self._get_user_tenderbureau_id(user_id)
             is_super = await self._is_super_admin(user_id)
             
             query = self.db.table('tenders')\
-                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
+                .select('*, tenderbureaus(*), bedrijven(bedrijfsnaam, kvk_nummer, btw_nummer, contactpersoon, contact_email, plaats)')\
                 .eq('id', tender_id)
             
-            # Filter op bureau (tenzij super-admin)
             if not is_super and user_bureau_id:
                 query = query.eq('tenderbureau_id', user_bureau_id)
             
@@ -349,7 +427,6 @@ class TenderService:
                 tender = result.data
                 tender['team_assignments'] = await self._get_team_assignments(tender['id'])
                 
-                # Flatten bedrijf data
                 bedrijf = tender.pop('bedrijven', None) or {}
                 tender['bedrijfsnaam'] = bedrijf.get('bedrijfsnaam')
                 tender['kvk_nummer'] = bedrijf.get('kvk_nummer')
@@ -358,7 +435,6 @@ class TenderService:
                 tender['contact_email'] = bedrijf.get('contact_email')
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
-                # ⭐ v2.7: Flatten tenderbureau naam
                 tenderbureau = tender.pop('tenderbureaus', None) or {}
                 tender['tenderbureau_naam'] = tenderbureau.get('naam')
                 
@@ -367,7 +443,7 @@ class TenderService:
             return None
             
         except Exception as e:
-            print(f"âŒ Error getting tender by ID: {e}")
+            print(f"❌ Error getting tender by ID: {e}")
             return None
     
     async def create_tender(
@@ -377,52 +453,39 @@ class TenderService:
     ) -> dict:
         """
         Create a new tender.
-        
-        MULTI-TENANCY:
-        - tenderbureau_id wordt automatisch gezet op het bureau van de user
-        - Tenzij expliciet meegegeven (super-admin)
-        
         v2.1: Filtert bedrijfsvelden uit (die zitten nu in bedrijven tabel)
         """
         try:
             tender_data = tender.model_dump(exclude_unset=True)
-            
-            # â­ Filter removed bedrijf fields
             tender_data = self._filter_removed_fields(tender_data)
             
-            # Set tenderbureau_id if not provided
             if not tender_data.get('tenderbureau_id'):
                 bureau_id = await self._get_user_tenderbureau_id(user_id)
                 if not bureau_id:
                     raise ValueError("User heeft geen tenderbureau")
                 tender_data['tenderbureau_id'] = bureau_id
             
-            # Extract team_assignments before serializing
             team_assignments = self._extract_team_assignments(tender_data)
-            
-            # Serialize dates and Decimals for JSON
             tender_data = self._serialize_data(tender_data)
             
-            print(f"ðŸ“ Creating tender for bureau {tender_data.get('tenderbureau_id')}: {tender_data.get('naam')}")
+            print(f"📝 Creating tender for bureau {tender_data.get('tenderbureau_id')}: {tender_data.get('naam')}")
             
             result = self.db.table('tenders')\
                 .insert(tender_data)\
                 .execute()
             
             created_tender = result.data[0]
-            print(f"âœ… Tender created: {created_tender['id']}")
+            print(f"✅ Tender created: {created_tender['id']}")
             
-            # Save team assignments separately
             if team_assignments:
                 await self._save_team_assignments(created_tender['id'], team_assignments)
             
-            # Return tender with team_assignments
             created_tender['team_assignments'] = await self._get_team_assignments(created_tender['id'])
             
             return created_tender
             
         except Exception as e:
-            print(f"âŒ Error creating tender: {e}")
+            print(f"❌ Error creating tender: {e}")
             raise
     
     async def update_tender(
@@ -433,18 +496,11 @@ class TenderService:
     ) -> Optional[dict]:
         """
         Update a tender.
-        
-        MULTI-TENANCY:
-        - User moet in hetzelfde tenderbureau zitten als de tender
-        - Of super-admin zijn
-        
-        v2.1: Filtert bedrijfsvelden uit (die zitten nu in bedrijven tabel)
         v2.2: Fix Decimal serialization
         """
         try:
             tender_data = tender.model_dump(exclude_unset=True)
 
-            # ⭐ Veiligheidsnet: Bij fase-wijziging zonder fase_status → eerste status ophalen
             if 'fase' in tender_data and 'fase_status' not in tender_data:
                 nieuwe_fase = tender_data['fase']
                 eerste_status = await self._get_first_fase_status(nieuwe_fase)
@@ -454,32 +510,24 @@ class TenderService:
                 else:
                     tender_data['fase_status'] = None
 
-            # â­ Filter removed bedrijf fields
             tender_data = self._filter_removed_fields(tender_data)
 
-            # Get user's bureau and check permissions
             user_bureau_id = await self._get_user_tenderbureau_id(user_id)
             is_super = await self._is_super_admin(user_id)
 
-            # Extract team_assignments before serializing
             team_assignments = self._extract_team_assignments(tender_data)
-
-            # Serialize dates and Decimals for JSON
             tender_data = self._serialize_data(tender_data)
 
-            # Don't allow changing tenderbureau_id (unless super-admin)
             if not is_super:
                 tender_data.pop('tenderbureau_id', None)
 
             print(f"📋 Updating tender {tender_id}")
 
-            # Build update query
             if tender_data:
                 query = self.db.table('tenders')\
                     .update(tender_data)\
                     .eq('id', tender_id)
 
-                # Filter op bureau (tenzij super-admin)
                 if not is_super and user_bureau_id:
                     query = query.eq('tenderbureau_id', user_bureau_id)
 
@@ -490,7 +538,6 @@ class TenderService:
 
                 updated_tender = result.data[0]
             else:
-                # No tender data to update, just get current tender
                 query = self.db.table('tenders')\
                     .select('*')\
                     .eq('id', tender_id)
@@ -505,11 +552,9 @@ class TenderService:
 
                 updated_tender = result.data[0]
 
-            # Save team assignments separately (if provided)
             if team_assignments is not None:
                 await self._save_team_assignments(tender_id, team_assignments)
 
-            # Return tender with team_assignments
             updated_tender['team_assignments'] = await self._get_team_assignments(tender_id)
 
             print(f"✅ Tender updated: {updated_tender['id']}")
@@ -520,12 +565,7 @@ class TenderService:
             raise
 
     async def _get_first_fase_status(self, fase: str) -> Optional[str]:
-        """
-        Haal de eerste status op voor een fase uit de fase_statussen tabel.
-        Sorteert op volgorde (laagste eerst).
-        Returns:
-            str: De status_key van de eerste status, of None als niets gevonden
-        """
+        """Haal de eerste status op voor een fase uit de fase_statussen tabel."""
         try:
             result = self.db.table('fase_statussen')\
                 .select('status_key')\
@@ -541,24 +581,15 @@ class TenderService:
             return None
     
     async def delete_tender(self, tender_id: str, user_id: str) -> bool:
-        """
-        Delete a tender.
-        
-        MULTI-TENANCY:
-        - User moet in hetzelfde tenderbureau zitten als de tender
-        - Of super-admin zijn
-        """
+        """Delete a tender."""
         try:
-            # Get user's bureau and check permissions
             user_bureau_id = await self._get_user_tenderbureau_id(user_id)
             is_super = await self._is_super_admin(user_id)
             
-            # Team assignments will be deleted automatically via CASCADE
             query = self.db.table('tenders')\
                 .delete()\
                 .eq('id', tender_id)
             
-            # Filter op bureau (tenzij super-admin)
             if not is_super and user_bureau_id:
                 query = query.eq('tenderbureau_id', user_bureau_id)
             
@@ -566,22 +597,19 @@ class TenderService:
             
             success = len(result.data) > 0
             if success:
-                print(f"âœ… Tender deleted: {tender_id}")
+                print(f"✅ Tender deleted: {tender_id}")
             else:
-                print(f"âš ï¸ Tender not found or no permission: {tender_id}")
+                print(f"⚠️ Tender not found or no permission: {tender_id}")
             
             return success
             
         except Exception as e:
-            print(f"âŒ Error deleting tender: {e}")
+            print(f"❌ Error deleting tender: {e}")
             raise
     
     async def get_tenders_by_fase(self, user_id: str, fase: str, tenderbureau_id: Optional[str] = None) -> List[dict]:
-        """
-        Get tenders by fase for user's tenderbureau.
-        """
+        """Get tenders by fase for user's tenderbureau."""
         try:
-            # Bepaal het tenderbureau
             bureau_id = tenderbureau_id or await self._get_user_tenderbureau_id(user_id)
             
             if not bureau_id:
@@ -598,30 +626,25 @@ class TenderService:
             for tender in result.data:
                 tender['team_assignments'] = await self._get_team_assignments(tender['id'])
                 
-                # Flatten bedrijf data
                 bedrijf = tender.pop('bedrijven', None) or {}
                 tender['bedrijfsnaam'] = bedrijf.get('bedrijfsnaam')
                 tender['kvk_nummer'] = bedrijf.get('kvk_nummer')
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
-                # ⭐ v2.7: Flatten tenderbureau naam
                 tenderbureau = tender.pop('tenderbureaus', None) or {}
                 tender['tenderbureau_naam'] = tenderbureau.get('naam')
                 
                 tenders.append(tender)
-            
+
             return tenders
             
         except Exception as e:
-            print(f"âŒ Error getting tenders by fase: {e}")
+            print(f"❌ Error getting tenders by fase: {e}")
             raise
     
     async def get_tender_stats(self, user_id: str, tenderbureau_id: Optional[str] = None) -> dict:
-        """
-        Get tender statistics for a tenderbureau.
-        """
+        """Get tender statistics for a tenderbureau."""
         try:
-            # Bepaal het tenderbureau
             bureau_id = tenderbureau_id or await self._get_user_tenderbureau_id(user_id)
             
             if not bureau_id:
@@ -632,7 +655,6 @@ class TenderService:
                 .eq('tenderbureau_id', bureau_id)\
                 .execute()
             
-            # Count by fase and status
             by_fase = {}
             by_status = {}
             
@@ -650,5 +672,5 @@ class TenderService:
             }
             
         except Exception as e:
-            print(f"âŒ Error getting tender stats: {e}")
+            print(f"❌ Error getting tender stats: {e}")
             return {'total': 0, 'by_fase': {}, 'by_status': {}}

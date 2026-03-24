@@ -54,7 +54,7 @@ const Icons = window.Icons || {};
 // Import BureauSwitcher
 import { BureauSwitcher } from '/js/components/BureauSwitcher.js';
 import { bureauAccessService } from '/js/services/BureauAccessService.js';
-import { SmartImportWizard } from '/js/components/SmartImportWizard.js';
+import { SmartImportWizard } from '/js/components/smart-import/SmartImportWizard.js';
 
 export class Header {
     constructor() {

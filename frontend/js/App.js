@@ -22,7 +22,7 @@
  */
 
 import { Header } from './components/Header.js';
-import { SmartImportWizard } from './components/SmartImportWizard.js';
+import { SmartImportWizard } from './components/smart-import/SmartImportWizard.js';
 import { TenderAanmaken } from './components/TenderAanmaken.js';
 import { BedrijfModal } from './components/BedrijfModal.js';
 import { TeamlidModal } from './components/TeamlidModal.js';
@@ -127,6 +127,15 @@ export class App {
             // 3. Initialize bureau context VOOR andere data laden
             console.log('🏢 Initializing bureau context...');
             await this.initBureauContext();
+
+            // 3b. Load alle tenderbureaus (voor lookup in modals/views)
+            try {
+                this.tenderbureaus = await tenderbureausService.getAllBureaus();
+                console.log(`✅ Alle tenderbureaus geladen: ${this.tenderbureaus.length}`);
+            } catch (e) {
+                console.error('❌ Kan tenderbureaus niet laden:', e);
+                this.tenderbureaus = [];
+            }
 
             // v2.2.1 FIX: Check of user toegang heeft tot minimaal 1 bureau
             if (!this.currentBureau && !this.isSuperAdmin) {

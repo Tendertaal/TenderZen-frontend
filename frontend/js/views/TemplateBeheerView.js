@@ -1,20 +1,8 @@
 // ================================================================
 // TenderZen — Template Beheer (Admin)
 // Frontend/js/views/TemplateBeheerView.js
-// Datum: 2026-02-09
-// ================================================================
-//
-// Admin pagina voor het beheren van planning- en checklist-templates.
-// Gebruikt de bestaande API endpoints uit planning_router (Fase B):
-//
-//   GET    /planning-templates              → Lijst
-//   GET    /planning-templates/{id}         → Detail met taken
-//   POST   /planning-templates              → Nieuw
-//   PUT    /planning-templates/{id}         → Update
-//   DELETE /planning-templates/{id}         → Verwijder
-//   POST   /planning-templates/{id}/duplicate → Dupliceer
-//   PUT    /planning-templates/{id}/taken   → Bulk replace taken
-//
+// Datum: 2026-03-16
+// WIJZIGING: Categorie kolom toegevoegd aan takentabel
 // ================================================================
 
 const ROLLEN = [
@@ -28,23 +16,27 @@ const ROLLEN = [
     { value: 'directie', label: 'Directie' }
 ];
 
+const CATEGORIEEN = [
+    'Voorbereiding',
+    'Uitwerking',
+    'Afronding & Indiening'
+];
+
 export class TemplateBeheerView {
 
     constructor(options = {}) {
         this.container = null;
-        // Use baseURL from config.js and append /api/v1 only once
         this.baseURL = (options.baseURL || window.API_CONFIG?.baseURL || 'http://localhost:3000') + '/api/v1';
         this.apiPath = '/planning-templates';
         this.authToken = options.authToken || '';
 
-        // State
         this.templates = [];
-        this.activeFilter = 'all';      // 'all', 'planning', 'checklist'
-        this.selectedTemplate = null;    // Volledig template object met taken
-        this.editingTemplate = null;     // Template in edit-modus (kopie)
+        this.activeFilter = 'all';
+        this.selectedTemplate = null;
+        this.editingTemplate = null;
         this.unsavedChanges = false;
         this.isLoading = false;
-        this.dragState = null;           // Voor drag-to-reorder
+        this.dragState = null;
     }
 
     // ══════════════════════════════════════════════
@@ -71,7 +63,6 @@ export class TemplateBeheerView {
         this._renderList();
 
         try {
-            // Get current bureau ID from global app state
             const bureauId = window.app?.currentBureau?.bureau_id;
             let url = `${this.baseURL}${this.apiPath}`;
             if (bureauId) {
@@ -84,7 +75,6 @@ export class TemplateBeheerView {
             if (!resp.ok) throw new Error('Templates laden mislukt');
 
             const data = await resp.json();
-            // Ensure templates is always an array
             let templatesArr = [];
             if (Array.isArray(data)) {
                 templatesArr = data;
@@ -92,8 +82,6 @@ export class TemplateBeheerView {
                 templatesArr = data.data;
             } else if (Array.isArray(data.templates)) {
                 templatesArr = data.templates;
-            } else {
-                templatesArr = [];
             }
             this.templates = templatesArr;
             this.templates.sort((a, b) => (a.naam || '').localeCompare(b.naam || ''));
@@ -120,13 +108,12 @@ export class TemplateBeheerView {
             this.editingTemplate = JSON.parse(JSON.stringify(data));
             this.unsavedChanges = false;
 
-            // Sorteer taken op volgorde
             if (this.editingTemplate.taken) {
                 this.editingTemplate.taken.sort((a, b) => (a.volgorde || 0) - (b.volgorde || 0));
             }
 
             this._renderDetail();
-            this._renderList(); // active state updaten
+            this._renderList();
 
         } catch (err) {
             console.error('❌ loadTemplateDetail:', err);
@@ -195,11 +182,13 @@ export class TemplateBeheerView {
 
             if (!resp1.ok) throw new Error('Template opslaan mislukt');
 
-            // 2. Bulk replace taken
+            // 2. Bulk replace taken — categorie wordt nu meegestuurd
+            const isTenderplanning = this.editingTemplate.type === 'tenderplanning';
             const taken = (this.editingTemplate.taken || []).map((t, i) => ({
                 naam: t.naam,
                 beschrijving: t.beschrijving || '',
-                rol: t.rol,
+                rol: isTenderplanning ? 'tendermanager' : (t.rol || 'tendermanager'),
+                categorie: t.categorie || (isTenderplanning ? 'Voorbereiding' : 'Uitwerking'),
                 t_minus_werkdagen: parseInt(t.t_minus_werkdagen) || 0,
                 duur_werkdagen: parseInt(t.duur_werkdagen) || 1,
                 is_mijlpaal: t.is_mijlpaal || false,
@@ -224,7 +213,6 @@ export class TemplateBeheerView {
             this.unsavedChanges = false;
             this.selectedTemplate = JSON.parse(JSON.stringify(this.editingTemplate));
 
-            // Refresh lijst
             await this.loadTemplates();
             this._renderDetail();
 
@@ -314,6 +302,7 @@ export class TemplateBeheerView {
             naam: '',
             beschrijving: '',
             rol: 'tendermanager',
+            categorie: 'Uitwerking',
             t_minus_werkdagen: 10,
             duur_werkdagen: 1,
             is_mijlpaal: false,
@@ -324,7 +313,6 @@ export class TemplateBeheerView {
         this.unsavedChanges = true;
         this._renderDetail();
 
-        // Focus op het nieuwe naam-veld
         requestAnimationFrame(() => {
             const rows = this.container?.querySelectorAll('.tb-taak-row');
             const lastRow = rows?.[rows.length - 1];
@@ -352,7 +340,6 @@ export class TemplateBeheerView {
         const [item] = taken.splice(fromIndex, 1);
         taken.splice(toIndex, 0, item);
 
-        // Herbereken volgorde
         taken.forEach((t, i) => { t.volgorde = i * 10; });
 
         this.unsavedChanges = true;
@@ -377,15 +364,15 @@ export class TemplateBeheerView {
                     </div>
                     <div class="tb-filter-tabs" id="tbFilterTabs">
                         <button class="tb-filter-tab tb-filter-tab--active" data-filter="all">Alle</button>
-                        <button class="tb-filter-tab" data-filter="planning">Planning</button>
+                        <button class="tb-filter-tab" data-filter="planning">Projectplanning</button>
                         <button class="tb-filter-tab" data-filter="checklist">Checklist</button>
+                        <button class="tb-filter-tab" data-filter="tenderplanning">Tenderplanning</button>
                     </div>
                     <div class="tb-template-list" id="tbTemplateList">
                         <!-- Filled by _renderList -->
                     </div>
                 </div>
                 <div class="tb-detail" id="tbDetail">
-                    <!-- Filled by _renderDetail -->
                     <div class="tb-empty-state">
                         <span class="tb-empty-icon">📋</span>
                         <h3>Selecteer een template</h3>
@@ -395,7 +382,6 @@ export class TemplateBeheerView {
             </div>
         `;
 
-        // Listeners
         this.container.querySelector('#tbNewBtn')
             ?.addEventListener('click', () => this.createTemplate());
 
@@ -442,8 +428,14 @@ export class TemplateBeheerView {
 
         list.innerHTML = filtered.map(t => {
             const isActive = this.selectedTemplate?.id === t.id;
-            const typeLabel = t.type === 'planning' ? '📅' : '✅';
+            const typeLabel = t.type === 'planning' ? '📅'
+                          : t.type === 'tenderplanning' ? '🗓️'
+                          : '✅';
             const badge = t.is_standaard ? '<span class="tb-badge">Standaard</span>' : '';
+
+            const typeNaam = t.type === 'planning' ? 'Projectplanning'
+                            : t.type === 'tenderplanning' ? 'Tenderplanning'
+                            : 'Checklist';
 
             return `
                 <div class="tb-template-item ${isActive ? 'tb-template-item--active' : ''}"
@@ -453,7 +445,8 @@ export class TemplateBeheerView {
                         <div class="tb-template-info">
                             <div class="tb-template-naam">${this._esc(t.naam)}</div>
                             <div class="tb-template-meta">
-                                ${t.type} ${badge}
+                                <span style="font-size:11px;color:#94a3b8;">${typeNaam}</span>
+                                ${badge}
                             </div>
                         </div>
                     </div>
@@ -467,16 +460,12 @@ export class TemplateBeheerView {
             `;
         }).join('');
 
-        // Listeners
         list.querySelectorAll('.tb-template-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                // Niet als er op een actie-knop geklikt is
                 if (e.target.closest('.tb-template-actions')) return;
-
                 if (this.unsavedChanges) {
                     if (!confirm('Je hebt onopgeslagen wijzigingen. Doorgaan?')) return;
                 }
-
                 this.loadTemplateDetail(item.dataset.id);
             });
         });
@@ -517,7 +506,7 @@ export class TemplateBeheerView {
         }
 
         const taken = t.taken || [];
-        const typeLabel = t.type === 'planning' ? 'Planning' : 'Checklist';
+        const typeLabel = t.type === 'planning' ? 'Projectplanning' : t.type === 'tenderplanning' ? 'Tenderplanning' : 'Checklist';
 
         detail.innerHTML = `
             <div class="tb-detail-content">
@@ -526,7 +515,7 @@ export class TemplateBeheerView {
                     <div class="tb-detail-header-left">
                         <input class="tb-detail-naam" id="tbNaam" value="${this._esc(t.naam)}"
                                placeholder="Template naam">
-                        <span class="tb-detail-type-badge tb-detail-type-badge--${t.type}">
+                        <span class="tb-detail-type-badge tb-detail-type-badge--${t.type === 'tenderplanning' ? 'tenderplanning' : t.type}">
                             ${typeLabel}
                         </span>
                     </div>
@@ -559,12 +548,13 @@ export class TemplateBeheerView {
                 <!-- Taken tabel -->
                 ${taken.length > 0 ? `
                     <div class="tb-taken-table">
-                        <div class="tb-taken-thead">
+                        <div class="tb-taken-thead ${t.type === 'tenderplanning' ? 'tb-taken-thead--tenderplanning' : ''}">
                             <div class="tb-col-drag"></div>
-                            <div class="tb-col-naam">Taaknaam</div>
-                            <div class="tb-col-rol">Rol</div>
-                            <div class="tb-col-tminus">T-minus</div>
-                            <div class="tb-col-duur">Duur</div>
+                            <div class="tb-col-naam">Mijlpaal</div>
+                            <div class="tb-col-categorie">Fase</div>
+                            ${t.type !== 'tenderplanning' ? '<div class="tb-col-rol">Rol</div>' : ''}
+                            ${t.type !== 'tenderplanning' ? '<div class="tb-col-tminus">T-minus</div>' : ''}
+                            ${t.type !== 'tenderplanning' ? '<div class="tb-col-duur">Duur</div>' : ''}
                             <div class="tb-col-flags">Flags</div>
                             <div class="tb-col-actions"></div>
                         </div>
@@ -590,22 +580,42 @@ export class TemplateBeheerView {
     }
 
     _renderTaakRow(taak, index) {
+        const isTenderplanning = this.editingTemplate?.type === 'tenderplanning';
+
         const rolOptions = ROLLEN.map(r =>
             `<option value="${r.value}" ${taak.rol === r.value ? 'selected' : ''}>${r.label}</option>`
         ).join('');
 
+        // Categorieen afhankelijk van template type
+        const catOpties = isTenderplanning
+            ? ['Voorbereiding', 'Nota van Inlichtingen', 'Indiening', 'Beoordeling', 'Gunning']
+            : CATEGORIEEN;
+
+        const catOptions = catOpties.map(c =>
+            `<option value="${c}" ${(taak.categorie || (isTenderplanning ? 'Voorbereiding' : 'Uitwerking')) === c ? 'selected' : ''}>${c}</option>`
+        ).join('');
+
+        // Grid class afhankelijk van type
+        const gridClass = isTenderplanning ? 'tb-taak-row--tenderplanning' : '';
+
         return `
-            <div class="tb-taak-row ${taak.is_mijlpaal ? 'tb-taak-row--mijlpaal' : ''}"
+            <div class="tb-taak-row ${taak.is_mijlpaal ? 'tb-taak-row--mijlpaal' : ''} ${gridClass}"
                  data-index="${index}" draggable="true">
                 <div class="tb-col-drag">
                     <span class="tb-drag-handle" title="Sleep om te verplaatsen">⠿</span>
                 </div>
                 <div class="tb-col-naam">
                     <input class="tb-taak-naam" data-index="${index}" data-field="naam"
-                           value="${this._esc(taak.naam)}" placeholder="Taaknaam...">
+                           value="${this._esc(taak.naam)}" placeholder="Mijlpaal naam...">
                     <input class="tb-taak-beschrijving" data-index="${index}" data-field="beschrijving"
                            value="${this._esc(taak.beschrijving || '')}" placeholder="Beschrijving (optioneel)">
                 </div>
+                <div class="tb-col-categorie">
+                    <select class="tb-taak-select" data-index="${index}" data-field="categorie">
+                        ${catOptions}
+                    </select>
+                </div>
+                ${!isTenderplanning ? `
                 <div class="tb-col-rol">
                     <select class="tb-taak-select" data-index="${index}" data-field="rol">
                         ${rolOptions}
@@ -622,7 +632,7 @@ export class TemplateBeheerView {
                            data-field="duur_werkdagen" value="${taak.duur_werkdagen || 1}"
                            min="0" max="50" title="Duur in werkdagen">
                     <span class="tb-taak-unit">wd</span>
-                </div>
+                </div>` : ''}
                 <div class="tb-col-flags">
                     <label class="tb-flag" title="Mijlpaal">
                         <input type="checkbox" data-index="${index}" data-field="is_mijlpaal"
@@ -655,33 +665,27 @@ export class TemplateBeheerView {
         const t = this.editingTemplate;
         if (!t) return;
 
-        // Naam
         detail.querySelector('#tbNaam')?.addEventListener('input', (e) => {
             t.naam = e.target.value;
             this._markChanged();
         });
 
-        // Beschrijving
         detail.querySelector('#tbBeschrijving')?.addEventListener('input', (e) => {
             t.beschrijving = e.target.value;
             this._markChanged();
         });
 
-        // Standaard checkbox
         detail.querySelector('#tbStandaard')?.addEventListener('change', (e) => {
             t.is_standaard = e.target.checked;
             this._markChanged();
         });
 
-        // Opslaan
         detail.querySelector('#tbSaveBtn')
             ?.addEventListener('click', () => this.saveTemplate());
 
-        // Taak toevoegen
         detail.querySelector('#tbAddTaakBtn')
             ?.addEventListener('click', () => this.addTaak());
 
-        // Taak veld wijzigingen
         detail.querySelectorAll('[data-field]').forEach(el => {
             const event = (el.type === 'checkbox') ? 'change' : 'input';
             el.addEventListener(event, (e) => {
@@ -702,7 +706,6 @@ export class TemplateBeheerView {
             });
         });
 
-        // Move up / down
         detail.querySelectorAll('[data-action="move-up"]').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.moveTaak(parseInt(btn.dataset.index), parseInt(btn.dataset.index) - 1);
@@ -715,17 +718,14 @@ export class TemplateBeheerView {
             });
         });
 
-        // Remove
         detail.querySelectorAll('[data-action="remove"]').forEach(btn => {
             btn.addEventListener('click', () => {
                 this.removeTaak(parseInt(btn.dataset.index));
             });
         });
 
-        // Drag & drop reorder
         this._attachDragListeners(detail);
 
-        // Keyboard: Ctrl+S
         this._saveHandler = (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
@@ -786,7 +786,6 @@ export class TemplateBeheerView {
         const btn = this.container?.querySelector('#tbSaveBtn');
         if (btn) btn.disabled = false;
 
-        // Toon unsaved banner
         let banner = this.container?.querySelector('.tb-unsaved-banner');
         if (!banner) {
             const content = this.container?.querySelector('.tb-detail-content');

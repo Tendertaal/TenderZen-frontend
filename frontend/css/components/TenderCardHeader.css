@@ -170,9 +170,9 @@
 .tch-status-menu {
     position: absolute;
     top: calc(100% + 4px);
-    right: 0;
+    left: 0;
     min-width: 200px;
-    max-height: 320px;
+    max-height: 60vh;
     overflow-y: auto;
     background: white;
     border: 1px solid #e2e8f0;
@@ -184,6 +184,11 @@
 
 .tch-status-dropdown.is-open .tch-status-menu {
     display: block;
+}
+
+/* Portal: menu is verplaatst naar document.body — altijd zichtbaar */
+.tch-menu-portal {
+    display: block !important;
 }
 
 /* Dropdown Groups */

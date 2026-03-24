@@ -1,8 +1,15 @@
 /**
  * TenderListView - Lijst weergave met tender cards
- * TenderZen v3.1 - Per-Card Headers
+ * TenderZen v3.2 - SmartImportPanel verwijderd (vervangen door TCC)
  * 
  * DOEL-PAD:  Frontend/js/views/TenderListView.js
+ *
+ * CHANGELOG v3.2:
+ * - VERWIJDERD: SmartImportPanel import (vervangen door Tender Command Center)
+ * - VERWIJDERD: initSmartImport() SmartImportPanel instantie
+ * - VERWIJDERD: injectSmartImportStyles() voor oude badge styling
+ * - BEHOUDEN: SmartImportWizard import (correct pad smart-import/)
+ * - BEHOUDEN: Alle AI badge click handlers (→ openCommandCenter)
  *
  * CHANGELOG v3.1:
  * - VERWIJDERD: Globale HeadersRow (nu per kaart in TenderCard v3.3)
@@ -16,8 +23,7 @@
 import { BaseView } from './BaseView.js';
 import { faseService } from '../services/FaseService.js';
 import { AIDocumentenModal } from '../components/AIDocumentenModal.js';
-import { SmartImportPanel } from '../components/SmartImportPanel.js';
-import { SmartImportWizard } from '../components/SmartImportWizard.js';
+import { SmartImportWizard } from '../components/smart-import/SmartImportWizard.js';
 import { TenderCard } from '../components/TenderCard.js';
 import { planningService } from '../services/PlanningService.js';
 
@@ -33,71 +39,7 @@ export class TenderListView extends BaseView {
         this.allFaseStatussen = {};
         this.faseConfig = {};
 
-        this.smartImportPanel = null;
         this.smartImportWizard = null;
-
-        this.initSmartImport();
-    }
-
-    initSmartImport() {
-        this.smartImportPanel = new SmartImportPanel({
-            onReanalyzeComplete: (tenderId, newData) => {
-                console.log('✅ Reanalyze complete for tender:', tenderId);
-                if (this.onTenderUpdated) {
-                    this.onTenderUpdated(tenderId);
-                }
-            },
-            onClose: () => {
-                console.log('Smart Import Panel closed');
-            }
-        });
-        this.injectSmartImportStyles();
-    }
-
-    injectSmartImportStyles() {
-        if (document.getElementById('smart-import-inline-styles')) return;
-        const styleSheet = document.createElement('style');
-        styleSheet.id = 'smart-import-inline-styles';
-        styleSheet.textContent = `
-            .ai-badge {
-                display: inline-flex; align-items: center; gap: 4px;
-                padding: 4px 8px; border-radius: 12px; font-size: 11px;
-                font-weight: 600; cursor: pointer; transition: all 0.2s ease;
-                margin-left: 8px; flex-shrink: 0;
-            }
-            .ai-badge.ai-badge--new {
-                background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-                border: 1px dashed #94a3b8; color: #64748b;
-            }
-            .ai-badge.ai-badge--new:hover {
-                background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-                border: 1px solid #7dd3fc; color: #0369a1;
-                transform: scale(1.05); box-shadow: 0 2px 8px rgba(3,105,161,0.2);
-            }
-            .ai-badge.ai-badge--haiku {
-                background: linear-gradient(135deg, #e0f2fe, #bae6fd);
-                border: 1px solid #7dd3fc; color: #0369a1;
-            }
-            .ai-badge.ai-badge--haiku:hover {
-                background: linear-gradient(135deg, #bae6fd, #7dd3fc);
-                transform: scale(1.05); box-shadow: 0 2px 8px rgba(3,105,161,0.3);
-            }
-            .ai-badge.ai-badge--pro {
-                background: linear-gradient(135deg, #fef3c7, #fde68a);
-                border: 1px solid #fbbf24; color: #92400e;
-            }
-            .ai-badge.ai-badge--pro:hover {
-                background: linear-gradient(135deg, #fde68a, #fcd34d);
-                transform: scale(1.05); box-shadow: 0 2px 8px rgba(251,191,36,0.4);
-            }
-            .ai-badge .badge-icon { font-size: 12px; }
-            .ai-badge .badge-label { letter-spacing: 0.3px; }
-            .tender-name-row {
-                display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-            }
-            .tender-name-row .tender-name { margin: 0; }
-        `;
-        document.head.appendChild(styleSheet);
     }
 
     getIcon(name, size = 14, color = null) {
@@ -322,17 +264,88 @@ export class TenderListView extends BaseView {
     // =========================================================================
 
     attachEventListeners() {
+        // ── Portal dropdown helpers ──
+        const _portalOpen = (trigger) => {
+            _portalCloseAll();
+            const dd = trigger.closest('.tch-status-dropdown');
+            const menu = dd?.querySelector('.tch-status-menu');
+            if (!dd || !menu) return;
+
+            dd.classList.add('is-open');
+            dd.closest('.tender-row')?.classList.add('dropdown-open');
+
+            // Verplaats menu naar body (portal) zodat overflow:hidden niet afsnijdt
+            const placeholder = document.createComment('tlv-portal-placeholder');
+            menu.parentNode.insertBefore(placeholder, menu);
+            menu.classList.add('tch-menu-portal');
+            document.body.appendChild(menu);
+            menu._tlvPlaceholder = placeholder;
+            menu._tlvDropdown = dd;
+
+            _portalPosition(trigger, menu);
+
+            this._tlvActiveMenu = menu;
+        };
+
+        const _portalPosition = (trigger, menu) => {
+            const rect = trigger.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.display = 'block';
+            menu.style.zIndex = '99999';
+            menu.style.top = `${rect.bottom + 4}px`;
+            menu.style.left = `${rect.left}px`;
+            menu.style.right = 'auto';
+            menu.style.bottom = 'auto';
+            menu.style.minWidth = `${Math.max(rect.width, 200)}px`;
+            menu.style.maxWidth = '280px';
+            menu.style.maxHeight = '70vh';
+            menu.style.overflowY = 'auto';
+
+            requestAnimationFrame(() => {
+                const mr = menu.getBoundingClientRect();
+                if (mr.right > window.innerWidth - 8)
+                    menu.style.left = `${window.innerWidth - mr.width - 8}px`;
+                if (mr.bottom > window.innerHeight - 8)
+                    menu.style.top = `${rect.top - mr.height - 4}px`;
+            });
+        };
+
+        const _portalClose = (menu) => {
+            if (!menu) return;
+            const dd = menu._tlvDropdown;
+            const placeholder = menu._tlvPlaceholder;
+            menu.classList.remove('tch-menu-portal');
+            menu.style.cssText = '';
+            if (placeholder?.parentNode) {
+                placeholder.parentNode.insertBefore(menu, placeholder);
+                placeholder.remove();
+            }
+            dd?.classList.remove('is-open');
+            dd?.closest('.tender-row')?.classList.remove('dropdown-open');
+            delete menu._tlvPlaceholder;
+            delete menu._tlvDropdown;
+            this._tlvActiveMenu = null;
+        };
+
+        const _portalCloseAll = () => {
+            document.querySelectorAll('body > .tch-menu-portal').forEach(m => _portalClose(m));
+            this.container?.querySelectorAll('.tch-status-dropdown.is-open').forEach(d => {
+                d.classList.remove('is-open');
+                d.closest('.tender-row')?.classList.remove('dropdown-open');
+            });
+            this._tlvActiveMenu = null;
+        };
+
         // Status dropdown toggle
         this.container.querySelectorAll('.tch-status-trigger').forEach(trigger => {
             trigger.addEventListener('click', (e) => {
                 e.stopPropagation(); e.preventDefault();
                 const dd = trigger.closest('.tch-status-dropdown');
-                const row = trigger.closest('.tender-row');
-                const isOpen = dd.classList.contains('is-open');
-                this.container.querySelectorAll('.tch-status-dropdown.is-open').forEach(d => {
-                    d.classList.remove('is-open'); d.closest('.tender-row').classList.remove('dropdown-open');
-                });
-                if (!isOpen) { dd.classList.add('is-open'); row.classList.add('dropdown-open'); }
+                if (dd.classList.contains('is-open')) {
+                    _portalClose(this._tlvActiveMenu);
+                } else {
+                    _portalOpen(trigger);
+                }
             });
         });
 
@@ -340,7 +353,9 @@ export class TenderListView extends BaseView {
         this.container.querySelectorAll('.tch-dropdown-option').forEach(option => {
             option.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const dd = option.closest('.tch-status-dropdown');
+                const dd = option.closest('.tch-status-dropdown')
+                    || this._tlvActiveMenu?._tlvDropdown;
+                if (!dd) return;
                 const row = dd.closest('.tender-row');
                 const tenderId = dd.dataset.tenderId;
                 const newStatus = option.dataset.value;
@@ -348,14 +363,14 @@ export class TenderListView extends BaseView {
                 const currentFase = dd.dataset.currentFase;
                 dd.querySelector('.tch-status-value').textContent = option.textContent.trim();
                 if (newFase !== currentFase) {
-                    const badge = row.querySelector('.tch-fase-badge');
+                    const badge = row?.querySelector('.tch-fase-badge');
                     if (badge) { badge.textContent = newFase.toUpperCase(); badge.className = 'tch-fase-badge tch-fase-badge--' + newFase; }
-                    row.className = row.className.replace(/phase-\w+/, 'phase-' + newFase);
+                    if (row) row.className = row.className.replace(/phase-\w+/, 'phase-' + newFase);
                     dd.dataset.currentFase = newFase;
                 }
                 dd.querySelectorAll('.tch-dropdown-option').forEach(o => o.classList.remove('is-selected'));
                 option.classList.add('is-selected');
-                dd.classList.remove('is-open'); row.classList.remove('dropdown-open');
+                _portalClose(this._tlvActiveMenu);
                 if (this.onStatusChange) this.onStatusChange(tenderId, newStatus, newFase);
             });
         });
@@ -363,10 +378,8 @@ export class TenderListView extends BaseView {
         // Close dropdown on outside click
         document.addEventListener('click', (e) => {
             if (!this.container) return;
-            if (!e.target.closest('.tch-status-dropdown')) {
-                this.container.querySelectorAll('.tch-status-dropdown.is-open').forEach(d => {
-                    d.classList.remove('is-open'); d.closest('.tender-row').classList.remove('dropdown-open');
-                });
+            if (!e.target.closest('.tch-status-dropdown') && !e.target.closest('.tch-menu-portal')) {
+                _portalCloseAll();
             }
         });
 

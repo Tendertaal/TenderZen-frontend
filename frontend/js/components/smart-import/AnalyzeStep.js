@@ -1,8 +1,14 @@
 // ================================================================
-// TenderZen — Smart Import v4.0 — Stap 2: Analyse
+// TenderZen — Smart Import v4.1 — Stap 2: Analyse
 // Frontend/js/components/smart-import/AnalyzeStep.js
-// Datum: 2026-02-09
+// Datum: 2026-03-11
 // ================================================================
+//
+// CHANGELOG v4.1:
+// - Alle emoji's/tekst-iconen vervangen door SVG iconen uit window.Icons
+// - Step status iconen: checkCircle (completed), refresh+spin (in_progress), clock (pending)
+// - Error state: warning SVG i.p.v. emoji
+// - Icon helper met fallback
 //
 // Upload bestanden naar API, start AI analyse, poll voor status.
 // Auto-advance naar stap 3 wanneer analyse klaar is.
@@ -26,6 +32,18 @@
 //   - Reanalyze Pro:   state._reanalyzeMode = true → skip upload
 //   - Extra document:  state._additionalFiles + state._mergeMode = true
 // ================================================================
+
+// ── Icon helper met fallback ──
+const _getIcon = (name, opts = {}) => {
+    const Icons = window.Icons || {};
+    if (Icons[name] && typeof Icons[name] === 'function') return Icons[name](opts);
+    const fallbacks = {
+        checkCircle: '✓', refresh: '◐', clock: '○',
+        warning: '⚠️', alertCircle: '❌', info: 'ℹ'
+    };
+    return fallbacks[name] || '';
+};
+
 
 export class AnalyzeStep {
 
@@ -51,13 +69,10 @@ export class AnalyzeStep {
 
         // Determine which flow to run
         if (this.state._reanalyzeMode) {
-            // v3.5: Re-analyze with Pro model (importId already exists)
             await this._startReanalysis();
         } else if (this.state._mergeMode && this.state._additionalFiles?.length > 0) {
-            // v3.3: Additional document analysis
             await this._startAdditionalAnalysis();
         } else {
-            // Normal flow: upload + analyze
             await this._startNormalAnalysis();
         }
     }
@@ -78,7 +93,7 @@ export class AnalyzeStep {
         ]).map(s => `
             <div class="si-analysis-step si-analysis-step--${s.status}">
                 <span class="si-step-icon">
-                    ${s.status === 'completed' ? '✓' : s.status === 'in_progress' ? '◐' : '○'}
+                    ${this._stepStatusIcon(s.status)}
                 </span>
                 <span>${s.label}</span>
             </div>
@@ -106,12 +121,26 @@ export class AnalyzeStep {
         `;
     }
 
+    /**
+     * Geeft het juiste SVG icoon terug per step status.
+     */
+    _stepStatusIcon(status) {
+        switch (status) {
+            case 'completed':
+                return _getIcon('checkCircle', { size: 18, color: '#16a34a' });
+            case 'in_progress':
+                return `<span class="si-icon-spin">${_getIcon('refresh', { size: 18, color: '#2563eb' })}</span>`;
+            case 'pending':
+            default:
+                return _getIcon('clock', { size: 18, color: '#94a3b8' });
+        }
+    }
+
     attachListeners(container) {
         this.container = container;
     }
 
     validate() {
-        // Analyse stap wordt automatisch overgeslagen (auto-advance)
         return true;
     }
 
@@ -237,7 +266,6 @@ export class AnalyzeStep {
 
             console.log('📤 Uploading additional document...');
 
-            // Upload extra bestanden (maakt nieuw import_id)
             const formData = new FormData();
             for (const f of additionalFiles) {
                 formData.append('files', f.file);
@@ -258,7 +286,6 @@ export class AnalyzeStep {
             const uploadResult = await uploadResp.json();
             const additionalImportId = uploadResult.import_id;
 
-            // Start analyse
             const analyzeResp = await fetch(
                 `${this.state.baseURL}/smart-import/${additionalImportId}/analyze`,
                 {
@@ -282,7 +309,6 @@ export class AnalyzeStep {
 
             console.log('🤖 Additional analysis started...');
 
-            // Poll met merge-logica bij voltooiing
             this._startPolling(additionalImportId, true);
 
         } catch (error) {
@@ -303,7 +329,6 @@ export class AnalyzeStep {
         this._analysisCompleted = false;
 
         this.pollingInterval = setInterval(async () => {
-            // Guard: voorkom dat meerdere overlappende callbacks verwerken
             if (this.aborted || this._analysisCompleted) {
                 this._stopPolling();
                 return;
@@ -326,15 +351,13 @@ export class AnalyzeStep {
                 this._updateProgressUI();
 
                 if (status.status === 'completed' && !this._analysisCompleted) {
-                    this._analysisCompleted = true;  // Voorkom dubbele verwerking
+                    this._analysisCompleted = true;
                     this._stopPolling();
 
                     console.log('✅ Analysis completed!');
 
                     if (mergeOnComplete && this.state.extractedData) {
-                        // Merge met bestaande data
                         this._mergeExtractedData(status.extracted_data);
-                        // Voeg extra bestanden toe aan uploadedFiles
                         const extra = this.state._additionalFiles || [];
                         this.state.uploadedFiles.push(...extra.map(f => ({
                             ...f, isAdditional: true
@@ -343,18 +366,15 @@ export class AnalyzeStep {
                         this.state.extractedData = status.extracted_data;
                     }
 
-                    // Track model
                     if (status.ai_model_used) {
                         this.state.currentModel = status.ai_model_used.includes('sonnet')
                             ? 'sonnet' : 'haiku';
                     }
 
-                    // Link tender indien nodig
                     if (this.state.tenderId && this.state.importId) {
                         await this._linkToTender(this.state.importId);
                     }
 
-                    // Auto-advance naar stap 3
                     if (this.state._navigateTo) {
                         this.state._navigateTo(3);
                     }
@@ -397,7 +417,7 @@ export class AnalyzeStep {
             stepsEl.innerHTML = this.steps.map(s => `
                 <div class="si-analysis-step si-analysis-step--${s.status}">
                     <span class="si-step-icon">
-                        ${s.status === 'completed' ? '✓' : s.status === 'in_progress' ? '◐' : '○'}
+                        ${this._stepStatusIcon(s.status)}
                     </span>
                     <span>${s.label}</span>
                 </div>
@@ -424,7 +444,9 @@ export class AnalyzeStep {
 
         this.container.innerHTML = `
             <div style="text-align: center; padding: 60px 20px;">
-                <span style="font-size: 48px;">⚠️</span>
+                <span style="display:inline-block;margin-bottom:8px;">
+                    ${_getIcon('warning', { size: 48, color: '#ea580c' })}
+                </span>
                 <h3 style="margin: 16px 0 8px; color: #991b1b;">Analyse mislukt</h3>
                 <p style="color: #64748b; margin: 0 0 20px;">${userMessage}</p>
                 <button class="siw-btn siw-btn--secondary" id="siRetryBtn">
@@ -477,7 +499,6 @@ export class AnalyzeStep {
         console.log('🔀 Merging extracted data...');
         const existing = this.state.extractedData;
 
-        // Merge categorieën
         for (const cat of ['basisgegevens', 'planning']) {
             if (!newData[cat]) continue;
             if (!existing[cat]) { existing[cat] = {}; }
@@ -495,7 +516,6 @@ export class AnalyzeStep {
             }
         }
 
-        // Merge gunningscriteria
         if (newData.gunningscriteria?.criteria?.length > 0) {
             if (!existing.gunningscriteria) existing.gunningscriteria = { criteria: [] };
             const codes = new Set(existing.gunningscriteria.criteria.map(c => c.code || c.naam));
@@ -506,7 +526,6 @@ export class AnalyzeStep {
             }
         }
 
-        // Merge warnings
         if (newData.warnings?.length > 0) {
             if (!existing.warnings) existing.warnings = [];
             for (const w of newData.warnings) {
@@ -541,7 +560,6 @@ export class AnalyzeStep {
             || window.bureauAccessService?.getActiveBureauId?.()
             || document.querySelector('[data-bureau-id]')?.dataset?.bureauId;
 
-        // Valideer UUID
         const isUUID = id &&
             id !== 'ALL_BUREAUS' &&
             /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
@@ -549,10 +567,6 @@ export class AnalyzeStep {
         return isUUID ? id : null;
     }
 
-    /**
-     * Cleanup bij wizard sluiting.
-     * Wordt aangeroepen door orchestrator (optioneel).
-     */
     destroy() {
         this.aborted = true;
         this._stopPolling();

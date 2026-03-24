@@ -1,0 +1,416 @@
+/* ============================================
+   TEAM TAB — Teamleden & Rolverdeling
+   ============================================ */
+
+.tcc-team-container {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Team cards grid */
+.tcc-team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.tcc-team-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.tcc-team-card:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+}
+
+.tcc-team-card-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    letter-spacing: 0.5px;
+}
+
+.tcc-team-card-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tcc-team-card-naam {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tcc-team-card-rol {
+    font-size: 11px;
+    color: #6366f1;
+    font-weight: 500;
+    margin-top: 2px;
+}
+
+.tcc-team-card-uren {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.tcc-team-card-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.tcc-team-card:hover .tcc-team-card-remove {
+    opacity: 1;
+}
+
+.tcc-team-card-remove:hover {
+    background: #fee2e2;
+}
+
+/* Empty state */
+.tcc-team-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 32px 20px;
+    color: #94a3b8;
+    font-size: 14px;
+    background: #f8fafc;
+    border-radius: 10px;
+    border: 1px dashed #e2e8f0;
+}
+
+/* Rolverdeling */
+.tcc-team-rol-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.tcc-team-rol-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 13px;
+}
+
+.tcc-team-rol-row:last-child {
+    border-bottom: none;
+}
+
+.tcc-team-rol-row--warn {
+    background: #fffbeb;
+}
+
+.tcc-team-rol-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.tcc-team-rol-req {
+    color: #dc2626;
+    font-size: 11px;
+}
+
+.tcc-team-rol-assigned {
+    flex: 1;
+    color: #475569;
+}
+
+.tcc-team-rol-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.tcc-team-rol-status--ok {
+    color: #16a34a;
+}
+
+.tcc-team-rol-status--warn {
+    color: #f59e0b;
+}
+
+.tcc-team-rol-status--empty {
+    color: #cbd5e1;
+}
+
+/* Warning banner */
+.tcc-team-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #78350f;
+    line-height: 1.5;
+}
+
+.tcc-team-warning .tcc-icon {
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* Add member form */
+.tcc-team-add {
+    margin-top: 10px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.tcc-team-add-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tcc-team-add-select {
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #0f172a;
+    background: #ffffff;
+    outline: none;
+    flex: 1;
+    min-width: 140px;
+}
+
+.tcc-team-add-select--rol {
+    flex: 0 0 130px;
+    min-width: 130px;
+}
+
+.tcc-team-add-uren {
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #0f172a;
+    width: 70px;
+    text-align: center;
+    outline: none;
+}
+
+.tcc-team-add-select:focus,
+.tcc-team-add-uren:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+/* Small button variant */
+.tcc-btn--sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    gap: 4px;
+}
+
+/* Section meta */
+.tcc-section-meta {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 400;
+    margin-left: auto;
+    margin-right: 8px;
+}
+
+
+
+/* ============================================
+   WORKLOAD — Progress bars & legend
+   ============================================ */
+
+.tcc-team-workload-container {
+    padding: 4px 0;
+}
+
+.tcc-team-workload-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tcc-team-workload-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    transition: background 0.15s;
+}
+
+.tcc-team-workload-row:hover {
+    background: #f8fafc;
+}
+
+.tcc-team-workload-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.tcc-team-workload-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tcc-team-workload-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #0f172a;
+    margin-bottom: 4px;
+}
+
+.tcc-team-workload-bar-bg {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.tcc-team-workload-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+    min-width: 2px;
+}
+
+.tcc-team-workload-stats {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    min-width: 100px;
+    justify-content: flex-end;
+}
+
+.tcc-team-workload-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.tcc-team-workload-pct {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.tcc-team-workload-warn {
+    display: flex;
+    align-items: center;
+}
+
+.tcc-team-workload-legend {
+    display: flex;
+    gap: 16px;
+    padding: 10px 14px 4px;
+    font-size: 11px;
+    color: #64748b;
+}
+
+/* ============================================
+   CRITERIA — Toewijzingscriteria uitleg
+   ============================================ */
+
+.tcc-team-criteria {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.tcc-team-criteria-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.tcc-team-criteria-item:last-child {
+    border-bottom: none;
+}
+
+.tcc-team-criteria-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tcc-team-criteria-item strong {
+    font-size: 13px;
+    color: #0f172a;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.tcc-team-criteria-item p {
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.tcc-team-criteria-item em {
+    color: #475569;
+    font-style: italic;
+}
+

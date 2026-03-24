@@ -1,0 +1,297 @@
+/* ============================================================
+   TCC TAB INFO — Tenderinformatie
+   Versie: 20260312_1130
+   Integratie: Voeg toe aan TenderCommandCenter.css
+   Prefix: tcc-info- voor tab-specifieke classes
+   ============================================================ */
+
+/* ============================================================
+   FIELD GRID (2-kolom)
+   ============================================================ */
+.tcc-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+.tcc-info-field {
+    padding: 12px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tcc-info-field:nth-child(odd) {
+    border-right: 1px solid #f1f5f9;
+}
+
+.tcc-info-field--full {
+    grid-column: 1 / -1;
+    border-right: none !important;
+}
+
+.tcc-info-field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.tcc-info-field-value {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 500;
+}
+
+.tcc-info-field-value--muted {
+    color: #94a3b8;
+    font-style: italic;
+    font-weight: 400;
+}
+
+.tcc-info-field-value--link {
+    color: #4338ca;
+    text-decoration: none;
+}
+
+.tcc-info-field-value--link:hover {
+    text-decoration: underline;
+}
+
+/* ============================================================
+   EDIT MODE — INPUT FIELDS
+   ============================================================ */
+.tcc-info-input {
+    font-size: 14px;
+    color: #1e293b;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 7px 10px;
+    background: #fff;
+    width: 100%;
+    font-family: inherit;
+    transition: border-color 0.15s;
+}
+
+.tcc-info-input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.tcc-info-input--select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+    cursor: pointer;
+}
+
+.tcc-info-input--textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+/* ============================================================
+   VIEW / EDIT TOGGLE
+   ============================================================ */
+.tcc-info-view {
+    display: block;
+}
+
+.tcc-info-edit {
+    display: none;
+}
+
+.tcc-info-panel.is-editing .tcc-info-view {
+    display: none;
+}
+
+.tcc-info-panel.is-editing .tcc-info-edit {
+    display: block;
+}
+
+/* ============================================================
+   BUREAU CARD
+   ============================================================ */
+.tcc-info-bureau-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: #f0fdf4;
+    border-bottom: 1px solid #dcfce7;
+}
+
+.tcc-info-bureau-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.tcc-info-bureau-info {
+    flex: 1;
+}
+
+.tcc-info-bureau-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #166534;
+}
+
+.tcc-info-bureau-hint {
+    font-size: 11px;
+    color: #16a34a;
+}
+
+.tcc-info-bureau-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #dcfce7;
+    color: #166534;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* ============================================================
+   BEDRIJF CARD
+   ============================================================ */
+.tcc-info-bedrijf-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    background: #eef2ff;
+    border-bottom: 1px solid #e0e7ff;
+}
+
+.tcc-info-bedrijf-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.tcc-info-bedrijf-info {
+    flex: 1;
+}
+
+.tcc-info-bedrijf-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #312e81;
+}
+
+.tcc-info-bedrijf-hint {
+    font-size: 11px;
+    color: #6366f1;
+}
+
+.tcc-info-bedrijf-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #e0e7ff;
+    color: #4338ca;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* ============================================================
+   BEDRIJF SELECT WRAPPER
+   ============================================================ */
+.tcc-info-select-wrapper {
+    padding: 12px 18px;
+}
+
+.tcc-info-select-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+}
+
+/* ============================================================
+   DANGER ZONE
+   ============================================================ */
+.tcc-info-danger-zone {
+    margin-top: 8px;
+    padding: 16px 18px;
+    border: 1px dashed #fecaca;
+    border-radius: 10px;
+    background: #fef2f2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tcc-info-danger-text {
+    font-size: 13px;
+    color: #991b1b;
+}
+
+.tcc-info-danger-text small {
+    display: block;
+    font-size: 11px;
+    color: #b91c1c;
+    font-weight: 400;
+    margin-top: 2px;
+}
+
+.tcc-info-btn-danger {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #fff;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+}
+
+.tcc-info-btn-danger:hover {
+    background: #dc2626;
+    color: #fff;
+    border-color: #dc2626;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 700px) {
+    .tcc-info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tcc-info-field:nth-child(odd) {
+        border-right: none;
+    }
+}

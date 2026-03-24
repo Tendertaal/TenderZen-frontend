@@ -1,14 +1,52 @@
 // frontend/js/services/AIDocumentService.js
 
-import { API_CONFIG } from '../config.js';
+import { API_CONFIG, supabase } from '../config.js';
 
 export class AIDocumentService {
   constructor() {
     this.baseUrl = API_CONFIG.BASE_URL;
   }
 
+  // NIEUW: Directe generatie via backend
+  async generateDocument(tenderId, templateKey, model = 'sonnet') {
+    const token = await this.getAuthToken();
+    if (!token) throw new Error('Geen geldige authenticatie. Log opnieuw in.');
+
+    const response = await fetch(
+      `${this.baseUrl}/api/v1/tenders/${tenderId}/generate-document`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          template_key: templateKey,
+          model: model
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Onbekende fout' }));
+      throw new Error(error.detail || `Generatie mislukt (${response.status})`);
+    }
+
+    return await response.json();
+  }
+
+  // Vervang losse getAuthToken door class-methode
+  async getAuthToken() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session?.access_token || null;
+    } catch {
+      return null;
+    }
+  }
+
   async saveDocument(tenderId, docData) {
-    const token = await getAuthToken();
+    const token = await this.getAuthToken();
     if (!token) throw new Error('Geen geldige authenticatie. Probeer opnieuw.');
     const response = await fetch(
       `${this.baseUrl}/tenders/${tenderId}/ai-documents`,
@@ -29,7 +67,7 @@ export class AIDocumentService {
   }
 
   async getDocuments(tenderId, options = {}) {
-    const token = await getAuthToken();
+    const token = await this.getAuthToken();
     if (!token) throw new Error('Geen geldige authenticatie. Probeer opnieuw.');
     const params = new URLSearchParams();
     if (options.template_key) {
@@ -52,7 +90,7 @@ export class AIDocumentService {
   }
 
   async getDocument(documentId) {
-    const token = await getAuthToken();
+    const token = await this.getAuthToken();
     if (!token) throw new Error('Geen geldige authenticatie. Probeer opnieuw.');
     const response = await fetch(
       `${this.baseUrl}/ai-documents/${documentId}`,
@@ -69,7 +107,7 @@ export class AIDocumentService {
   }
 
   async deleteDocument(documentId) {
-    const token = await getAuthToken();
+    const token = await this.getAuthToken();
     if (!token) throw new Error('Geen geldige authenticatie. Probeer opnieuw.');
     const response = await fetch(
       `${this.baseUrl}/ai-documents/${documentId}`,
@@ -85,4 +123,6 @@ export class AIDocumentService {
     }
     return await response.json();
   }
+
+
 }

@@ -1,8 +1,13 @@
 // ================================================================
-// TenderZen — Smart Import v4.0 — Stap 1: Upload
+// TenderZen — Smart Import v4.1 — Stap 1: Upload
 // Frontend/js/components/smart-import/UploadStep.js
-// Datum: 2026-02-09
+// Datum: 2026-03-11
 // ================================================================
+//
+// CHANGELOG v4.1:
+// - Alle emoji's vervangen door SVG iconen uit window.Icons
+// - Icon helper met fallback naar emoji als Icons niet geladen
+// - Consistent met TCC design system
 //
 // Drag & drop file upload met validatie.
 // Accepteert PDF, DOCX, ZIP bestanden (max 25MB, max 10 stuks).
@@ -25,6 +30,18 @@ const VALID_MIME_TYPES = [
     'application/x-zip-compressed'
 ];
 
+// ── Icon helper met fallback ──
+const _getIcon = (name, opts = {}) => {
+    const Icons = window.Icons || {};
+    if (Icons[name] && typeof Icons[name] === 'function') return Icons[name](opts);
+    const fallbacks = {
+        upload: '📤', fileText: '📄', clipboardList: '📋',
+        download: '📦', close: '×', warning: '⚠️',
+        checkCircle: '✓', info: 'ℹ'
+    };
+    return fallbacks[name] || '';
+};
+
 
 export class UploadStep {
 
@@ -44,7 +61,10 @@ export class UploadStep {
         // v3.6: Header voor bestaande tender
         const tenderHeader = (this.state.tenderId && this.state.tenderNaam)
             ? `<div class="si-upload-for-tender">
-                   <span class="si-upload-tender-label">📋 Documenten voor:</span>
+                   <span class="si-upload-tender-label">
+                       ${_getIcon('clipboardList', { size: 16, color: '#0d9488' })}
+                       Documenten voor:
+                   </span>
                    <span class="si-upload-tender-name">${this._esc(this.state.tenderNaam)}</span>
                </div>`
             : '';
@@ -55,7 +75,9 @@ export class UploadStep {
 
                 <div class="si-dropzone" id="siDropzone">
                     <div class="si-dropzone-content">
-                        <span class="si-dropzone-icon">📤</span>
+                        <span class="si-dropzone-icon">
+                            ${_getIcon('upload', { size: 40, color: '#0d9488' })}
+                        </span>
                         <h3>Sleep bestanden hierheen</h3>
                         <p>of klik om te selecteren</p>
                         <p class="si-dropzone-hint">PDF, DOCX of ZIP · Max 25 MB per bestand · Max 10 bestanden</p>
@@ -74,6 +96,12 @@ export class UploadStep {
                         <span>${this._formatBytes(files.reduce((s, f) => s + f.size, 0))}</span>
                     </div>
                 ` : ''}
+
+                <div class="si-upload-skip" style="text-align:center;padding:16px 0 0;">
+                    <button class="siw-btn siw-btn--ghost" data-action="si-skip-upload" style="color:#6366f1;font-size:13px;">
+                        Geen documenten? Sla over en maak de tender direct aan →
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -215,7 +243,9 @@ export class UploadStep {
                     <div class="si-file-name">${this._esc(file.name)}</div>
                     <div class="si-file-size">${this._formatBytes(file.size)}</div>
                 </div>
-                <button class="si-file-remove" data-index="${i}" title="Verwijderen">&times;</button>
+                <button class="si-file-remove" data-index="${i}" title="Verwijderen">
+                    ${_getIcon('close', { size: 16, color: '#dc2626' })}
+                </button>
             </div>
         `).join('');
     }
@@ -232,7 +262,13 @@ export class UploadStep {
 
     _fileIcon(name) {
         const ext = name.split('.').pop().toLowerCase();
-        return { pdf: '📄', docx: '📝', doc: '📝', zip: '📦' }[ext] || '📎';
+        const iconMap = {
+            pdf:  () => _getIcon('fileText', { size: 18, color: '#4f46e5' }),
+            docx: () => _getIcon('fileText', { size: 18, color: '#4f46e5' }),
+            doc:  () => _getIcon('fileText', { size: 18, color: '#4f46e5' }),
+            zip:  () => _getIcon('download', { size: 18, color: '#2563eb' })
+        };
+        return (iconMap[ext] || (() => _getIcon('fileText', { size: 18, color: '#64748b' })))();
     }
 
     _esc(str) {

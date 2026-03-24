@@ -1790,9 +1790,6 @@ export class TenderAanmaken {
         // Initialize fase status dropdown
         this.handleFaseChange('acquisitie');
 
-        // Load tenderbureaus
-        this.loadTenderbureaus();
-
         // Load team members and initialize team builder
         this.initTeamBuilder();
 
@@ -2031,81 +2028,46 @@ export class TenderAanmaken {
      */
     async loadTenderbureaus() {
         try {
-            // Import supabase
-            const { supabase } = await import('/js/config.js');
-
-            // Get active bureau ID from localStorage
             const activeBureauId = localStorage.getItem('tenderzen_current_bureau');
+            const bureauId = this.currentTender?.tenderbureau_id || activeBureauId;
 
             if (this.isSuperAdmin) {
-                // ⭐ Super-admin: laad ALLE bureaus voor dropdown
                 const selectEl = this.modal.querySelector('#tender-tenderbureau-select');
+                if (!selectEl) return;
 
-                if (!selectEl) {
-                    console.warn('tender-tenderbureau-select element not found');
-                    return;
-                }
+                const bureaus = window.app?.tenderbureaus || [];
+                this.allBureaus = bureaus;
 
-                // Load all bureaus
-                const { data: bureaus, error } = await supabase
-                    .from('tenderbureaus')
-                    .select('id, naam')
-                    .order('naam', { ascending: true });
-
-                if (error) {
-                    console.error('Error loading bureaus:', error);
-                    selectEl.innerHTML = '<option value="">⚠️ Fout bij laden</option>';
-                    return;
-                }
-
-                this.allBureaus = bureaus || [];
-
-                // Build dropdown options
-                selectEl.innerHTML = this.allBureaus.map(b =>
-                    `<option value="${b.id}" ${b.id === activeBureauId ? 'selected' : ''}>${b.naam}</option>`
+                selectEl.innerHTML = bureaus.map(b =>
+                    `<option value="${b.id}" ${b.id === bureauId ? 'selected' : ''}>${b.naam}</option>`
                 ).join('');
 
-                console.log('✅ Loaded', this.allBureaus.length, 'bureaus for super-admin dropdown');
+                console.log('✅ Loaded', bureaus.length, 'bureaus for super-admin dropdown');
 
             } else {
-                // Normale user: toon readonly veld met actief bureau
                 const displayEl = this.modal.querySelector('#active-bureau-name');
+                if (!displayEl) return;
 
-                if (!displayEl) {
-                    console.warn('active-bureau-name element not found');
-                    return;
-                }
-
-                if (!activeBureauId) {
-                    displayEl.textContent = '⚠️ Geen bureau geselecteerd';
+                if (!bureauId) {
+                    displayEl.textContent = '⚠️ Geen bureau gekoppeld';
                     displayEl.style.color = '#dc2626';
                     return;
                 }
 
-                // Load bureau name
-                const { data: bureau, error } = await supabase
-                    .from('tenderbureaus')
-                    .select('id, naam')
-                    .eq('id', activeBureauId)
-                    .single();
-
-                if (error || !bureau) {
-                    console.error('Error loading bureau:', error);
-                    displayEl.textContent = '⚠️ Bureau niet gevonden';
-                    displayEl.style.color = '#dc2626';
-                    return;
-                }
+                const bureau = window.app?.tenderbureaus?.find(b => b.id === bureauId)
+                    || { naam: `Bureau ${String(bureauId).substring(0, 8)}...` };
 
                 displayEl.textContent = bureau.naam;
                 displayEl.style.color = '#10b981';
                 displayEl.style.fontWeight = '500';
 
-                console.log('✅ Active bureau:', bureau.naam);
+                console.log('✅ Tenderbureau:', bureau.naam);
             }
         } catch (error) {
             console.error('Error in loadTenderbureaus:', error);
         }
     }
+
 
     // =========================================================
     // TEAM BUILDER
@@ -2918,7 +2880,7 @@ export class TenderAanmaken {
         }
 
         const tenderNaam = this.currentTender.naam || 'deze tender';
-        const confirmed = confirm(`Weet je zeker dat je "${tenderNaam}" wilt verwijderen?\n\nDit kan niet ongedaan worden gemaakt.`);
+        const confirmed = confirm(`Weet je zeker dat je "${tenderNaam}" wilt verwijderen?\n\nDit kan niet ongedaan gemaakt.`);
 
         if (confirmed) {
             console.log('🗑️ Deleting tender:', this.currentTender.id);
@@ -2955,6 +2917,9 @@ export class TenderAanmaken {
         // Set mode
         this.editMode = tender !== null;
         this.currentTender = tender;
+
+        // ⭐ FIX: Nu pas bureau laden
+        this.loadTenderbureaus();
 
         // Update UI based on mode
         this.updateModalUI();

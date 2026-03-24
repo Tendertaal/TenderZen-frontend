@@ -1,8 +1,17 @@
 // ================================================================
-// TenderZen — Smart Import v4.0 — Stap 3: Controleer
+// TenderZen — Smart Import v4.1 — Stap 3: Controleer
 // Frontend/js/components/smart-import/ReviewStep.js
-// Datum: 2026-02-09
+// Datum: 2026-03-11
 // ================================================================
+//
+// CHANGELOG v4.1:
+// - Alle emoji's vervangen door SVG iconen uit window.Icons
+// - Stats banner: checkCircle, confidence dots als SVG
+// - Model banner: zap (Pro), info iconen
+// - Add doc banner: fileText + plusCircle
+// - Warnings: warning SVG
+// - File icons: fileText, download SVG
+// - Icon helper met fallback
 //
 // Review en bewerk de AI-geëxtraheerde metadata.
 // Toont velden met confidence-indicators en de mogelijkheid
@@ -23,6 +32,20 @@
 //   - state._mergeMode        (trigger voor AnalyzeStep)
 //   - state._additionalFiles  (extra bestanden)
 // ================================================================
+
+// ── Icon helper met fallback ──
+const _getIcon = (name, opts = {}) => {
+    const Icons = window.Icons || {};
+    if (Icons[name] && typeof Icons[name] === 'function') return Icons[name](opts);
+    const fallbacks = {
+        checkCircle: '✓', warning: '⚠️', alertCircle: '❌',
+        info: 'ℹ', zap: '⚡', fileText: '📄',
+        download: '📦', close: '×', plusCircle: '➕',
+        clipboardList: '📋', refresh: '🔄'
+    };
+    return fallbacks[name] || '';
+};
+
 
 export class ReviewStep {
 
@@ -47,36 +70,51 @@ export class ReviewStep {
         const hasEmpty = stats.total > stats.extracted;
         const model = this.state.currentModel || 'haiku';
 
+        // Confidence indicator dots
+        const confDot = (color, count, label) => {
+            return `<span class="si-conf-dot" style="color:${color};">●</span> ${count} ${label}`;
+        };
+
         return `
             <div class="si-review">
                 <!-- Stats banner -->
                 <div class="si-stats-banner ${hasEmpty ? 'si-stats-banner--warn' : ''}">
-                    ✅ <strong>${stats.extracted}</strong> van <strong>${stats.total}</strong> velden automatisch ingevuld
+                    ${_getIcon('checkCircle', { size: 16, color: '#16a34a' })}
+                    <strong>${stats.extracted}</strong> van <strong>${stats.total}</strong> velden automatisch ingevuld
                     <span class="si-confidence-summary">
-                        (🟢 ${stats.high} hoog · 🟡 ${stats.medium} gemiddeld · 🔴 ${stats.low} laag)
+                        (${confDot('#16a34a', stats.high, 'hoog')} · ${confDot('#d97706', stats.medium, 'gemiddeld')} · ${confDot('#dc2626', stats.low, 'laag')})
                     </span>
                 </div>
 
                 <!-- Model info + reanalyze -->
                 <div class="si-model-banner">
                     <span class="si-model-label">
-                        🤖 Geanalyseerd met: <strong>${model === 'sonnet' ? 'Pro (Sonnet)' : 'Standaard (Haiku)'}</strong>
+                        ${_getIcon('zap', { size: 16, color: model === 'sonnet' ? '#d97706' : '#2563eb' })}
+                        Geanalyseerd met: <strong>${model === 'sonnet' ? 'Pro (Sonnet)' : 'Standaard (Haiku)'}</strong>
                     </span>
                     ${model !== 'sonnet' ? `
                         <button class="si-btn-reanalyze" id="siReanalyzeBtn">
-                            ⚡ Opnieuw analyseren met Pro
+                            ${_getIcon('zap', { size: 14, color: '#7c3aed' })}
+                            Opnieuw analyseren met Pro
                         </button>
                     ` : `
-                        <span class="si-model-pro-badge">✨ Pro analyse</span>
+                        <span class="si-model-pro-badge">
+                            ${_getIcon('checkCircle', { size: 14, color: '#92400e' })}
+                            Pro analyse
+                        </span>
                     `}
                 </div>
 
                 <!-- Extra document banner -->
                 ${hasEmpty ? `
                     <div class="si-add-doc-banner">
-                        <span>📄 Ontbreken er gegevens? Upload een extra document om de analyse aan te vullen.</span>
+                        <span>
+                            ${_getIcon('fileText', { size: 16, color: '#4f46e5' })}
+                            Ontbreken er gegevens? Upload een extra document om de analyse aan te vullen.
+                        </span>
                         <button class="si-btn-add-doc" id="siAddDocBtn">
-                            ➕ Extra document toevoegen
+                            ${_getIcon('plusCircle', { size: 14, color: '#16a34a' })}
+                            Extra document toevoegen
                         </button>
                     </div>
                 ` : ''}
@@ -84,8 +122,10 @@ export class ReviewStep {
                 <!-- Mini upload (hidden) -->
                 <div class="si-mini-upload" id="siMiniUpload" style="display:none;">
                     <div class="si-mini-upload-header">
-                        <h4>📄 Extra document toevoegen</h4>
-                        <button class="si-mini-close" id="siMiniClose">&times;</button>
+                        <h4>${_getIcon('fileText', { size: 16, color: '#4f46e5' })} Extra document toevoegen</h4>
+                        <button class="si-mini-close" id="siMiniClose">
+                            ${_getIcon('close', { size: 16, color: '#dc2626' })}
+                        </button>
                     </div>
                     <div class="si-mini-dropzone" id="siMiniDropzone">
                         <p>Sleep een extra document hierheen of klik om te selecteren</p>
@@ -95,7 +135,10 @@ export class ReviewStep {
                     <div class="si-mini-file-list" id="siMiniFileList"></div>
                     <div class="si-mini-actions" id="siMiniActions" style="display:none;">
                         <button class="siw-btn siw-btn--ghost" id="siMiniCancel">Annuleren</button>
-                        <button class="siw-btn siw-btn--primary" id="siMiniStart">🔍 Analyseren & Samenvoegen</button>
+                        <button class="siw-btn siw-btn--primary" id="siMiniStart">
+                            ${_getIcon('zap', { size: 14, color: '#ffffff' })}
+                            Analyseren & Samenvoegen
+                        </button>
                     </div>
                 </div>
 
@@ -110,16 +153,16 @@ export class ReviewStep {
                 <!-- Warnings -->
                 ${data.warnings?.length > 0 ? `
                     <div class="si-warnings">
-                        <h4>⚠️ Opmerkingen</h4>
+                        <h4>${_getIcon('warning', { size: 16, color: '#ea580c' })} Opmerkingen</h4>
                         <ul>${data.warnings.map(w => `<li>${w}</li>`).join('')}</ul>
                     </div>
                 ` : ''}
 
                 <!-- Legenda -->
                 <div class="si-legend">
-                    <span>🟢 Hoge zekerheid (&gt;85%)</span>
-                    <span>🟡 Gemiddeld (50-85%)</span>
-                    <span>🔴 Lage zekerheid (&lt;50%)</span>
+                    <span><span class="si-conf-dot" style="color:#16a34a;">●</span> Hoge zekerheid (&gt;85%)</span>
+                    <span><span class="si-conf-dot" style="color:#d97706;">●</span> Gemiddeld (50-85%)</span>
+                    <span><span class="si-conf-dot" style="color:#dc2626;">●</span> Lage zekerheid (&lt;50%)</span>
                 </div>
             </div>
         `;
@@ -188,8 +231,6 @@ export class ReviewStep {
     }
 
     validate() {
-        // Minimaal een naam is wenselijk maar niet verplicht
-        // (de wizard laat altijd door naar stap 4)
         return true;
     }
 
@@ -315,7 +356,7 @@ export class ReviewStep {
         const source = data?.source ?? '';
 
         const confClass = confidence >= 0.85 ? 'high' : confidence >= 0.5 ? 'medium' : 'low';
-        const confIcon = confidence >= 0.85 ? '🟢' : confidence >= 0.5 ? '🟡' : '🔴';
+        const confColor = confidence >= 0.85 ? '#16a34a' : confidence >= 0.5 ? '#d97706' : '#dc2626';
         const isEmpty = value === null || value === undefined || value === '';
 
         let inputHtml;
@@ -342,7 +383,7 @@ export class ReviewStep {
             <div class="si-field-group ${isEmpty ? 'si-field-group--empty' : `si-field-group--${confClass}`}">
                 <label class="si-field-label">
                     ${field.label}
-                    ${confidence > 0 ? `<span class="si-confidence-badge" title="Bron: ${source}">${confIcon}</span>` : ''}
+                    ${confidence > 0 ? `<span class="si-confidence-badge" title="Bron: ${source}" style="color:${confColor};">●</span>` : ''}
                 </label>
                 ${inputHtml}
             </div>
@@ -366,10 +407,8 @@ export class ReviewStep {
         );
         if (!ok) return;
 
-        // Zet flags zodat AnalyzeStep de juiste flow kiest
         this.state._reanalyzeMode = true;
 
-        // Navigeer terug naar stap 2
         if (this.state._navigateTo) {
             this.state._navigateTo(2);
         }
@@ -381,11 +420,9 @@ export class ReviewStep {
             return;
         }
 
-        // Zet flags
         this.state._mergeMode = true;
         this.state._additionalFiles = this.additionalFiles;
 
-        // Navigeer naar stap 2
         if (this.state._navigateTo) {
             this.state._navigateTo(2);
         }
@@ -439,7 +476,9 @@ export class ReviewStep {
                             <div class="si-file-name">${f.name}</div>
                             <div class="si-file-size">${this._formatBytes(f.size)}</div>
                         </div>
-                        <button class="si-file-remove si-mini-remove" data-index="${i}">&times;</button>
+                        <button class="si-file-remove si-mini-remove" data-index="${i}">
+                            ${_getIcon('close', { size: 16, color: '#dc2626' })}
+                        </button>
                     </div>
                 `).join('');
 
@@ -507,6 +546,12 @@ export class ReviewStep {
 
     _fileIcon(name) {
         const ext = (name || '').split('.').pop().toLowerCase();
-        return { pdf: '📄', docx: '📝', doc: '📝', zip: '📦' }[ext] || '📎';
+        const iconMap = {
+            pdf:  () => _getIcon('fileText', { size: 18, color: '#4f46e5' }),
+            docx: () => _getIcon('fileText', { size: 18, color: '#4f46e5' }),
+            doc:  () => _getIcon('fileText', { size: 18, color: '#4f46e5' }),
+            zip:  () => _getIcon('download', { size: 18, color: '#2563eb' })
+        };
+        return (iconMap[ext] || (() => _getIcon('fileText', { size: 18, color: '#64748b' })))();
     }
 }

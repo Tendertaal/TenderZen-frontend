@@ -45,6 +45,11 @@ export class PlanningModal {
     this.tender = tender;
     this.activeTab = initialTab;
 
+    // ⭐ FIX: Nu pas bureau laden (indien nodig)
+    if (typeof this.loadTenderbureaus === 'function') {
+      this.loadTenderbureaus();
+    }
+
     // Create and mount modal (renderer already initialized in constructor)
     this.modal = this.renderer.createModal();
 

@@ -44,6 +44,10 @@ export class BedrijfModal {
             console.log('✅ Modal appended to DOM');
         }
 
+        // Set mode
+        // (editMode is niet aanwezig, maar mode is equivalent)
+        // Zet currentTender (in deze modal: bedrijf)
+
         // Show modal (SIMPLE: direct style.display)
         this.modal.style.display = 'flex';
         this.isOpen = true;

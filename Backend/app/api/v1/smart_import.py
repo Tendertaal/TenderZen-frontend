@@ -1,9 +1,15 @@
 # app/api/v1/smart_import.py
 """
 Smart Import API Routes
-TenderZen v3.5
+TenderZen v3.6
 
-NEW v3.5:
+WIJZIGINGEN v3.6 (2026-03-11):
+- POST /smart-import/{import_id}/create-tender:
+  → Vangt PostgreSQL 23505 (unique violation) af als 409 Conflict
+  → Geeft duidelijke foutmelding met tender_nummer in response
+  → Frontend kan nu specifiek reageren op duplicate nummers
+
+v3.5:
 - Model parameter in analyze endpoint (haiku/sonnet)
 - POST /smart-import/{import_id}/reanalyze - Opnieuw analyseren met ander model
 
@@ -44,12 +50,11 @@ class AnalyzeOptions(BaseModel):
     extract_gunningscriteria: bool = True
     extract_certificeringen: bool = True
     language: str = "nl"
-    model: Optional[Literal["haiku", "sonnet"]] = "haiku"  # v3.5: Model keuze
+    model: Optional[Literal["haiku", "sonnet"]] = "haiku"
 
 
 class ReanalyzeOptions(BaseModel):
-    """v3.5: Opties voor her-analyse met ander model"""
-    model: Literal["haiku", "sonnet"] = "sonnet"  # Default naar Pro
+    model: Literal["haiku", "sonnet"] = "sonnet"
 
 
 class SupplementAnalyzeOptions(BaseModel):
@@ -70,8 +75,8 @@ class ImportStatusResponse(BaseModel):
     error_message: Optional[str] = None
     extracted_data: Optional[Dict[str, Any]] = None
     warnings: Optional[List[str]] = None
-    newly_filled_fields: Optional[List[str]] = None  # v3.3
-    ai_model_used: Optional[str] = None  # v3.5: Welk model is gebruikt
+    newly_filled_fields: Optional[List[str]] = None
+    ai_model_used: Optional[str] = None
     steps: Optional[List[Dict[str, Any]]] = None
 
 
@@ -97,13 +102,11 @@ async def upload_files(
     
     service = SmartImportService(db)
     
-    # Maak import sessie
     import_session = await service.create_import_session(
         tenderbureau_id=tenderbureau_id,
         user_id=current_user['id']
     )
     
-    # Upload bestanden
     try:
         uploaded_files = await service.upload_files(
             import_id=import_session['id'],
@@ -130,28 +133,21 @@ async def start_analysis(
 ):
     """
     Start de AI analyse voor een import sessie.
-    
-    v3.5: Ondersteunt model keuze:
-    - model="haiku" (default) - Snel, goedkoop
-    - model="sonnet" - Nauwkeuriger, duurder
     """
     service = SmartImportService(db)
     
-    # Controleer of import bestaat en bij gebruiker hoort
     import_record = await service.get_import(import_id)
     if not import_record:
         raise HTTPException(status_code=404, detail="Import niet gevonden")
     
-    # Log model keuze
     logger.info(f"📊 Starting analysis for {import_id} with model: {options.model}")
     
-    # Start analyse (asynchroon)
     try:
         import asyncio
         asyncio.create_task(service.analyze(
             import_id=import_id,
             options=options.model_dump(),
-            model=options.model  # v3.5: Model parameter
+            model=options.model
         ))
         
         return {
@@ -177,18 +173,13 @@ async def reanalyze(
 ):
     """
     Voer de analyse opnieuw uit met een ander model.
-    
-    Typisch gebruik: eerst met Haiku (snel/goedkoop), 
-    dan met Sonnet (nauwkeuriger) als resultaat onvoldoende is.
     """
     service = SmartImportService(db)
     
-    # Controleer of import bestaat
     import_record = await service.get_import(import_id)
     if not import_record:
         raise HTTPException(status_code=404, detail="Import niet gevonden")
     
-    # Controleer of er al een analyse is geweest
     if import_record.get('status') not in ['completed', 'failed']:
         raise HTTPException(
             status_code=400, 
@@ -197,7 +188,6 @@ async def reanalyze(
     
     logger.info(f"🔄 Re-analyzing {import_id} with model: {options.model}")
     
-    # Start her-analyse (asynchroon)
     try:
         import asyncio
         asyncio.create_task(service.reanalyze(
@@ -228,11 +218,9 @@ async def add_document(
 ):
     """
     Voeg een extra document toe aan een bestaande import sessie.
-    Dit kan gebruikt worden om ontbrekende data aan te vullen.
     """
     service = SmartImportService(db)
     
-    # Controleer of import bestaat
     import_record = await service.get_import(import_id)
     if not import_record:
         raise HTTPException(status_code=404, detail="Import niet gevonden")
@@ -265,17 +253,14 @@ async def analyze_supplement(
 ):
     """
     Voer een aanvullende analyse uit op nieuw toegevoegde documenten.
-    Merget de resultaten met bestaande data.
     """
     service = SmartImportService(db)
     
-    # Controleer of import bestaat
     import_record = await service.get_import(import_id)
     if not import_record:
         raise HTTPException(status_code=404, detail="Import niet gevonden")
     
     try:
-        # Start aanvullende analyse (asynchroon)
         import asyncio
         asyncio.create_task(service.analyze_supplement(
             import_id=import_id,
@@ -311,7 +296,6 @@ async def get_status(
     if not import_record:
         raise HTTPException(status_code=404, detail="Import niet gevonden")
     
-    # Bouw step info voor frontend
     progress = import_record.get('progress', 0)
     current_step = import_record.get('current_step', '')
     
@@ -346,11 +330,15 @@ async def get_status(
         error_message=import_record.get('error_message'),
         extracted_data=import_record.get('extracted_data'),
         warnings=import_record.get('warnings'),
-        newly_filled_fields=import_record.get('newly_filled_fields'),  # v3.3
-        ai_model_used=import_record.get('ai_model_used'),  # v3.5
+        newly_filled_fields=import_record.get('newly_filled_fields'),
+        ai_model_used=import_record.get('ai_model_used'),
         steps=steps
     )
 
+
+# ==========================================
+# v3.6: Create Tender — met 409 bij duplicate
+# ==========================================
 
 @router.post("/{import_id}/create-tender")
 async def create_tender(
@@ -361,6 +349,9 @@ async def create_tender(
 ):
     """
     Maak een nieuwe tender aan met de geëxtraheerde data.
+    
+    v3.6: Retourneert 409 Conflict bij duplicate tender_nummer
+    in plaats van een generieke 500 error.
     """
     service = SmartImportService(db)
     
@@ -390,7 +381,30 @@ async def create_tender(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Tender aanmaken mislukt: {str(e)}")
+        error_str = str(e)
+        
+        # ── FIX v3.6: Herken PostgreSQL unique violation ──
+        # Code 23505 = unique_violation in PostgreSQL
+        if '23505' in error_str or 'duplicate key' in error_str.lower():
+            tender_nummer = request.data.get('tender_nummer', 'onbekend')
+            logger.warning(
+                f"Duplicate tender_nummer '{tender_nummer}' bij import {import_id}"
+            )
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "code": "DUPLICATE_TENDER_NUMMER",
+                    "message": f"Tender nummer '{tender_nummer}' bestaat al in dit bureau.",
+                    "tender_nummer": tender_nummer
+                }
+            )
+        
+        # Alle andere fouten
+        logger.error(f"Tender aanmaken mislukt voor import {import_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Tender aanmaken mislukt: {error_str}"
+        )
 
 
 @router.post("/{import_id}/cancel")
@@ -409,7 +423,6 @@ async def cancel_import(
         raise HTTPException(status_code=404, detail="Import niet gevonden")
     
     try:
-        # Update status naar cancelled
         db.table('smart_imports').update({
             'status': 'cancelled'
         }).eq('id', import_id).execute()
@@ -433,7 +446,6 @@ async def get_available_models(
 ):
     """
     Haal beschikbare AI modellen op.
-    Kan gebruikt worden in de frontend om model keuze te tonen.
     """
     return {
         "models": [

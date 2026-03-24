@@ -744,7 +744,7 @@ async def get_tender_planning_counts(
 
 @router.get("/planning-templates")
 async def get_planning_templates(
-    type: Optional[str] = Query(None, pattern='^(planning|checklist)$'),
+    type: Optional[str] = Query(None, pattern='^(planning|checklist|tenderplanning)$'),
     tenderbureau_id: Optional[str] = Query(None),
     user: dict = Depends(get_current_user),
     db: Client = Depends(get_user_db)

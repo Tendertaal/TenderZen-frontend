@@ -190,27 +190,33 @@ class TenderBase(BaseModel):
     
     # Timeline velden - extra
     schouw_datum: Optional[datetime] = None
+    nvi1_datum: Optional[datetime] = None
+    nvi2_datum: Optional[datetime] = None
+    presentatie_datum: Optional[datetime] = None
     nota_inlichtingen_datum: Optional[datetime] = None
     gunning_datum: Optional[datetime] = None
+    voorlopige_gunning: Optional[datetime] = None
+    definitieve_gunning: Optional[datetime] = None
+    start_uitvoering: Optional[datetime] = None
     contract_start: Optional[date] = None
     contract_einde: Optional[date] = None
-    
+
     # Smart Import koppeling
     smart_import_id: Optional[str] = None
     ai_model_used: Optional[str] = None
 
     # AI pitstop
     ai_pitstop_status: Optional[str] = None
-    
+
     # Notities
     notities: Optional[str] = None
     interne_notities: Optional[str] = None
-    
+
     # Metadata
     bron: Optional[str] = None
     bron_url: Optional[str] = None
     referentie_nummer: Optional[str] = None
-    
+
     @field_validator('fase')
     @classmethod
     def validate_fase(cls, v):
@@ -295,27 +301,33 @@ class TenderUpdate(BaseModel):
     
     # Timeline velden - extra
     schouw_datum: Optional[datetime] = None
+    nvi1_datum: Optional[datetime] = None
+    nvi2_datum: Optional[datetime] = None
+    presentatie_datum: Optional[datetime] = None
     nota_inlichtingen_datum: Optional[datetime] = None
     gunning_datum: Optional[datetime] = None
+    voorlopige_gunning: Optional[datetime] = None
+    definitieve_gunning: Optional[datetime] = None
+    start_uitvoering: Optional[datetime] = None
     contract_start: Optional[date] = None
     contract_einde: Optional[date] = None
-    
+
     # Smart Import koppeling
     smart_import_id: Optional[str] = None
     ai_model_used: Optional[str] = None
 
     # AI pitstop
     ai_pitstop_status: Optional[str] = None
-    
+
     # Notities
     notities: Optional[str] = None
     interne_notities: Optional[str] = None
-    
+
     # Metadata
     bron: Optional[str] = None
     bron_url: Optional[str] = None
     referentie_nummer: Optional[str] = None
-    
+
     @field_validator('fase')
     @classmethod
     def validate_fase(cls, v):
@@ -393,11 +405,17 @@ class TenderResponse(BaseModel):
     deadline_indiening: Optional[datetime] = None
     interne_deadline: Optional[datetime] = None
     schouw_datum: Optional[datetime] = None
+    nvi1_datum: Optional[datetime] = None
+    nvi2_datum: Optional[datetime] = None
+    presentatie_datum: Optional[datetime] = None
     nota_inlichtingen_datum: Optional[datetime] = None
     gunning_datum: Optional[datetime] = None
+    voorlopige_gunning: Optional[datetime] = None
+    definitieve_gunning: Optional[datetime] = None
+    start_uitvoering: Optional[datetime] = None
     contract_start: Optional[date] = None
     contract_einde: Optional[date] = None
-    
+
     # Smart Import koppeling
     smart_import_id: Optional[str] = None
     ai_model_used: Optional[str] = None

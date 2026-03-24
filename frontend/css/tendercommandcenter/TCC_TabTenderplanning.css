@@ -1,0 +1,860 @@
+/* ============================================
+   tcc-tab-tenderplanning.css  —  v3.0  (2026-03-16)
+
+   Definitieve stijl conform goedgekeurde mockup:
+   - Grid: 28px | 1fr | 160px | 150px | 100px | 28px
+     (checkbox | mijlpaal | toegewezen | datum+tijd | status | edit)
+   - Checkboxes identiek aan Projectplanning tab
+   - Detaillaag per rij
+   - Sub-rijen (NvI vragen/antwoorden, alcatraz)
+   - Alle kleuren via CSS-variabelen voor dark-mode compatibiliteit
+   ============================================ */
+
+/* ── GRID DEFINITIE ─────────────────────────── */
+
+.tcc-tp-grid {
+    display: grid;
+    grid-template-columns: 28px 1fr 160px 120px 90px 28px;
+    align-items: center;
+    gap: 0;
+}
+
+/* ── HEADER (blauwe border-left, identiek PP) ── */
+
+.tcc-tp-header {
+    border-left: 3px solid #2563eb;
+    margin: 16px 20px 0;
+    padding: 10px 0 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tcc-tp-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tcc-tp-header-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.tcc-tp-header-sub {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin-top: 2px;
+}
+
+/* ── COUNTDOWN ──────────────────────────────── */
+
+.tcc-tp-countdown {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 10px 20px 0;
+    padding: 8px 12px;
+    background: var(--color-background-warning);
+    border: 0.5px solid var(--color-border-warning);
+    border-radius: var(--border-radius-md);
+    font-size: 13px;
+    color: var(--color-text-warning);
+    font-weight: 500;
+}
+
+.tcc-tp-countdown--urgent {
+    background: var(--color-background-danger);
+    border-color: var(--color-border-danger);
+    color: var(--color-text-danger);
+}
+
+.tcc-tp-countdown--soon {
+    background: var(--color-background-warning);
+    border-color: var(--color-border-warning);
+    color: var(--color-text-warning);
+}
+
+/* ── PROGRESS ───────────────────────────────── */
+
+.tcc-tp-progress-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 8px 20px 4px;
+}
+
+.tcc-tp-progress-track {
+    width: 110px;
+    height: 4px;
+    background: var(--color-border-tertiary);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.tcc-tp-progress-fill {
+    height: 100%;
+    background: #2563eb;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+}
+
+.tcc-tp-progress-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+/* ── TABEL HEADER ───────────────────────────── */
+
+.tcc-tp-thead {
+    display: grid;
+    grid-template-columns: 28px 1fr 160px 120px 90px 28px;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 20px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    margin-top: 8px;
+}
+
+.tcc-tp-th {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.tcc-tp-th--right {
+    text-align: right;
+}
+
+/* ── FASE HEADER (identiek aan PP VOORBEREIDING) */
+
+.tcc-tp-fase-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px 3px;
+}
+
+.tcc-tp-fase-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tcc-tp-fase-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.tcc-tp-fase-count {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-left: auto;
+}
+
+.tcc-tp-ai-badge {
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 7px;
+    border-radius: 99px;
+}
+
+.tcc-tp-ai-bron {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    margin-left: auto;
+}
+
+/* ── EERST VOLGENDE MARKER ──────────────────── */
+
+.tcc-tp-next-marker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 20px;
+}
+
+.tcc-tp-next-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: #2563eb;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.tcc-tp-next-line {
+    flex: 1;
+    height: 0.5px;
+    background: linear-gradient(90deg, #93c5fd, transparent);
+}
+
+/* ── RIJ ────────────────────────────────────── */
+
+.tcc-tp-rij {
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+
+.tcc-tp-rij-main {
+    display: grid;
+    grid-template-columns: 28px 1fr 160px 120px 90px 28px;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 20px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.tcc-tp-rij-main:hover {
+    background: var(--color-background-secondary);
+}
+
+.tcc-tp-rij--sub .tcc-tp-rij-main {
+    padding-left: 40px;
+}
+
+.tcc-tp-rij--next .tcc-tp-rij-main {
+    background: #eff6ff;
+}
+
+.tcc-tp-rij--next .tcc-tp-rij-main:hover {
+    background: #e0efff;
+}
+
+.tcc-tp-rij--checked .tcc-tp-rij-main {
+    opacity: 0.45;
+}
+
+.tcc-tp-rij--checked .tcc-tp-rij-main:hover {
+    opacity: 0.65;
+    background: var(--color-background-secondary);
+}
+
+.tcc-tp-rij--open .tcc-tp-chevron {
+    transform: rotate(90deg);
+}
+
+/* ── CHECKBOX (identiek aan Projectplanning) ── */
+
+.tcc-tp-check {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--color-border-secondary);
+    border-radius: 4px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    background: transparent;
+}
+
+.tcc-tp-check:hover {
+    border-color: #16a34a;
+}
+
+.tcc-tp-check--done {
+    background: #16a34a;
+    border-color: #16a34a;
+}
+
+/* ── MIJLPAAL KOLOM ─────────────────────────── */
+
+.tcc-tp-rij-mijlpaal {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.tcc-tp-chevron {
+    flex-shrink: 0;
+    opacity: 0.35;
+    transition: transform 0.15s;
+}
+
+.tcc-tp-indent {
+    width: 10px;
+    height: 10px;
+    flex-shrink: 0;
+    opacity: 0.25;
+    color: var(--color-text-secondary);
+}
+
+.tcc-tp-rij-naam {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tcc-tp-rij-naam--done {
+    text-decoration: line-through;
+    color: var(--color-text-secondary);
+    font-weight: 400;
+}
+
+.tcc-tp-rij-naam--deadline {
+    color: #dc2626;
+}
+
+.tcc-tp-rij-naam--empty {
+    color: var(--color-text-secondary);
+    font-weight: 400;
+    font-style: italic;
+}
+
+/* AI rij nummertje */
+.tcc-tp-rij-nr {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 10px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tcc-tp-rij-nr--past {
+    background: var(--color-background-secondary);
+    color: var(--color-text-secondary);
+}
+
+/* ── TOEGEWEZEN AAN KOLOM ───────────────────── */
+
+.tcc-tp-assign {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.tcc-tp-assign svg {
+    opacity: 0.45;
+    flex-shrink: 0;
+}
+
+.tcc-tp-assign--filled {
+    color: var(--color-text-primary);
+    cursor: default;
+}
+
+.tcc-tp-assign--filled svg {
+    opacity: 1;
+}
+
+.tcc-tp-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.tcc-tp-avatar--blue   { background: #dbeafe; color: #1d4ed8; }
+.tcc-tp-avatar--green  { background: #dcfce7; color: #15803d; }
+.tcc-tp-avatar--purple { background: #ede9fe; color: #6d28d9; }
+.tcc-tp-avatar--orange { background: #ffedd5; color: #c2410c; }
+
+/* ── DATUM & TIJD KOLOM ─────────────────────── */
+
+.tcc-tp-rij-datum {
+    text-align: right;
+}
+
+.tcc-tp-rij-datum-hoofd {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+}
+
+.tcc-tp-rij-datum--past .tcc-tp-rij-datum-hoofd {
+    color: var(--color-text-secondary);
+    font-weight: 400;
+}
+
+.tcc-tp-rij-datum--deadline .tcc-tp-rij-datum-hoofd {
+    color: #dc2626;
+}
+
+.tcc-tp-rij-datum--empty .tcc-tp-rij-datum-hoofd {
+    color: var(--color-border-secondary);
+    font-style: italic;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.tcc-tp-weekday {
+    font-weight: 400;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.tcc-tp-rij-time {
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    text-align: right;
+}
+
+.tcc-tp-rij-datum--deadline .tcc-tp-rij-time {
+    color: #f87171;
+}
+
+/* ── STATUS BADGES ──────────────────────────── */
+
+.tcc-tp-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 99px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    float: right;
+    white-space: nowrap;
+}
+
+.tcc-tp-badge--passed  { background: #dcfce7; color: #15803d; }
+.tcc-tp-badge--next    { background: #dbeafe; color: #1d4ed8; }
+.tcc-tp-badge--deadline { background: #fee2e2; color: #dc2626; }
+.tcc-tp-badge--soon    { background: #fef3c7; color: #92400e; }
+.tcc-tp-badge--gray    { background: var(--color-background-secondary); color: var(--color-text-secondary); }
+.tcc-tp-badge--empty   { background: var(--color-background-secondary); color: var(--color-border-secondary); }
+
+/* ── EDIT KNOP ──────────────────────────────── */
+
+.tcc-tp-edit-btn {
+    width: 22px;
+    height: 22px;
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    color: var(--color-text-secondary);
+    transition: opacity 0.1s;
+}
+
+.tcc-tp-rij-main:hover .tcc-tp-edit-btn {
+    opacity: 1;
+}
+
+/* ── DETAIL LAAG ────────────────────────────── */
+
+.tcc-tp-detail {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding: 6px 20px 10px 72px;
+    background: var(--color-background-secondary);
+    border-top: 0.5px solid var(--color-border-tertiary);
+}
+
+.tcc-tp-rij--sub .tcc-tp-detail {
+    padding-left: 88px;
+}
+
+.tcc-tp-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tcc-tp-detail-item--wide {
+    flex: 1;
+    min-width: 200px;
+}
+
+.tcc-tp-detail-label {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tcc-tp-detail-val {
+    font-size: 12px;
+    color: var(--color-text-primary);
+}
+
+.tcc-tp-detail-val--empty {
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+/* ── FOOTER ─────────────────────────────────── */
+
+.tcc-tp-footer {
+    padding: 8px 20px 12px;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    margin-top: 4px;
+    display: flex;
+    gap: 8px;
+}
+
+/* ── PICKER ─────────────────────────────────── */
+
+.tcc-tp-picker {
+    padding: 16px 20px;
+}
+
+.tcc-tp-doc-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.tcc-tp-doc-row:hover                            { border-color: #93c5fd; background: #f0f9ff; }
+.tcc-tp-doc-row:has(input:checked)               { border-color: #2563eb; background: #eff6ff; }
+.tcc-tp-doc-radio                                { display: none; }
+.tcc-tp-doc-icon                                 { width: 30px; height: 30px; border-radius: 6px; background: var(--color-background-secondary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tcc-tp-doc-info                                 { flex: 1; min-width: 0; }
+.tcc-tp-doc-naam                                 { font-size: 13px; font-weight: 500; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tcc-tp-doc-meta                                 { font-size: 11px; color: var(--color-text-secondary); }
+.tcc-tp-doc-ext                                  { background: var(--color-background-secondary); padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 500; }
+.tcc-tp-doc-check                                { opacity: 0; transition: opacity 0.15s; }
+.tcc-tp-doc-row:has(input:checked) .tcc-tp-doc-check { opacity: 1; }
+.tcc-tp-nodocs                                   { font-size: 13px; color: var(--color-text-secondary); text-align: center; padding: 20px; }
+.tcc-tp-picker-actions                           { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+/* ── LOADING ─────────────────────────────────── */
+
+.tcc-tp-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px 32px;
+}
+
+.tcc-tp-loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border-tertiary);
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: tcc-tp-spin 0.8s linear infinite;
+}
+
+@keyframes tcc-tp-spin { to { transform: rotate(360deg); } }
+
+.tcc-tp-loading-desc {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+}
+
+/* ── STIJL GELIJKGETROKKEN MET PROJECTPLANNING ───────────────
+   Overschrijft eerdere waarden zodat TP identiek is aan PP
+   ──────────────────────────────────────────────────────────── */
+
+/* Rij naam — zelfde gewicht als PP taak naam */
+.tcc-tp-rij-naam {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+/* Fase header — identiek aan PP VOORBEREIDING header */
+.tcc-tp-fase-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px 6px;
+}
+
+.tcc-tp-fase-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.5px;
+}
+
+.tcc-tp-fase-count {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-left: auto;
+    font-weight: 400;
+}
+
+/* Rij — compactere padding gelijk aan PP */
+.tcc-tp-rij-main {
+    padding: 8px 20px !important;
+}
+
+/* Sub-rij inspringing */
+.tcc-tp-rij--sub .tcc-tp-rij-main {
+    padding-left: 44px !important;
+}
+
+/* Tabel header tekst — zelfde stijl als PP kolom headers */
+.tcc-tp-th {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Datum hoofd — zelfde als PP datum kolom */
+.tcc-tp-rij-datum-hoofd {
+    font-size: 13px;
+    font-weight: 400;
+    color: #475569;
+    white-space: nowrap;
+}
+
+/* Weekday kleiner en lichter */
+.tcc-tp-weekday {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+/* Datum tijd regel */
+.tcc-tp-rij-time {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 1px;
+}
+
+/* Assign tekst — gelijk aan PP "Toewijzen" */
+.tcc-tp-assign {
+    font-size: 13px;
+    color: #94a3b8;
+    gap: 5px;
+}
+
+.tcc-tp-assign--filled {
+    color: #475569;
+    font-size: 13px;
+}
+
+/* Progress label rechts — gelijk aan PP */
+.tcc-tp-progress-label {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
+    font-weight: 400;
+}
+
+/* AI badge sectie header — paarse dot zoals PP fase dot */
+.tcc-tp-ai-badge {
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 7px;
+    border-radius: 10px;
+    letter-spacing: 0;
+}
+
+/* Rij border — dunner zoals PP */
+.tcc-tp-rij {
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* ── PICKER — Checkbox versie (meerdere documenten) ── */
+
+.tcc-tp-picker-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.tcc-tp-doc-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 6px;
+    background: white;
+}
+
+.tcc-tp-doc-row:hover {
+    border-color: #93c5fd;
+    background: #f8fafc;
+}
+
+/* Checkbox verbergen — eigen checkmark tonen */
+.tcc-tp-doc-check-input {
+    display: none;
+}
+
+/* Checkmark rechts — alleen zichtbaar als aangevinkt */
+.tcc-tp-doc-checkmark {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.tcc-tp-doc-row:has(.tcc-tp-doc-check-input:checked) .tcc-tp-doc-checkmark {
+    opacity: 1;
+}
+
+/* Geselecteerde rij stijl */
+.tcc-tp-doc-row:has(.tcc-tp-doc-check-input:checked) {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.tcc-tp-doc-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.tcc-tp-doc-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tcc-tp-doc-naam {
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tcc-tp-doc-meta {
+    margin-top: 2px;
+}
+
+.tcc-tp-doc-ext {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+}
+
+/* Geen documenten state */
+.tcc-tp-nodocs {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+}
+
+/* Picker actions */
+.tcc-tp-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 12px;
+}
+
+.tcc-tp-picker-docs {
+    margin-bottom: 4px;
+}
+
+/* ── MODEL SELECTOR ─────────────────────────── */
+
+.tcc-tp-model-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-right: auto;
+}
+
+.tcc-tp-model-opties {
+    display: flex;
+    gap: 8px;
+}
+
+.tcc-tp-model-optie {
+    cursor: pointer;
+}
+
+.tcc-tp-model-optie input[type="radio"] {
+    display: none;
+}
+
+.tcc-tp-model-card {
+    padding: 8px 14px;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.15s;
+    text-align: center;
+    min-width: 80px;
+}
+
+.tcc-tp-model-optie:hover .tcc-tp-model-card {
+    border-color: #93c5fd;
+    background: #f8fafc;
+}
+
+.tcc-tp-model-optie input:checked + .tcc-tp-model-card {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.tcc-tp-model-naam {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.tcc-tp-model-optie input:checked + .tcc-tp-model-card .tcc-tp-model-naam {
+    color: #2563eb;
+}
+
+.tcc-tp-model-desc {
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* Picker actions: model links, knop rechts */
+.tcc-tp-picker-actions {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 12px;
+    gap: 16px;
+}
