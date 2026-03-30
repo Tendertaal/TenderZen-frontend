@@ -420,6 +420,15 @@
     background: rgba(249, 115, 22, 0.07);
 }
 
+.planning-task-row--done {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.planning-task-row--done:hover {
+    background: #dcfce7;
+}
+
 .planning-task-row--milestone {
     background: rgba(239, 68, 68, 0.03);
 }

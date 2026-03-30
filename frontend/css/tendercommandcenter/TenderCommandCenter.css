@@ -236,20 +236,12 @@
     color: #b45309;
 }
 
-/* ─── BODY (scrollable content) ─── */
+/* ─── BODY (fixed container — tab panel scrollt zelf) ─── */
 .tcc-body {
     flex: 1;
-    overflow-y: auto;
-    padding: 20px 28px 28px;
-}
-
-.tcc-body::-webkit-scrollbar {
-    width: 6px;
-}
-
-.tcc-body::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
+    overflow: hidden;
+    min-height: 0;
+    position: relative;
 }
 
 .tcc-tab-panel {
@@ -258,6 +250,19 @@
 
 .tcc-tab-panel.is-active {
     display: block;
+    height: 100%;
+    overflow-y: auto;
+    padding: 20px 28px 28px;
+    box-sizing: border-box;
+}
+
+.tcc-tab-panel.is-active::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tcc-tab-panel.is-active::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
 }
 
 /* ─── SUB-NAV (segmented control) ─── */

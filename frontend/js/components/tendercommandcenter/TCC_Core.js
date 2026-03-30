@@ -42,7 +42,8 @@ const tccState = {
   data: null,
   loading: false,
   toastTimer: null,
-  _notities: null   // TCC_TabNotities instantie
+  _notities: null,        // TCC_TabNotities instantie
+  checklistState: null    // null | 'leeg' | 'picker' | 'loading' | 'data'
 };
 
 // ============================================
@@ -118,6 +119,7 @@ function closeTcc() {
   tccState.data = null;
   tccState.tenderId = null;
   tccState.activeTab = 'ai';
+  tccState.checklistState = null;
 
   // Forced refresh van tenderlijst view
   if (window.app?.loadData) {
@@ -235,7 +237,7 @@ var handleTpStartExtractie   = window.handleTpStartExtractie;
  */
 function transformChecklist(items = []) {
   if (!items.length) return { items: [], badge: '' };
-  const doneCount = items.filter(i => i.status === 'done' || i.checked).length;
+  const doneCount = items.filter(i => i.status === 'completed' || i.checked).length;
   const total = items.length;
   return { items, badge: `${doneCount}/${total}`, done: doneCount, total };
 }
@@ -382,6 +384,7 @@ function initTccEvents(overlay) {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const action = btn.dataset.action;
+    console.log('[TCC] click action:', action, btn);
 
     switch (action) {
       case 'tcc-close': closeTcc(); break;
@@ -397,6 +400,7 @@ function initTccEvents(overlay) {
       case 'ai-download':     _handleAiDownload(btn.dataset.type); break;
 
       // Tenderplanning — handlers in TCC_TabPlanning.js
+      case 'tp-toon-info':      handleTpToonInfo(btn.dataset.key); break;
       case 'tp-start-picker':   handleTpStartPicker(); break;
       case 'tp-annuleer':       handleTpAnnuleer(); break;
       case 'tp-picker-toggle':  handleTpPickerToggle(btn.dataset.docId); break;
@@ -404,8 +408,13 @@ function initTccEvents(overlay) {
       case 'tp-assign':         handleTpAssign(btn.dataset.key, btn); break;
       case 'tp-extract-start':
       case 'tp-start-extractie': handleTpStartExtractie(); break;
+      case 'tp-toggle-check':    handleTpToggleCheck(btn.dataset.key, panel); break;
+      case 'tp-toggle-check-ai': handleTpToggleCheckAi(btn.dataset.id, panel); break;
+      case 'tp-toggle-detail':   handleTpToggleDetail(btn.dataset.key, panel); break;
+      case 'tp-toggle-detail-ai': handleTpToggleDetailAi(btn.dataset.id, panel); break;
 
       // Projectplanning — handlers in TCC_TabProjectplanning.js
+      case 'pp-toon-info':      handlePpToonInfo(btn.dataset.taakId); break;
       case 'pp-toon-config':    handlePpToonConfig(); break;
       case 'pp-annuleer':       handlePpAnnuleer(); break;
       case 'pp-start-genereren': handlePpStartGenereren(); break;
@@ -429,12 +438,18 @@ function initTccEvents(overlay) {
       case 'smart-import-trigger': handleSmartImportTrigger(); break;
 
       // Checklist — handlers in TCC_TabChecklist.js
-      case 'checklist-start-picker':   handleChecklistStartPicker(); break;
-      case 'checklist-annuleer':        handleChecklistAnnuleer(); break;
-      case 'checklist-picker-toggle':   handleChecklistPickerToggle(btn.dataset.docId); break;
-      case 'checklist-start-extractie': handleChecklistStartExtractie(); break;
-      case 'checklist-toggle':          handleChecklistToggle(btn.dataset.itemId, btn.dataset.status); break;
-      case 'checklist-delete':          handleChecklistDelete(btn.dataset.itemId); break;
+      case 'cl-toon-picker':       handleClToonPicker(); break;
+      case 'cl-aanvullen-picker':  handleClAanvullenPicker(); break;
+      case 'cl-annuleer':          handleClAnnuleer(); break;
+      case 'cl-picker-toggle':     handleClPickerToggle(btn.dataset.docId, btn.dataset.docNaam); break;
+      case 'cl-start-extractie':   handleClStartExtractie(); break;
+      case 'cl-toggle-item':       handleClToggleItem(btn.dataset.itemId); break;
+      case 'cl-set-deadline':      handleClSetDeadline(btn.dataset.itemId, btn); break;
+      case 'cl-assign':            handleClAssign(btn.dataset.itemId, btn); break;
+      case 'cl-item-menu':         handleClItemMenu(btn.dataset.itemId); break;
+      case 'cl-toon-bron':         handleClToonBron(btn.dataset.itemId, btn); break;
+      case 'cl-add-item':          handleClAddItem(); break;
+      case 'cl-load-template':     handleClLoadTemplate(); break;
 
       // Bewerken / Info tab
       case 'edit-fields':        _handleEditFields(); break;
@@ -600,6 +615,7 @@ async function _refreshNaDownstream(tabs = []) {
     showTccToast('Tabs verversen mislukt', 'error');
   }
 }
+window._refreshNaDownstream = _refreshNaDownstream;
 
 function _refreshTabPanel(panel, tabKey) {
   const oudPanel = panel.querySelector(`[data-panel="${tabKey}"]`);

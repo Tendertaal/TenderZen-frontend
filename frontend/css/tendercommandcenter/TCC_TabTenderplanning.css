@@ -858,3 +858,214 @@
     margin-top: 12px;
     gap: 16px;
 }
+/* ── INFO POPUP ──────────────────────────────── */
+.tcc-tp-info-btn {
+    background: #ede9fe;
+    border: none;
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+    flex-shrink: 0;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+.tcc-tp-info-btn:hover { background: #ddd6fe; }
+
+.tcc-tp-rij.is-actief .tcc-tp-rij-main {
+    background: #faf5ff;
+    border-color: #c4b5fd;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+}
+
+.tcc-tp-info-popup {
+    background: #ffffff;
+    border: 0.5px solid #c4b5fd;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.tcc-tp-info-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px 8px;
+    border-bottom: 0.5px solid #f1f5f9;
+    background: #f8fafc;
+}
+.tcc-tp-info-popup-icon {
+    width: 28px;
+    height: 28px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.tcc-tp-info-popup-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.tcc-tp-info-popup-body { padding: 12px 14px; }
+.tcc-tp-info-popup-tekst {
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+.tcc-tp-info-popup-bron {
+    font-size: 12px;
+    color: #475569;
+    font-style: italic;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 6px;
+    border-left: 2px solid #e2e8f0;
+}
+.tcc-tp-info-popup-doc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #475569;
+}
+
+
+/* ============================================================
+   TIJDLIJN RIJEN (.tcc-tp-tl-*)
+   Nieuwe tijdlijn weergave voor tenderplanning tab
+   ============================================================ */
+
+.tcc-tp-tl-item { margin-bottom: 3px; }
+
+.tcc-tp-tl-rij {
+    display: grid;
+    grid-template-columns: 28px 1fr 160px 120px 90px 28px;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 0.5px solid #e2e8f0;
+    font-size: 13px;
+    cursor: default;
+    background: var(--color-background-primary, #fff);
+}
+
+.tcc-tp-tl-rij[data-action] { cursor: pointer; }
+
+.tcc-tp-tl-rij--open {
+    border-radius: 8px 8px 0 0;
+    border-bottom-color: transparent;
+}
+
+.tcc-tp-tl-rij--verstreken { background: #f0fdf4; border-color: #bbf7d0; }
+.tcc-tp-tl-rij--next       { background: #eff6ff; border-color: #bfdbfe; }
+.tcc-tp-tl-rij--deadline   { background: #fef2f2; border-color: #fecaca; }
+
+.tcc-tp-tl-dot {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid #e2e8f0;
+    background: #fff;
+}
+
+.tcc-tp-tl-dot--verstreken { background: #dcfce7; border-color: #16a34a; }
+.tcc-tp-tl-dot--next       { background: #dbeafe; border-color: #2563eb; }
+.tcc-tp-tl-dot--deadline   { background: #fef2f2; border-color: #dc2626; }
+
+.tcc-tp-tl-naam { font-size: 13px; color: var(--color-text-primary, #0f172a); }
+.tcc-tp-tl-naam--verstreken { color: #94a3b8; }
+.tcc-tp-tl-naam--next       { font-weight: 500; }
+.tcc-tp-tl-naam--deadline   { color: #dc2626; font-weight: 500; }
+
+.tcc-tp-tl-assign { font-size: 12px; color: #94a3b8; }
+
+.tcc-tp-tl-datum { font-size: 12px; color: var(--color-text-secondary, #64748b); }
+.tcc-tp-tl-datum--verstreken { color: #94a3b8; }
+.tcc-tp-tl-datum--next       { color: #1d4ed8; font-weight: 500; }
+.tcc-tp-tl-datum--deadline   { color: #dc2626; font-weight: 500; }
+.tcc-tp-tl-datum--leeg       { color: #cbd5e1; }
+
+.tcc-tp-tl-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.tcc-tp-tl-badge--verstreken { background: #dcfce7; color: #166534; }
+.tcc-tp-tl-badge--next       { background: #dbeafe; color: #1d4ed8; }
+.tcc-tp-tl-badge--deadline   { background: #fef2f2; color: #dc2626; }
+.tcc-tp-tl-badge--grijs      { color: #94a3b8; }
+
+.tcc-tp-tl-chevron {
+    color: #cbd5e1;
+    font-size: 18px;
+    text-align: center;
+    display: inline-block;
+    transition: transform .2s;
+    line-height: 1;
+}
+
+.tcc-tp-tl-chevron--open { transform: rotate(90deg); }
+
+.tcc-tp-tl-uitleg {
+    background: var(--color-background-primary, #fff);
+    border: 0.5px solid #e2e8f0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 10px 14px 12px 60px;
+    font-size: 13px;
+    color: var(--color-text-secondary, #64748b);
+    line-height: 1.6;
+    font-style: italic;
+}
+
+.tcc-tp-tl-uitleg--verstreken { background: #f0fdf4; border-color: #bbf7d0; }
+.tcc-tp-tl-uitleg--next       { background: #eff6ff; border-color: #bfdbfe; }
+.tcc-tp-tl-uitleg--deadline   { background: #fef2f2; border-color: #fecaca; }
+
+/* ── EERST VOLGENDE MARKER (nieuw) ───────────── */
+
+.tcc-tp-next-marker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0 8px;
+}
+
+.tcc-tp-next-lijn {
+    flex: 1;
+    height: 1px;
+    background: #bfdbfe;
+}
+
+.tcc-tp-next-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #2563eb;
+    letter-spacing: .06em;
+    white-space: nowrap;
+}

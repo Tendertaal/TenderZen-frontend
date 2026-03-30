@@ -1,0 +1,127 @@
+/* ============================================
+   Topbar.css — Bovenste navigatiebalk
+   TenderZen v1.0 (2026-03-27)
+
+   Klassen beginnen altijd met .tz-topbar-
+   ============================================ */
+
+/* ── Topbar basis ───────────────────────────── */
+
+.tz-topbar {
+    height: 52px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    flex-shrink: 0;
+    z-index: 50;
+}
+
+/* ── Secties ────────────────────────────────── */
+
+.tz-topbar-left {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+.tz-topbar-center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tz-topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* ── View pills ─────────────────────────────── */
+
+.tz-topbar-view-pills {
+    display: flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.tz-topbar-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    padding: 0 16px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.tz-topbar-pill:hover {
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.tz-topbar-pill.active {
+    background: #ffffff;
+    color: #1e293b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Context-gevoelige actieknop ────────────── */
+
+.tz-topbar-action {
+    display: flex;
+    align-items: center;
+}
+
+.tz-topbar-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s;
+    font-family: inherit;
+}
+
+/* Smart Import — paars */
+.tz-topbar-btn--purple { background: #7c3aed; }
+.tz-topbar-btn--purple:hover { background: #6d28d9; }
+
+/* + Bedrijf — groen */
+.tz-topbar-btn--green { background: #16a34a; }
+.tz-topbar-btn--green:hover { background: #15803d; }
+
+/* + Teamlid — blauw */
+.tz-topbar-btn--blue { background: #2563eb; }
+.tz-topbar-btn--blue:hover { background: #1d4ed8; }
+
+/* ── Bureau slot (BureauSwitcher target) ────── */
+
+#tz-topbar-bureau-slot {
+    display: flex;
+    align-items: center;
+}

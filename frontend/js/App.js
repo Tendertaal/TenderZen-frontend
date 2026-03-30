@@ -94,8 +94,9 @@ export class App {
         this.tenders = []; // Master data - all tenders
         this.isSuperAdmin = false;
 
-        // Zoekquery state
+        // Zoekquery + fase filter state
         this.searchQuery = '';
+        this.currentFaseFilter = null; // null = alle fases; string[] = actieve FaseBar selectie
 
         // Bureau state
         this.currentBureau = null;
@@ -175,6 +176,14 @@ export class App {
             // 5b. Initialize bureau switcher in header
             console.log('🔀 Initializing bureau switcher...');
             await this.header.initBureauSwitcher();
+
+            // 5c. Initialize sidebar + topbar (na bureau switcher zodat we die kunnen verplaatsen)
+            this.initSidebarTopbar();
+            // Sidebar user menu event koppelen
+            document.addEventListener('sidebar:userAction', (e) => {
+                const action = e.detail.action;
+                this.handleMenuAction(action);
+            });
 
             // Determine if user is super-admin (authoritative)
             try {
@@ -508,6 +517,180 @@ export class App {
         // Zoekfunctie callbacks
         this.header.onSearch = (query) => this.handleTenderSearch(query);
         this.header.onSearchClear = () => this.handleSearchClear();
+    }
+
+    /**
+     * Initialize sidebar en topbar layout
+     * Wordt aangeroepen NA header.initBureauSwitcher() zodat #bureau-switcher-container
+     * al bestaat en verplaatst kan worden naar de topbar.
+     */
+    initSidebarTopbar() {
+        console.log('🗂️ Initializing sidebar + topbar...');
+
+        // Zorg dat currentUser beschikbaar is voor Sidebar._isAdmin() en _userData()
+        if (!window.app.currentUser && this.userProfile) {
+            window.app.currentUser = this.userProfile;
+        }
+
+        // ── Sidebar ────────────────────────────────────────────
+        const sidebarContainer = document.getElementById('app-sidebar');
+        if (sidebarContainer && window.Sidebar) {
+            this.sidebar = new window.Sidebar();
+            sidebarContainer.appendChild(this.sidebar.render());
+
+            // Zet actief item op basis van huidige view
+            this.sidebar.setActive(this.currentView || 'tenders');
+        }
+
+        // ── Topbar ─────────────────────────────────────────────
+        const topbarContainer = document.getElementById('app-topbar');
+        if (topbarContainer && window.Topbar) {
+            this.topbar = new window.Topbar();
+            topbarContainer.appendChild(this.topbar.render());
+
+            // Verplaats BureauSwitcher van verborgen header naar topbar
+            const bureauSwitcher = document.getElementById('bureau-switcher-container');
+            const bureauSlot = document.getElementById('tz-topbar-bureau-slot');
+            if (bureauSwitcher && bureauSlot) {
+                bureauSlot.appendChild(bureauSwitcher);
+            }
+
+            // Initiële context: standaard tenders view
+            this.topbar.setContext('tenders');
+        }
+
+        // ── FaseBar initialiseren in #app-phase-tabs ──────────
+        const phaseTabsContainer = document.getElementById('app-phase-tabs');
+        if (phaseTabsContainer && window.FaseBar) {
+            this.faseBar = new window.FaseBar();
+            phaseTabsContainer.appendChild(this.faseBar.render());
+        }
+
+        // ── Sidebar layout sync (margin-left meebeweegt) ───────
+        const appMain = document.getElementById('app-main');
+
+        const syncSidebarLayout = (isOpen) => {
+            if (!appMain) return;
+            appMain.classList.toggle('sidebar-expanded', isOpen);
+        };
+
+        // Direct toepassen op basis van initiële sidebar staat
+        if (this.sidebar) {
+            syncSidebarLayout(this.sidebar._isOpen);
+            this.sidebar.onToggle = (isOpen) => syncSidebarLayout(isOpen);
+        }
+
+        // ── Helper: toon/verberg fase tabs ────────────────────
+        const setPhaseTabsVisible = (visible) => {
+            if (phaseTabsContainer) {
+                phaseTabsContainer.style.display = visible ? '' : 'none';
+            }
+        };
+
+        // Initieel: fase tabs zichtbaar (default view = tenders)
+        setPhaseTabsVisible(true);
+
+        // ── Event listeners ────────────────────────────────────
+
+        // Sidebar navigatie → correcte view laden via bestaande handleMenuAction logica
+        document.addEventListener('sidebar:navigate', (e) => {
+            const view = e.detail?.view;
+            if (!view) return;
+
+            const isTendersCtx = (view === 'tenders');
+            setPhaseTabsVisible(isTendersCtx);
+            if (this.topbar) this.topbar.showViewSwitcher(isTendersCtx);
+
+            // Map sidebar item → bestaande app navigatie
+            switch (view) {
+                case 'tenders':
+                    this.showView('totaal');
+                    break;
+                case 'bedrijven':
+                    this.showView('bedrijven');
+                    break;
+                case 'team':
+                    this.showView('team');
+                    break;
+                case 'templatebeheer':
+                    this.showView('templatebeheer');
+                    break;
+                case 'tenderbureaus':
+                    if (this.isSuperAdmin) {
+                        this.showView('tenderbureaus');
+                    }
+                    break;
+                case 'profiel':
+                    // Verberg view switcher en fase tabs (niet relevant voor profiel)
+                    if (this.topbar) this.topbar.showViewSwitcher(false);
+                    const phaseTabs = document.getElementById('app-phase-tabs');
+                    if (phaseTabs) phaseTabs.style.display = 'none';
+                    this.showView('profiel');
+                    break;
+                case 'rapportages':
+                case 'exporteren':
+                case 'instellingen':
+                case 'iconenbeheer':
+                    alert(`${view} — komt binnenkort!`);
+                    break;
+                default:
+                    this.showView(view);
+            }
+        });
+
+        // Topbar view pills → handleViewTypeChange
+        document.addEventListener('topbar:viewChange', (e) => {
+            const view = e.detail?.view;
+            if (view) this.handleViewTypeChange(view);
+        });
+
+        // FaseBar zoeken
+        document.addEventListener('fasebar:search', (e) => {
+            const query = e.detail?.query || '';
+            if (query) this.handleTenderSearch(query);
+            else this.handleSearchClear();
+        });
+
+        // FaseBar fase filter — slaat filter op en past de actieve view aan
+        document.addEventListener('fasebar:filterChange', (e) => {
+            const fases = e.detail?.fases; // null = alles, string[] = selectie
+            this.currentFaseFilter = fases; // centraal opslaan voor view-type wissels
+
+            if (this.currentViewType === 'kanban') {
+                if (this.kanbanView) this.kanbanView.setFaseFilter(fases);
+                return;
+            }
+
+            if (this.currentViewType === 'planning') {
+                // AgendaView laadt eigen data, fase filter hier niet van toepassing
+                return;
+            }
+
+            // Lijst-modus: filter op totaalView
+            const totaalView = this.views['totaal'];
+            if (!totaalView) return;
+            if (this.currentView !== 'totaal') {
+                this.showView('totaal'); // mount is sync, filter wordt direct erna gezet
+            }
+            totaalView.setFaseFilter(fases);
+        });
+
+        // Topbar Smart Import
+        document.addEventListener('topbar:smartImport', () => {
+            if (this.smartImportWizard) this.smartImportWizard.open();
+        });
+
+        // Topbar + Bedrijf
+        document.addEventListener('topbar:addBedrijf', () => {
+            if (this.bedrijfModal) this.bedrijfModal.open();
+        });
+
+        // Topbar + Teamlid
+        document.addEventListener('topbar:addTeamlid', () => {
+            if (this.teamlidModal) this.teamlidModal.open();
+        });
+
+        console.log('✅ Sidebar + topbar geïnitialiseerd');
     }
 
     /**
@@ -851,6 +1034,7 @@ export class App {
         counts.totaal = this.tenders.filter(t => t.fase !== 'archief').length;
 
         this.header.updateCounts(counts);
+        if (this.faseBar) this.faseBar.updateCounts(counts);
 
         const teamMembers = this.getUniqueTeamMembers();
         this.header.updateTeamOptions(teamMembers);
@@ -944,6 +1128,25 @@ export class App {
 
         this.currentView = viewName;
 
+        // Sync sidebar actief item + fase tabs + topbar view switcher
+        // Fase-views (totaal/acquisitie/etc.) mappen op sidebar item 'tenders'
+        const sidebarItemId = ['totaal', 'zoekresultaten', 'acquisitie', 'inschrijvingen', 'ingediend', 'evaluatie', 'archief'].includes(viewName)
+            ? 'tenders'
+            : viewName;
+        if (this.sidebar) this.sidebar.setActive(sidebarItemId);
+        const isTendersView = ['totaal', 'zoekresultaten', 'acquisitie', 'inschrijvingen', 'ingediend', 'evaluatie', 'archief'].includes(viewName);
+        const phaseTabsEl = document.getElementById('app-phase-tabs');
+        if (phaseTabsEl) phaseTabsEl.style.display = isTendersView ? '' : 'none';
+        if (this.topbar) this.topbar.showViewSwitcher(isTendersView);
+
+        // Context-gevoelige actieknop bijwerken
+        if (this.topbar) {
+            const topbarContext = isTendersView ? 'tenders'
+                : ['bedrijven', 'team'].includes(viewName) ? viewName
+                : null;
+            this.topbar.setContext(topbarContext);
+        }
+
         const view = this.views[viewName];
         if (view) {
             view.mount(this.contentContainer);
@@ -1010,6 +1213,9 @@ export class App {
         const previousViewType = this.currentViewType;
         this.currentViewType = viewType;
 
+        // Sync topbar pill
+        if (this.topbar) this.topbar.setActiveView(viewType);
+
         if (viewType === 'planning') {
             if (previousViewType === 'kanban' && this.kanbanView) {
                 this.kanbanView.unmount();
@@ -1029,6 +1235,7 @@ export class App {
 
             this.kanbanView.mount(this.contentContainer);
             this.kanbanView.setTenders(this.tenders);
+            if (this.currentFaseFilter) this.kanbanView.setFaseFilter(this.currentFaseFilter);
             console.log('⊞ KanbanView gemount');
 
         } else if (viewType === 'lijst') {
@@ -1043,6 +1250,10 @@ export class App {
             if (currentTenderView) {
                 currentTenderView.mount(this.contentContainer);
                 currentTenderView.setTenders(this.tenders);
+                // setTenders hergebruikt bestaande faseFilter; voor zekerheid ook expliciet zetten
+                if (this.currentFaseFilter && typeof currentTenderView.setFaseFilter === 'function') {
+                    currentTenderView.setFaseFilter(this.currentFaseFilter);
+                }
             }
             console.log(`📋 Lijst view hersteld: ${this.currentView}`);
         }

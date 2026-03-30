@@ -1495,10 +1495,16 @@ async def get_tender_checklist_items(
                 'status': item.get('status') or 'pending',
                 'is_verplicht': item.get('is_verplicht', True),
                 'verplicht': item.get('is_verplicht', True),
-                'checked': item.get('status') == 'done',
+                'checked': item.get('status') == 'completed',
                 'volgorde': item.get('volgorde', 0),
+                'beschrijving': item.get('beschrijving'),
+                'toegewezen_aan': item.get('toegewezen_aan') or [],
+                'deadline': item.get('deadline'),
+                'bron_tekst': item.get('bron_tekst'),
+                'document_naam': item.get('document_naam'),
+                'document_id': item.get('document_id'),
             })
-        done_count = len([i for i in mapped if i['status'] == 'done'])
+        done_count = len([i for i in mapped if i['status'] == 'completed'])
         total = len(mapped)
         return {'success': True, 'items': mapped, 'total': total, 'done': done_count, 'badge': f"{done_count}/{total}" if total else ''}
     except Exception as e:
@@ -1542,7 +1548,9 @@ Geef de output als JSON-array (geen markdown, geen uitleg):
   {
     "taak_naam": "Inschrijfbiljet",
     "sectie": "Inleverdocumenten",
-    "is_verplicht": true
+    "is_verplicht": true,
+    "bron_tekst": "De inschrijver dient een volledig ingevuld inschrijfbiljet te overleggen.",
+    "document_naam": "bestek_deel_B.pdf"
   }
 ]
 
@@ -1551,6 +1559,8 @@ Regels:
   "Uitsluitingsgronden", "Gunningscriteria", "Overig"
 - is_verplicht is true tenzij expliciet als optioneel beschreven
 - taak_naam is kort en actiegericht (max 80 tekens)
+- bron_tekst is de exacte zin of passage uit het document waarop dit item is gebaseerd (max 200 tekens), of null als niet te bepalen
+- document_naam is de bestandsnaam van het document waar dit item uit komt, of null als niet te bepalen
 - Maximaal 30 items
 - Geen dubbelen
 """
@@ -1652,6 +1662,42 @@ async def _fetch_brondocumenten_voor_tender(
     return content_blocks
 
 
+async def _fetch_doc_id_map(tender_id: str, db: Client) -> dict:
+    """Geeft een dict terug: {filename: document_id} voor alle documenten van deze tender."""
+    doc_map = {}
+    try:
+        docs_result = db.table('tender_documents') \
+            .select('id, original_file_name, file_name') \
+            .eq('tender_id', tender_id) \
+            .eq('is_deleted', False) \
+            .execute()
+        for doc in (docs_result.data or []):
+            fn = doc.get('original_file_name') or doc.get('file_name') or ''
+            if fn and doc.get('id'):
+                doc_map[fn] = doc['id']
+    except Exception as e:
+        print(f"⚠️ Doc ID map ophalen mislukt: {e}")
+    return doc_map
+
+
+def _maak_checklist_item_dict(item: dict, tender_id: str, tenderbureau_id: str, volgorde: int, doc_id_map: dict = None) -> dict:
+    """Bouw een checklist_items INSERT dict met altijd exact dezelfde keys."""
+    doc_naam = item.get('document_naam') or None
+    return {
+        'tender_id': str(tender_id),
+        'tenderbureau_id': str(tenderbureau_id) if tenderbureau_id else None,
+        'taak_naam': str(item.get('taak_naam', ''))[:200],
+        'sectie': item.get('sectie') or 'Overig',
+        'beschrijving': item.get('beschrijving') or None,
+        'is_verplicht': bool(item.get('is_verplicht', True)),
+        'status': 'pending',
+        'volgorde': volgorde,
+        'bron_tekst': str(item['bron_tekst'])[:200] if item.get('bron_tekst') else None,
+        'document_naam': doc_naam[:255] if doc_naam else None,
+        'document_id': (doc_id_map or {}).get(doc_naam) if doc_naam else None,
+    }
+
+
 def _parse_json_response(raw: str) -> list:
     clean = raw.strip()
     clean = re.sub(r'^```(?:json)?\s*', '', clean)
@@ -1665,7 +1711,21 @@ def _parse_json_response(raw: str) -> list:
             return result['items']
         return []
     except json.JSONDecodeError as e:
-        print(f"⚠️ JSON parse fout: {e}\nRaw: {raw[:500]}")
+        print(f"⚠️ JSON parse fout (probeer fallback): {e}\nRaw: {raw[:500]}")
+        # Fallback: extraheer complete items tot het laatste afgeronde object
+        match = re.search(r'\[.*\]', clean, re.DOTALL)
+        if match:
+            json_str = match.group(0)
+            last_complete = json_str.rfind('},')
+            if last_complete > 0:
+                json_str = json_str[:last_complete + 1] + ']'
+                try:
+                    result = json.loads(json_str)
+                    print(f"✅ Fallback parse gelukt: {len(result)} items")
+                    return result if isinstance(result, list) else []
+                except json.JSONDecodeError:
+                    pass
+        print(f"❌ JSON parse volledig mislukt")
         return []
 
 
@@ -1679,6 +1739,7 @@ GELDIGE_EXTRACTIE_MODELLEN = {
 
 class ExtractPlanningRequest(BaseModel):
     overschrijf: bool = False
+    aanvullen: bool = False
     model: str = "claude-haiku-4-5-20251001"  # Selecteerbaar vanuit UI (Haiku/Sonnet/Opus)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -1808,18 +1869,19 @@ async def extract_checklist(
         tender_result = db.table('tenders').select('tenderbureau_id').eq('id', tender_id).single().execute()
         tenderbureau_id = tender_result.data.get('tenderbureau_id') if tender_result.data else None
 
-        bestaand = db.table('checklist_items').select('id').eq('tender_id', tender_id).limit(1).execute()
-        heeft_data = len(bestaand.data or []) > 0
+        bestaand_result = db.table('checklist_items').select('id, taak_naam').eq('tender_id', tender_id).execute()
+        bestaande_items = bestaand_result.data or []
+        heeft_data = len(bestaande_items) > 0
 
-        if heeft_data and not body.overschrijf:
+        if heeft_data and not body.overschrijf and not body.aanvullen:
             return {
                 'success': False,
                 'overgeslagen': True,
-                'reden': 'Er is al een checklist voor deze tender. Gebruik overschrijf=true om te vervangen.',
+                'reden': 'Er is al een checklist voor deze tender. Gebruik overschrijf=true om te vervangen of aanvullen=true om alleen nieuwe items toe te voegen.',
                 'aangemaakt': 0
             }
 
-        content_blocks = await _fetch_brondocumenten_voor_tender(tender_id, db, max_docs=3)
+        content_blocks, doc_id_map = await _fetch_brondocumenten_voor_tender(tender_id, db, max_docs=3), await _fetch_doc_id_map(tender_id, db)
         if not content_blocks:
             raise HTTPException(status_code=422, detail="Geen brondocumenten gevonden voor deze tender.")
 
@@ -1828,7 +1890,7 @@ async def extract_checklist(
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         response = client.messages.create(
             model=gekozen_model,
-            max_tokens=2000,
+            max_tokens=8000,
             messages=[{
                 'role': 'user',
                 'content': content_blocks + [{'type': 'text', 'text': PROMPT_EXTRACT_CHECKLIST}]
@@ -1842,30 +1904,37 @@ async def extract_checklist(
 
         if heeft_data and body.overschrijf:
             db.table('checklist_items').delete().eq('tender_id', tender_id).execute()
+            bestaande_namen = set()
+        elif body.aanvullen:
+            bestaande_namen = {r['taak_naam'].lower().strip() for r in bestaande_items if r.get('taak_naam')}
+        else:
+            bestaande_namen = set()
 
+        volgorde_offset = len(bestaande_items) if body.aanvullen and not body.overschrijf else 0
+
+        gegenereerde_items = [item for item in items if item.get('taak_naam')]
         nieuwe_items = []
-        for i, item in enumerate(items):
-            if not item.get('taak_naam'):
+        for i, item in enumerate(gegenereerde_items):
+            if item['taak_naam'].lower().strip() in bestaande_namen:
                 continue
-            nieuwe_items.append({
-                'tender_id': tender_id,
-                'tenderbureau_id': tenderbureau_id,
-                'taak_naam': str(item['taak_naam'])[:200],
-                'sectie': item.get('sectie', 'Inleverdocumenten'),
-                'is_verplicht': bool(item.get('is_verplicht', True)),
-                'status': 'pending',
-                'volgorde': i,
-            })
+            nieuwe_items.append(
+                _maak_checklist_item_dict(item, tender_id, tenderbureau_id, volgorde_offset + i, doc_id_map)
+            )
 
         if nieuwe_items:
             db.table('checklist_items').insert(nieuwe_items).execute()
 
+        alle_items = db.table('checklist_items').select('*').eq('tender_id', tender_id).order('volgorde').execute()
+        toegevoegd = len(nieuwe_items)
+        overgeslagen = len(gegenereerde_items) - toegevoegd
+
         return {
             'success': True,
-            'aangemaakt': len(nieuwe_items),
-            'items': nieuwe_items,
-            'badge': f"0/{len(nieuwe_items)}",
-            'message': f'{len(nieuwe_items)} checklist-items geëxtraheerd en opgeslagen'
+            'toegevoegd': toegevoegd,
+            'overgeslagen': overgeslagen,
+            'items': alle_items.data or [],
+            'badge': f"0/{len(alle_items.data or [])}",
+            'message': f'{toegevoegd} checklist-items geëxtraheerd en opgeslagen'
         }
     except HTTPException:
         raise
@@ -2231,6 +2300,7 @@ class NieuwChecklistItemRequest(BaseModel):
 class PopulateChecklistFromTemplateRequest(BaseModel):
     template_id: str
     overschrijf: bool = False
+    aanvullen: bool = False
 
 
 @router.patch("/tenders/{tender_id}/checklist-items/{item_id}")
@@ -2242,7 +2312,7 @@ async def update_checklist_item(
     db: Client = Depends(get_supabase_async)
 ):
     try:
-        bestaand = db.table('checklist_items').select('id, tender_id').eq('id', item_id).eq('tender_id', tender_id).single().execute()
+        bestaand = db.table('checklist_items').select('id, tender_id').eq('id', item_id).eq('tender_id', tender_id).limit(1).execute()
         if not bestaand.data:
             raise HTTPException(status_code=404, detail="Checklist item niet gevonden")
 
@@ -2250,8 +2320,8 @@ async def update_checklist_item(
         if body.taak_naam is not None:
             update_data['taak_naam'] = body.taak_naam[:300]
         if body.status is not None:
-            if body.status not in ('pending', 'in_progress', 'done'):
-                raise HTTPException(status_code=400, detail="Status moet pending, in_progress of done zijn")
+            if body.status not in ('pending', 'in_progress', 'completed'):
+                raise HTTPException(status_code=400, detail="Status moet pending, in_progress of completed zijn")
             update_data['status'] = body.status
         if body.deadline is not None:
             update_data['deadline'] = None if body.deadline in ('', 'null') else body.deadline
@@ -2369,34 +2439,47 @@ async def populate_checklist_from_template(
         if not template_taken:
             raise HTTPException(status_code=422, detail="Template heeft geen items")
 
-        bestaand = db.table('checklist_items').select('id').eq('tender_id', tender_id).limit(1).execute()
-        heeft_data = len(bestaand.data or []) > 0
+        bestaand_result = db.table('checklist_items').select('id, taak_naam').eq('tender_id', tender_id).execute()
+        bestaande_items = bestaand_result.data or []
+        heeft_data = len(bestaande_items) > 0
 
-        if heeft_data and not body.overschrijf:
-            return {'success': False, 'overgeslagen': True, 'reden': 'Er zijn al checklist items. Gebruik overschrijf=true.', 'aangemaakt': 0}
+        if heeft_data and not body.overschrijf and not body.aanvullen:
+            return {'success': False, 'overgeslagen': True, 'reden': 'Er zijn al checklist items. Gebruik overschrijf=true om te vervangen of aanvullen=true om alleen nieuwe items toe te voegen.', 'aangemaakt': 0}
 
         if heeft_data and body.overschrijf:
             db.table('checklist_items').delete().eq('tender_id', tender_id).execute()
+            bestaande_namen = set()
+        elif body.aanvullen:
+            bestaande_namen = {r['taak_naam'].lower().strip() for r in bestaande_items if r.get('taak_naam')}
+        else:
+            bestaande_namen = set()
+
+        volgorde_offset = len(bestaande_items) if body.aanvullen and not body.overschrijf else 0
 
         nieuwe_items = []
         for i, tt in enumerate(template_taken):
-            item = {
-                'tender_id': tender_id,
-                'tenderbureau_id': tenderbureau_id,
-                'taak_naam': tt.get('naam', 'Item')[:300],
-                'sectie': tt.get('sectie') or tt.get('categorie') or tt.get('fase') or 'Overige documenten',
-                'is_verplicht': bool(tt.get('is_verplicht', False)),
-                'status': 'pending',
-                'volgorde': tt.get('volgorde', i),
-            }
-            if tt.get('beschrijving'):
-                item['beschrijving'] = tt['beschrijving'][:500]
-            nieuwe_items.append(item)
+            taak_naam = tt.get('naam', 'Item')[:300]
+            if taak_naam.lower().strip() in bestaande_namen:
+                continue
+            nieuwe_items.append(_maak_checklist_item_dict(
+                {
+                    'taak_naam': taak_naam,
+                    'sectie': tt.get('sectie') or tt.get('categorie') or tt.get('fase') or 'Overige documenten',
+                    'beschrijving': tt.get('beschrijving'),
+                    'is_verplicht': bool(tt.get('is_verplicht', False)),
+                },
+                tender_id, tenderbureau_id,
+                volgorde_offset + tt.get('volgorde', i),
+            ))
 
-        result = db.table('checklist_items').insert(nieuwe_items).execute()
-        aangemaakt = len(result.data or [])
+        if nieuwe_items:
+            db.table('checklist_items').insert(nieuwe_items).execute()
 
-        return {'success': True, 'aangemaakt': aangemaakt, 'template_naam': template_result.data['naam'], 'items': result.data or [], 'message': f'{aangemaakt} items geladen vanuit template'}
+        alle_items = db.table('checklist_items').select('*').eq('tender_id', tender_id).order('volgorde').execute()
+        toegevoegd = len(nieuwe_items)
+        overgeslagen = len(template_taken) - toegevoegd
+
+        return {'success': True, 'toegevoegd': toegevoegd, 'overgeslagen': overgeslagen, 'template_naam': template_result.data['naam'], 'items': alle_items.data or [], 'message': f'{toegevoegd} items geladen vanuit template'}
     except HTTPException:
         raise
     except Exception as e:

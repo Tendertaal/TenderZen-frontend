@@ -1162,7 +1162,7 @@ async def add_team_assignment(
 
         new_assignment = {
             'tender_id': tender_id,
-            'team_member_id': request.team_member_id,
+            'user_id': request.team_member_id,
             'rol_in_tender': request.rol_in_tender,
             'geplande_uren': request.geplande_uren
         }

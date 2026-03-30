@@ -328,7 +328,7 @@ function transformTenderplanning(tender, extractedData, smartImportData, milesto
         const isChecked = !!(planningData[`checked_${key}${ronde ? '_' + ronde : ''}`]);
         const assignee  = planningData[`assignee_${key}${ronde ? '_' + ronde : ''}`] || null;
         const portaal   = planningData[`portaal_${key}${ronde ? '_' + ronde : ''}`] || tender.portaal || null;
-        const notitie   = planningData[`notitie_${key}${ronde ? '_' + ronde : ''}`] || null;
+        const notities  = planningData[`notitie_${key}${ronde ? '_' + ronde : ''}`] || null;
 
         return {
             key:        ronde ? `${key}_${ronde}` : key,
@@ -347,7 +347,7 @@ function transformTenderplanning(tender, extractedData, smartImportData, milesto
             isChecked,
             assignee,
             portaal,
-            notitie,
+            notities,
             heeftDatum: !!dateStr,
         };
     }
@@ -675,16 +675,16 @@ function _renderTpData(tp) {
         </div>
     </div>`;
 
-    // Kolom headers — zelfde als PP
+    // Kolom headers
     const colHeaders = `
-    <div style="display:grid;grid-template-columns:32px 1fr 200px 110px 90px 32px;align-items:center;gap:8px;
+    <div style="display:grid;grid-template-columns:28px 1fr 160px 120px 90px 28px;align-items:center;gap:8px;
                 padding:6px 4px;border-bottom:2px solid #e2e8f0;margin:0 -4px 4px -4px;
                 font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">
         <span></span>
         <span>Mijlpaal</span>
         <span>Toegewezen aan</span>
         <span>Datum & tijd</span>
-        <span style="text-align:center;">Status</span>
+        <span>Status</span>
         <span></span>
     </div>`;
 
@@ -712,12 +712,13 @@ function _renderTpAlleRijen(allItems, mItems) {
         if (item.isNext && !nextMarkerGezet) {
             html += `
             <div class="tcc-tp-next-marker">
+                <div class="tcc-tp-next-lijn"></div>
                 <span class="tcc-tp-next-label">▾ EERST VOLGENDE</span>
-                <span class="tcc-tp-next-line"></span>
+                <div class="tcc-tp-next-lijn"></div>
             </div>`;
             nextMarkerGezet = true;
         }
-        html += _renderTpAlsTaskRow(item);
+        html += _renderTpTijdlijnRij(item);
     });
 
     // AI milestones worden via milestone_type gemapt naar template-sloten
@@ -726,102 +727,106 @@ function _renderTpAlleRijen(allItems, mItems) {
     return html;
 }
 
-// ── RIJ als planning-task-row (identiek aan PP) ───────────
+// ── TIJDLIJN RIJ ─────────────────────────────
 
-function _renderTpAlsTaskRow(item) {
-    const isDone   = item.isChecked || item.isPast;
-    const isNext   = item.isNext;
-    const rowBg    = isNext ? 'planning-task-row--active' : '';
+function _renderTpTijdlijnRij(item) {
+    const isVerstreken = item.isPast && !item.isChecked;
+    const isDeadline   = item.isDeadline && !item.isPast && !item.isChecked;
+    const isNext       = item.isNext && !item.isPast && !item.isChecked;
+    const heeftDatum   = item.heeftDatum;
 
-    // Checkbox
-    const checkHtml = `
-        <div class="planning-task-check ${isDone ? 'done' : ''}"
-             data-action="tp-toggle-check" data-key="${item.key}">
-            ${isDone ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>` : ''}
-        </div>`;
+    // State string voor BEM-modifiers
+    let state = '';
+    if (isVerstreken) state = 'verstreken';
+    else if (isDeadline) state = 'deadline';
+    else if (isNext) state = 'next';
 
-    // Naam — met indent voor sub-items
-    const indentStyle = item.isSub ? 'padding-left:20px;' : '';
-    const naamCls = isDone ? 'done' : (item.isDeadline && !isDone ? '' : '');
-    const naamKleur = item.isDeadline && !isDone ? 'color:#dc2626;font-weight:700;' : '';
-    const naamHtml = `
-        <span class="planning-task-name ${naamCls}" style="${indentStyle}${naamKleur}">
-            ${item.label}
-        </span>`;
+    // Dot inhoud
+    let dotInhoud = '';
+    if (isVerstreken) {
+        dotInhoud = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (isDeadline || isNext) {
+        const kleur = isDeadline ? '#dc2626' : '#2563eb';
+        dotInhoud = `<svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="${kleur}"/></svg>`;
+    }
 
-    // Toegewezen aan — toon avatar als toegewezen, anders placeholder
+    // Naam
+    const naamMod = state ? ` tcc-tp-tl-naam--${state}` : '';
+
+    // Assign
     const assigneeLid = item.assignee
         ? (tccState.data?._bureauTeamMembers || []).find(m => m.naam === item.assignee)
         : null;
     const assignHtml = item.assignee ? `
-        <div class="planning-task-assignees" data-action="tp-assign" data-key="${item.key}"
+        <div class="tcc-tp-tl-assign" data-action="tp-assign" data-key="${item.key}"
              style="cursor:pointer;display:flex;align-items:center;gap:6px;" title="${item.assignee} — klik om te wijzigen">
-            <span style="width:24px;height:24px;border-radius:50%;
+            <span style="width:22px;height:22px;border-radius:50%;
                          background:${assigneeLid?.avatar_kleur || '#667eea'};color:white;
                          font-size:10px;font-weight:700;display:inline-flex;align-items:center;
                          justify-content:center;flex-shrink:0;">
                 ${assigneeLid ? (assigneeLid.initialen || assigneeLid.naam.substring(0,2).toUpperCase()) : item.assignee.substring(0,2).toUpperCase()}
             </span>
-            <span style="font-size:12px;color:#475569;font-weight:500;">
-                ${item.assignee.split(' ')[0]}
-            </span>
+            <span style="font-size:12px;color:#475569;font-weight:500;">${item.assignee.split(' ')[0]}</span>
         </div>` : `
-        <div class="planning-task-assignees" data-action="tp-assign" data-key="${item.key}"
-             style="cursor:pointer;display:flex;align-items:center;gap:4px;" title="Klik om toe te wijzen">
-            <span style="display:inline-flex;align-items:center;gap:4px;color:#94a3b8;font-size:12px;">
-                ${tccIcon('user', 14)} <span>Toewijzen</span>
-            </span>
+        <div class="tcc-tp-tl-assign" data-action="tp-assign" data-key="${item.key}"
+             style="cursor:pointer;color:#cbd5e1;font-size:12px;display:flex;align-items:center;gap:4px;">
+            ${tccIcon('user', 13)} Toewijzen
         </div>`;
 
     // Datum
-    let datumHtml;
-    if (item.heeftDatum) {
-        const datumKleur = item.isDeadline && !isDone ? 'color:#dc2626;font-weight:700;' : isDone ? 'color:#94a3b8;' : '';
-        datumHtml = `
-            <span class="planning-task-date" style="${datumKleur}cursor:default;">
-                ${item.datumLabel}
-                ${item.time ? `<br><span style="font-size:11px;color:#94a3b8;">${item.time}</span>` : ''}
-            </span>`;
+    let datumMod = '';
+    let datumTekst = '';
+    if (!heeftDatum) {
+        datumMod = ' tcc-tp-tl-datum--leeg';
+        datumTekst = 'Datum toevoegen';
     } else {
-        datumHtml = `
-            <span class="planning-task-date" data-action="tp-edit-item" data-key="${item.key}"
-                  style="cursor:pointer;color:#cbd5e1;font-size:12px;" title="Datum instellen">
-                ${tccIcon('calendar', 13)} Datum
-            </span>`;
+        if (isVerstreken) datumMod = ' tcc-tp-tl-datum--verstreken';
+        else if (isDeadline) datumMod = ' tcc-tp-tl-datum--deadline';
+        else if (isNext) datumMod = ' tcc-tp-tl-datum--next';
+        datumTekst = item.datumLabel + (item.time ? ` <span style="font-size:11px;color:#94a3b8;">${item.time}</span>` : '');
     }
 
-    // Status badge
-    let statusHtml;
-    if (isDone) {
-        statusHtml = `<span class="planning-task-status status--done">Verstreken</span>`;
-    } else if (item.isDeadline) {
-        statusHtml = `<span class="planning-task-status" style="background:#fee2e2;color:#dc2626;">Deadline</span>`;
+    // Badge
+    let badgeHtml;
+    if (isVerstreken) {
+        badgeHtml = `<span class="tcc-tp-tl-badge tcc-tp-tl-badge--verstreken">Verstreken</span>`;
+    } else if (isDeadline) {
+        badgeHtml = `<span class="tcc-tp-tl-badge tcc-tp-tl-badge--deadline">Deadline</span>`;
     } else if (isNext) {
-        statusHtml = `<span class="planning-task-status" style="background:#dbeafe;color:#1d4ed8;">Eerstvolgende</span>`;
-    } else if (!item.heeftDatum) {
-        statusHtml = `<span class="planning-task-status status--todo">—</span>`;
-    } else if (item.daysLeft !== null && item.daysLeft <= 14) {
-        statusHtml = `<span class="planning-task-status" style="background:#fef3c7;color:#92400e;">${item.daysLeft} dagen</span>`;
+        badgeHtml = `<span class="tcc-tp-tl-badge tcc-tp-tl-badge--next">Eerstvolgende</span>`;
+    } else if (heeftDatum && item.daysLeft !== null && item.daysLeft <= 14 && item.daysLeft >= 0) {
+        badgeHtml = `<span class="tcc-tp-tl-badge" style="background:#fef3c7;color:#92400e;">${item.daysLeft} dagen</span>`;
+    } else if (heeftDatum && item.daysLeft !== null) {
+        badgeHtml = `<span class="tcc-tp-tl-badge tcc-tp-tl-badge--grijs">${item.daysLeft} d.</span>`;
     } else {
-        statusHtml = `<span class="planning-task-status status--todo">${item.daysLeft !== null ? item.daysLeft + ' d.' : '—'}</span>`;
+        badgeHtml = `<span class="tcc-tp-tl-badge tcc-tp-tl-badge--grijs">—</span>`;
     }
 
-    // Menu knop
-    const menuHtml = `
-        <button class="planning-task-menu" data-action="tp-edit-item" data-key="${item.key}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
-            </svg>
-        </button>`;
+    // Chevron — alleen als notities aanwezig
+    const heeftNotities = !!item.notities;
+    const chevronHtml = heeftNotities
+        ? `<span class="tcc-tp-tl-chevron">›</span>`
+        : `<span></span>`;
+
+    // Uitklap
+    const uitlegHtml = heeftNotities ? `
+    <div class="tcc-tp-tl-uitleg tcc-tp-tl-uitleg--${state || 'leeg'}" style="display:none">
+        ${item.notities}
+    </div>` : '';
 
     return `
-    <div class="planning-task-row ${rowBg}" style="grid-template-columns:32px 1fr 200px 110px 90px 32px;">
-        ${checkHtml}
-        ${naamHtml}
-        ${assignHtml}
-        ${datumHtml}
-        ${statusHtml}
-        ${menuHtml}
+    <div class="tcc-tp-tl-item">
+        <div class="tcc-tp-tl-rij${state ? ` tcc-tp-tl-rij--${state}` : ''}"
+             data-key="${item.key}"
+             ${heeftNotities ? 'data-action="tp-toggle-detail"' : ''}>
+            <div class="tcc-tp-tl-dot${state ? ` tcc-tp-tl-dot--${state}` : ''}">${dotInhoud}</div>
+            <span class="tcc-tp-tl-naam${naamMod}">${item.label}</span>
+            ${assignHtml}
+            <span class="tcc-tp-tl-datum${datumMod}">${datumTekst}</span>
+            ${badgeHtml}
+            ${chevronHtml}
+        </div>
+        ${uitlegHtml}
     </div>`;
 }
 
@@ -927,6 +932,7 @@ function _renderTpRij(item) {
             ${indentHtml}
             <svg class="tcc-tp-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             <span class="${naamCls}">${item.label}</span>
+            ${item.notities ? `<button class="tcc-tp-info-btn" data-action="tp-toon-info" data-key="${escHtml(item.key)}" title="Meer informatie">${tccIcon('info', 15, '#7c3aed')}</button>` : ''}
         </div>`;
 
     // Toegewezen aan
@@ -1609,16 +1615,153 @@ function _tpRerender() {
     panel.replaceWith(nieuwPanel);
 }
 
-function handleTpToggleCheck(key, panel) {
-    const rij = panel.querySelector(`.tcc-tp-rij[data-key="${key}"]`);
+async function handleTpToggleCheck(key, panel) {
+    console.log('[TP] handleTpToggleCheck aangeroepen, key:', key);
+
+    // Stap 1 — Item opzoeken in state
+    const allItems = tccState.data?.tenderplanning?.allItems || [];
+    const item = allItems.find(i => i.key === key);
+    console.log('[TP] item:', item);
+
+    // Status bepalen: item.status (DB-waarde) of fallback via item.isChecked
+    const huidigeStatus = item?.status || (item?.isChecked ? 'completed' : 'pending');
+    console.log('[TP] huidige status:', huidigeStatus);
+
+    // Stap 2 — Nieuwe status
+    const nieuweStatus = huidigeStatus === 'completed' ? 'pending' : 'completed';
+    const isDone = nieuweStatus === 'completed';
+
+    // Stap 3 — Optimistic UI update
+    const rij = panel.querySelector(
+        `.tcc-tp-rij[data-key="${key}"], .planning-task-row[data-key="${key}"]`
+    );
+    console.log('[TP] rij gezocht met key:', key);
+    console.log('[TP] rij gevonden:', rij);
+    console.log('[TP] alle planning-task-rows:',
+        [...panel.querySelectorAll('.planning-task-row')].map(r => r.dataset.key));
+    if (!rij) {
+        console.error('[TP] Rij niet gevonden voor key:', key);
+        return;
+    }
+    const check    = rij.querySelector('.tcc-tp-check, .planning-task-check');
+    if (!check) {
+        console.error('[TP] check element niet gevonden in rij:', rij.innerHTML.substring(0, 200));
+        return;
+    }
+    const naamEl   = rij.querySelector('.tcc-tp-rij-naam, .planning-task-name');
+    const datumEl  = rij.querySelector('.tcc-tp-rij-datum, .planning-task-date');
+
+    check.classList.toggle('tcc-tp-check--done', isDone);
+    check.innerHTML = isDone ? tccIcon('check', 10, '#fff') : '';
+    rij.classList.toggle('tcc-tp-rij--checked', isDone);
+    if (naamEl)  naamEl.classList.toggle('tcc-tp-rij-naam--done', isDone);
+    if (datumEl) datumEl.classList.toggle('tcc-tp-rij-datum--past', isDone);
+
+    // Stap 4 — State updaten (optimistic)
+    if (item) {
+        item.status    = nieuweStatus;
+        item.isChecked = isDone;
+    }
+
+    // Stap 5 — API call via milestone_type mapping
+    const KEY_TYPE_MAP = {
+        'publicatiedatum':         'publicatie',
+        'schouwdatum':             'schouw',
+        'deadline_vragen_1':       'vragen_ronde_1',
+        'nota_van_inlichtingen_1': 'nota_inlichtingen_1',
+        'deadline_vragen_2':       'vragen_ronde_2',
+        'nota_van_inlichtingen_2': 'nota_inlichtingen_2',
+        'interne_deadline':        'interne_deadline',
+        'deadline_indiening':      'sluitingsdatum',
+        'alcatraz':                'alcatraz',
+        'presentatie':             'presentatie',
+        'voorlopige_gunning':      'voorlopige_gunning',
+        'definitieve_gunning':     'definitieve_gunning',
+        'start_opdracht':          'start_opdracht',
+    };
+
+    const baseKey      = key.replace(/_\d+$/, '');
+    const milestoneType = KEY_TYPE_MAP[key] || KEY_TYPE_MAP[baseKey];
+
+    if (!milestoneType) {
+        console.warn('[TP] Geen milestone type voor key:', key, '— status niet opgeslagen');
+        return;
+    }
+
+    const allMilestones = tccState._rawMilestones || [];
+    const bestaande     = allMilestones.find(m => m.milestone_type === milestoneType);
+
+    try {
+        window.showAutoSaveIndicator?.('saving');
+        let result;
+
+        if (bestaande) {
+            // Update bestaande milestone
+            result = await tccApiCall(
+                `/api/v1/ai-documents/tenders/${tccState.tenderId}/milestones/${bestaande.id}`,
+                { method: 'PATCH', body: JSON.stringify({ status: nieuweStatus }) }
+            );
+            console.log('[TP] API response:', result);
+            bestaande.status = nieuweStatus;
+        } else {
+            // Geen milestone in DB voor dit slot —
+            // UI toggle wel tonen maar niet persisteren
+            console.warn('[TP] Geen milestone voor key:', key, '— UI toggle zonder persistentie');
+            window.showAutoSaveIndicator?.('saved');
+            return;
+        }
+
+        window.showAutoSaveIndicator?.('saved');
+
+    } catch (err) {
+        console.error('[TP] Toggle fout:', err);
+        showTccToast('Opslaan mislukt', 'error');
+        window.showAutoSaveIndicator?.('error');
+
+        // Revert UI
+        check.classList.toggle('tcc-tp-check--done', !isDone);
+        check.innerHTML = !isDone ? tccIcon('check', 10, '#fff') : '';
+        rij.classList.toggle('tcc-tp-rij--checked', !isDone);
+        if (naamEl)  naamEl.classList.toggle('tcc-tp-rij-naam--done', !isDone);
+        if (datumEl) datumEl.classList.toggle('tcc-tp-rij-datum--past', !isDone);
+
+        // Revert state
+        if (item) {
+            item.status    = huidigeStatus;
+            item.isChecked = !isDone;
+        }
+    }
+}
+
+function handleTpToggleDetail(key, panel) {
+    const rij = panel.querySelector(`.tcc-tp-tl-rij[data-key="${key}"]`);
+    if (!rij) return;
+    const item   = rij.closest('.tcc-tp-tl-item');
+    const uitleg = item?.querySelector('.tcc-tp-tl-uitleg');
+    const chevron = rij.querySelector('.tcc-tp-tl-chevron');
+    if (!uitleg) return;
+
+    // Sluit andere open items
+    panel.querySelectorAll('.tcc-tp-tl-uitleg').forEach(el => {
+        if (el !== uitleg && el.style.display !== 'none') {
+            el.style.display = 'none';
+            el.closest('.tcc-tp-tl-item')?.querySelector('.tcc-tp-tl-rij')?.classList.remove('tcc-tp-tl-rij--open');
+            el.closest('.tcc-tp-tl-item')?.querySelector('.tcc-tp-tl-chevron')?.classList.remove('tcc-tp-tl-chevron--open');
+        }
+    });
+
+    const isOpen = uitleg.style.display !== 'none';
+    uitleg.style.display = isOpen ? 'none' : 'block';
+    rij.classList.toggle('tcc-tp-tl-rij--open', !isOpen);
+    if (chevron) chevron.classList.toggle('tcc-tp-tl-chevron--open', !isOpen);
+}
+
+function handleTpToggleCheckAi(id, panel) {
+    const rij = panel.querySelector(`.tcc-tp-rij--ai .tcc-tp-check[data-id="${id}"]`)?.closest('.tcc-tp-rij');
     if (!rij) return;
     const check = rij.querySelector('.tcc-tp-check');
     const isDone = check.classList.toggle('tcc-tp-check--done');
-    if (isDone) {
-        check.innerHTML = tccIcon('check', 10, '#fff');
-    } else {
-        check.innerHTML = '';
-    }
+    check.innerHTML = isDone ? tccIcon('check', 10, '#fff') : '';
     rij.classList.toggle('tcc-tp-rij--checked', isDone);
     const naam = rij.querySelector('.tcc-tp-rij-naam');
     if (naam) naam.classList.toggle('tcc-tp-rij-naam--done', isDone);
@@ -1627,8 +1770,8 @@ function handleTpToggleCheck(key, panel) {
     // TODO: persist naar DB via API
 }
 
-function handleTpToggleDetail(key, panel) {
-    const rij    = panel.querySelector(`.tcc-tp-rij[data-key="${key}"]`);
+function handleTpToggleDetailAi(id, panel) {
+    const rij = panel.querySelector(`.tcc-tp-rij--ai .tcc-tp-check[data-id="${id}"]`)?.closest('.tcc-tp-rij');
     if (!rij) return;
     const detail  = rij.querySelector('.tcc-tp-detail');
     const chevron = rij.querySelector('.tcc-tp-chevron');
@@ -1643,6 +1786,57 @@ function handleTpAddNvi(panel) {
     // Voegt een extra NvI ronde toe aan de DOM
     // TODO: implementeer dynamisch toevoegen + persist
     console.log('NvI ronde toevoegen');
+}
+
+function handleTpToonInfo(key) {
+    const panel = tccState.overlay?.querySelector('[data-panel="tenderplanning"]');
+    if (!panel) return;
+
+    // Zoek item in de verwerkte data
+    console.log('[TP] toon info key:', key,
+                'allItems:', tccState.data?.tenderplanning?.allItems?.length);
+    const allItems = tccState.data?.tenderplanning?.allItems || [];
+    const item = allItems.find(i => i.key === key);
+    if (!item?.notities) return;
+
+    const bestaand = document.querySelector(`.tcc-tp-info-popup[data-info-key="${key}"]`);
+    if (bestaand) {
+        panel.querySelector(`.tcc-tp-rij[data-key="${key}"]`)?.classList.remove('is-actief');
+        bestaand.remove();
+        return;
+    }
+
+    document.querySelectorAll('.tcc-tp-info-popup').forEach(p => p.remove());
+    panel.querySelectorAll('.tcc-tp-rij.is-actief').forEach(r => r.classList.remove('is-actief'));
+
+    const popup = document.createElement('div');
+    popup.className = 'tcc-tp-info-popup';
+    popup.dataset.infoKey = key;
+    popup.innerHTML = `
+        <div class="tcc-tp-info-popup-header">
+            <div class="tcc-tp-info-popup-icon">${tccIcon('info', 13, '#64748b')}</div>
+            <span class="tcc-tp-info-popup-title">Mijlpaalinformatie</span>
+        </div>
+        <div class="tcc-tp-info-popup-body">
+            <div class="tcc-tp-info-popup-tekst">${escHtml(item.notities)}</div>
+            ${item.bron_tekst ? `<div class="tcc-tp-info-popup-bron">${escHtml(item.bron_tekst)}</div>` : ''}
+            ${item.document_naam ? `<div class="tcc-tp-info-popup-doc">${tccIcon('fileText', 11, '#475569')} ${escHtml(item.document_naam)}</div>` : ''}
+        </div>`;
+
+    const rij = panel.querySelector(`.tcc-tp-rij[data-key="${key}"]`);
+    if (!rij) return;
+    rij.classList.add('is-actief');
+    rij.insertAdjacentElement('afterend', popup);
+
+    setTimeout(() => {
+        document.addEventListener('click', function sluit(e) {
+            if (!popup.contains(e.target) && !e.target.closest(`[data-key="${key}"]`)) {
+                rij.classList.remove('is-actief');
+                popup.remove();
+                document.removeEventListener('click', sluit);
+            }
+        });
+    }, 0);
 }
 
 function handleTpAddMijlpaal(panel) {

@@ -34,6 +34,7 @@ export class TenderListView extends BaseView {
         this.filteredTenders = [];
 
         this.searchQuery = '';
+        this.faseFilter = null; // null = standaard filter; string[] = multi-select override
         this.onSearchResultsCount = null;
 
         this.allFaseStatussen = {};
@@ -117,14 +118,22 @@ export class TenderListView extends BaseView {
     }
 
     getFaseKleur(fase) {
-        const kleuren = { 'acquisitie': '#f59e0b', 'inschrijvingen': '#8b5cf6', 'ingediend': '#10b981', 'archief': '#64748b' };
-        return this.faseConfig[fase]?.kleur || kleuren[fase] || '#6366f1';
+        return this.faseConfig[fase]?.kleur || (window.FaseKleuren ? window.FaseKleuren.get(fase).kleur : '#64748b');
+    }
+
+    setFaseFilter(fases) {
+        this.faseFilter = fases; // null = standaard; string[] = multi-select
+        this.filteredTenders = this.filterTenders(this.tenders);
+        if (this.container) this.render();
     }
 
     filterTenders(tenders) {
         if (!tenders) return [];
         let filtered = tenders;
-        if (this.fase === null || this.fase === undefined) {
+        if (this.faseFilter && this.faseFilter.length > 0) {
+            // Multi-select override vanuit FaseBar
+            filtered = filtered.filter(t => this.faseFilter.includes(t.fase));
+        } else if (this.fase === null || this.fase === undefined) {
             filtered = filtered.filter(t => t.fase !== 'archief');
         } else {
             filtered = filtered.filter(t => t.fase === this.fase);

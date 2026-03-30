@@ -15,13 +15,19 @@ export class TotaalView extends TenderListView {
     }
 
     /**
-     * Override filterTenders to exclude archived tenders
+     * Override filterTenders to exclude archived tenders,
+     * maar respecteer multi-select faseFilter vanuit FaseBar.
      */
     filterTenders(tenders) {
         if (!tenders) return [];
-        
-        // Filter out archived tenders - totaaloverzicht toont alleen actieve tenders
-        return tenders.filter(tender => tender.fase !== 'archief');
+
+        // FaseBar multi-select heeft prioriteit (inclusief archief als geselecteerd)
+        if (this.faseFilter && this.faseFilter.length > 0) {
+            return tenders.filter(t => this.faseFilter.includes(t.fase));
+        }
+
+        // Default: alle actieve tenders (exclusief archief)
+        return tenders.filter(t => t.fase !== 'archief');
     }
 
     /**

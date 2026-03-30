@@ -100,7 +100,7 @@ export class ProfielView extends BaseView {
 
         // Loading state
         this.container.innerHTML = `
-            <div class="profiel-page">
+            <div class="pv-page">
                 <div class="profiel-loading">
                     <div class="profiel-loading-spinner"></div>
                     <span>Profiel laden...</span>
@@ -114,7 +114,7 @@ export class ProfielView extends BaseView {
 
         if (!this.profile) {
             this.container.innerHTML = `
-                <div class="profiel-page">
+                <div class="pv-page">
                     <div class="profiel-error">
                         ${this.getIcon('alertCircle', 24, '#dc2626')}
                         <p>Profiel kon niet worden geladen.</p>
@@ -129,34 +129,82 @@ export class ProfielView extends BaseView {
         // Update header context
         this.updateHeaderContext();
 
-        // Render full page
         const p = this.profile;
         const isSuper = p.is_super_admin === true;
         const initialen = p.initialen || this._generateInitials(p.naam || p.email);
 
         this.container.innerHTML = `
-            <div class="profiel-page">
-                <div class="profiel-page-header">
-                    <h1 class="profiel-page-title">Mijn Profiel</h1>
-                    <p class="profiel-page-subtitle">Beheer je account, beveiliging en systeemtoegang</p>
+            <div class="pv-page">
+                ${this._renderHeaderCard(p, initialen, isSuper)}
+
+                <div class="pv-grid">
+                    ${this._renderPersonalSection(p)}
+                    ${this._renderSecuritySection(p)}
                 </div>
 
-                <div class="profiel-grid">
-                    <!-- LEFT: Identity Card -->
-                    ${this._renderIdentityCard(p, initialen, isSuper)}
+                ${this._renderBureauSection(p, isSuper)}
+                ${isSuper ? this._renderSystemSection() : ''}
 
-                    <!-- RIGHT: Sections -->
-                    <div class="profiel-sections">
-                        ${this._renderPersonalSection(p)}
-                        ${this._renderBureauSection(p, isSuper)}
-                        ${this._renderSecuritySection(p)}
-                        ${isSuper ? this._renderSystemSection() : ''}
-                    </div>
+                <div class="pv-logout">
+                    <button class="pv-logout-btn" data-action="logout">
+                        ${this.getIcon('logOut', 14)} Uitloggen
+                    </button>
                 </div>
             </div>
         `;
 
         this.attachEventListeners();
+    }
+
+    // ════════════════════════════════════════════════
+    // HEADER CARD (TOP)
+    // ════════════════════════════════════════════════
+
+    _renderHeaderCard(p, initialen, isSuper) {
+        const avatarKleur = p.avatar_kleur || 'linear-gradient(135deg, #3b82f6, #6366f1)';
+
+        return `
+            <div class="pv-header-card">
+                <div class="pv-header-top">
+                    <div class="pv-header-avatar" style="background: ${avatarKleur}">${initialen}</div>
+                    <div class="pv-header-info">
+                        <h1 class="pv-header-name">${p.naam || 'Geen naam'}</h1>
+                        <p class="pv-header-email">${p.email || ''}</p>
+                        <div class="pv-header-badges">
+                            ${isSuper ? `
+                                <span class="pv-badge pv-badge--super-admin">
+                                    ${this.getIcon('crown', 12)} Super-Admin
+                                </span>
+                            ` : ''}
+                            <span class="pv-badge ${p.mfa_active ? 'pv-badge--mfa-active' : 'pv-badge--mfa-inactive'}">
+                                ${this.getIcon('shieldCheck', 12)} MFA ${p.mfa_active ? 'Actief' : 'Inactief'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="pv-header-stats">
+                        <div class="pv-stat">
+                            <span class="pv-stat-number">${p.bureau_count || 0}</span>
+                            <span class="pv-stat-label">Bureaus</span>
+                        </div>
+                        <div class="pv-stat">
+                            <span class="pv-stat-number">${p.total_tenders || 0}</span>
+                            <span class="pv-stat-label">Tenders</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pv-header-actions">
+                    <button class="pv-action-btn" data-action="edit-personal">
+                        ${this.getIcon('edit', 14)} Profiel bewerken
+                    </button>
+                    <button class="pv-action-btn" data-action="change-password">
+                        ${this.getIcon('lock', 14)} Wachtwoord wijzigen
+                    </button>
+                    <button class="pv-action-btn" data-action="setup-mfa">
+                        ${this.getIcon('shieldCheck', 14)} MFA instellingen
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
     updateHeaderContext() {

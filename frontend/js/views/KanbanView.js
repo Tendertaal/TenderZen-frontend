@@ -100,6 +100,7 @@ export class KanbanView {
     constructor(options = {}) {
         this.container = null;
         this.tenders = [];
+        this.faseFilter = null; // null = alle fases; string[] = multi-select filter
         this.draggedCard = null;
         this.draggedTenderId = null;
         this.allFaseStatussen = options.allFaseStatussen || {};
@@ -169,11 +170,20 @@ export class KanbanView {
         if (this.container) this.render();
     }
 
+    setFaseFilter(fases) {
+        this.faseFilter = fases; // null = alles tonen; string[] = alleen deze fases
+        if (this.container) this.render();
+    }
+
     setFaseStatussen(faseStatussen) {
         this.allFaseStatussen = faseStatussen || {};
     }
 
     _getTendersForFase(fase) {
+        // Fase filter actief: return leeg als deze fase niet geselecteerd is
+        if (this.faseFilter && this.faseFilter.length > 0 && !this.faseFilter.includes(fase)) {
+            return [];
+        }
         return this.tenders
             .filter(t => t.fase === fase)
             .sort((a, b) => {
@@ -614,6 +624,11 @@ export class KanbanView {
                 const tenderId = actionEl.dataset.tenderId;
 
                 switch (action) {
+                    case 'open-tcc':
+                        if (typeof window.openCommandCenter === 'function') {
+                            window.openCommandCenter(tenderId);
+                        }
+                        break;
                     case 'open-ai':
                     case 'open-ai-docs':
                         console.log('Open AI voor tender:', tenderId);

@@ -58,10 +58,12 @@ export class TenderCardBody {
         const tender = this.tender;
 
         return `
-            <div class="tcb ${sizeClass}" data-tender-id="${tender.id}">
+            <div class="tcb ${sizeClass}"
+                 data-tender-id="${tender.id}"
+                 style="cursor:pointer;"
+                 onclick="event.stopPropagation(); if(window.openCommandCenter) window.openCommandCenter('${tender.id}')">
                 <div class="tcb-name-row">
                     <h3 class="tcb-name">${this._highlight(tender.naam || 'Geen naam')}</h3>
-                    ${this._renderAIBadge()}
                 </div>
 
                 <div class="tcb-info">

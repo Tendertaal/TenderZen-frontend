@@ -80,7 +80,7 @@ function maakBorderKleur(hex) {
 
 const FALLBACK_CONFIG = {
     acquisitie:     { label: 'ACQUISITIE',  kleur: '#ea580c' },
-    inschrijvingen: { label: 'LOPEND',      kleur: '#2563eb' },
+    inschrijvingen: { label: 'LOPEND',      kleur: '#7c3aed' },
     ingediend:      { label: 'INGEDIEND',   kleur: '#16a34a' },
     evaluatie:      { label: 'AFRONDEN',    kleur: '#0d9488' },
     archief:        { label: 'ARCHIEF',     kleur: '#64748b' }
@@ -266,15 +266,9 @@ export class TenderCardHeader {
                 </div>
                 ${this.showActions ? `
                     <div class="tch-right">
-                        <button class="tch-action-btn tch-action-btn--ai" 
-                                data-action="open-ai-docs"
-                                data-tender-id="${tender.id}" 
-                                title="AI Documenten">
-                            ${getIcon('ai', 18)}
-                        </button>
-                        <button class="tch-action-btn tch-action-btn--settings" 
+                        <button class="tch-action-btn tch-action-btn--settings"
                                 data-action="open-settings"
-                                data-tender-id="${tender.id}" 
+                                data-tender-id="${tender.id}"
                                 title="Tender instellingen">
                             ${getIcon('settings', 18)}
                         </button>

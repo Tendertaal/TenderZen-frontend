@@ -42,7 +42,7 @@
   right: 0;
   width: 480px;
   height: 100%;
-  background: #fff;
+  background: #f8fafc;
   border-left: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
@@ -117,89 +117,193 @@
 .tcc-np-feed {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  padding: 12px 14px;
+  gap: 8px;
 }
 .tcc-np-feed::-webkit-scrollbar { width: 4px; }
 .tcc-np-feed::-webkit-scrollbar-track { background: transparent; }
 .tcc-np-feed::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
 
-/* ── Notitie item ── */
-.tcc-np-item {
+/* ── Berichtrij ── */
+.tcc-np-row {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
+  align-items: flex-end;
+  gap: 8px;
 }
-.tcc-np-avatar {
-  width: 34px;
-  height: 34px;
+.tcc-np-row--own {
+  flex-direction: row-reverse;
+}
+
+/* ── Avatar wrapper + contextmenu ── */
+.tcc-np-av-wrap {
+  position: relative;
+  flex-shrink: 0;
+  padding-bottom: 8px;
+}
+.tcc-np-av-wrap::after {
+  content: '';
+  position: absolute;
+  top: 28px;
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+.tcc-np-av {
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
+  cursor: pointer;
   flex-shrink: 0;
-  margin-top: 1px;
 }
-.tcc-np-avatar--purple  { background: #7c3aed; }
-.tcc-np-avatar--green   { background: #16a34a; }
-.tcc-np-avatar--orange  { background: #ea580c; }
-.tcc-np-avatar--blue    { background: #2563eb; }
-.tcc-np-avatar--teal    { background: #0d9488; }
-.tcc-np-avatar--pink    { background: #db2777; }
 
-.tcc-np-content {
+/* ── Contextmenu ── */
+.tcc-np-menu {
+  display: none;
+  position: absolute;
+  top: 28px;
+  left: 0;
+  min-width: 180px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+  z-index: 50;
+  overflow: hidden;
+}
+.tcc-np-row--own .tcc-np-menu {
+  left: auto;
+  right: 0;
+}
+.tcc-np-av-wrap:hover .tcc-np-menu,
+.tcc-np-menu.is-open {
+  display: block;
+}
+.tcc-np-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.tcc-np-menu-item:hover { background: #f8fafc; }
+.tcc-np-menu-item--danger { color: #dc2626; }
+.tcc-np-menu-item--danger:hover { background: #fef2f2; }
+.tcc-np-menu-sep {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 2px 0;
+}
+
+/* ── Bubble container ── */
+.tcc-np-bubble {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100% - 36px);
 }
+.tcc-np-row--own .tcc-np-bubble {
+  align-items: flex-end;
+}
+
+/* ── Meta-regel ── */
 .tcc-np-meta {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  margin-bottom: 3px;
+  padding: 0 2px;
 }
 .tcc-np-naam {
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
-  color: #0f172a;
+  color: #64748b;
 }
 .tcc-np-tijd {
-  font-size: 12px;
+  font-size: 10px;
   color: #94a3b8;
-  flex: 1;
 }
-/* Labels */
-.tcc-np-label {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
+.tcc-np-actie-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
 }
-.tcc-np-label--actie  { background: #fef3c7; color: #d97706; }
-.tcc-np-label--intern { background: #dcfce7; color: #16a34a; }
-.tcc-np-label--klant  { background: #dbeafe; color: #2563eb; }
 
-/* Berichtkader */
-.tcc-np-bubble {
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 14px;
-  color: #334155;
-  line-height: 1.6;
+/* ── Berichtkaart ── */
+.tcc-np-card {
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 8px 12px;
+  word-break: break-word;
 }
-.tcc-np-bubble p { margin: 0; }
-.tcc-np-bubble strong { font-weight: 600; color: #0f172a; }
+.tcc-np-card--other {
+  background: #fff;
+  border: 0.5px solid #e2e8f0;
+  border-radius: 4px 12px 12px 12px;
+  color: #0f172a;
+}
+.tcc-np-card--own {
+  background: #ede9fe;
+  border-radius: 12px 4px 12px 12px;
+  color: #1e1b4b;
+}
+.tcc-np-card strong { font-weight: 600; }
 .tcc-np-mention {
   color: #7c3aed;
-  font-weight: 600;
+  font-weight: 500;
+}
+
+/* ── Taak badge ── */
+.tcc-np-taak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 0.5px solid #bbf7d0;
+}
+
+/* ── Datumscheiding ── */
+.tcc-np-datum-scheiding {
+  text-align: center;
+  padding: 4px 0 2px;
+  position: relative;
+}
+.tcc-np-datum-scheiding::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 0.5px;
+  background: #e2e8f0;
+}
+.tcc-np-datum-scheiding span {
+  position: relative;
+  background: #f8fafc;
+  padding: 0 10px;
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 /* Bijlage kaartje */
@@ -231,20 +335,7 @@
   color: #94a3b8;
 }
 
-/* Actie-taak koppeling badge */
-.tcc-np-taak-koppeling {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 6px;
-  padding: 4px 8px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 6px;
-  font-size: 11px;
-  color: #16a34a;
-  font-weight: 500;
-}
+/* (vervangen door .tcc-np-taak-badge hierboven) */
 
 /* ── Lege state ── */
 .tcc-np-empty {
@@ -383,6 +474,17 @@
 .tcc-np-send-btn:hover { background: #6d28d9; }
 .tcc-np-send-btn:disabled { background: #c4b5fd; cursor: not-allowed; }
 
+/* ── Avatar in @mention dropdown (base stijlen) ── */
+.tcc-np-mention-item .tcc-np-avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
 /* @mention dropdown */
 .tcc-np-mention-dropdown {
   position: absolute;
@@ -409,6 +511,13 @@
   color: #334155;
 }
 .tcc-np-mention-item:hover { background: #f8fafc; }
+.tcc-np-mention-empty {
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.5;
+  font-style: italic;
+}
 .tcc-np-mention-item .tcc-np-avatar {
   width: 26px;
   height: 26px;

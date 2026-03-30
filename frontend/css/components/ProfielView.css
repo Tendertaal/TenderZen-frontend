@@ -9,39 +9,178 @@
    LAYOUT
    ════════════════════════════════════════════════ */
 
-.profiel-page {
-    max-width: 960px;
+.pv-page {
+    max-width: 800px;
     margin: 0 auto;
     padding: 32px 24px 64px;
 }
 
-.profiel-page-header {
-    margin-bottom: 28px;
+@media (max-width: 768px) {
+    .pv-page { padding: 16px 16px 48px; }
 }
 
-.profiel-page-title {
+/* ── Header card ───────────────────────────── */
+
+.pv-header-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    animation: pv-card-in 0.35s ease both;
+}
+
+@keyframes pv-card-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.pv-header-top {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.pv-header-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 26px;
+    font-weight: 600;
+    flex-shrink: 0;
+    letter-spacing: 1px;
+}
+
+.pv-header-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pv-header-name {
     font-size: 22px;
     font-weight: 700;
     color: #0f172a;
+    margin: 0;
     letter-spacing: -0.3px;
 }
 
-.profiel-page-subtitle {
+.pv-header-email {
     font-size: 14px;
-    color: #94a3b8;
-    margin-top: 4px;
+    color: #64748b;
+    margin: 4px 0 0;
 }
 
-.profiel-grid {
-    display: grid;
-    grid-template-columns: 320px 1fr;
+.pv-header-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.pv-header-stats {
+    display: flex;
     gap: 24px;
-    align-items: start;
+    text-align: center;
+    border-left: 1px solid #e2e8f0;
+    padding-left: 24px;
+    flex-shrink: 0;
 }
 
-@media (max-width: 768px) {
-    .profiel-grid { grid-template-columns: 1fr; }
-    .profiel-page { padding: 16px 16px 48px; }
+.pv-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.pv-stat-number {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+}
+
+.pv-stat-label {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.pv-header-actions {
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 16px;
+    flex-wrap: wrap;
+}
+
+.pv-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: inherit;
+}
+
+.pv-action-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* ── Two-column grid ────────────────────────── */
+
+.pv-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 640px) {
+    .pv-grid { grid-template-columns: 1fr; }
+    .pv-header-top { flex-wrap: wrap; }
+    .pv-header-stats { border-left: none; padding-left: 0; border-top: 1px solid #e2e8f0; padding-top: 16px; width: 100%; justify-content: center; }
+}
+
+/* ── Logout ─────────────────────────────────── */
+
+.pv-logout {
+    text-align: center;
+    padding: 20px;
+}
+
+.pv-logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 24px;
+    background: transparent;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-family: inherit;
+}
+
+.pv-logout-btn:hover {
+    background: #fef2f2;
 }
 
 /* Loading / Error */
@@ -71,68 +210,11 @@
 }
 
 /* ════════════════════════════════════════════════
-   IDENTITY CARD (LEFT)
+   IDENTITY CARD — verwijderd, vervangen door pv-header-card
+   Onderstaande stubs zorgen dat oude CSS-klassen geen layout breken
    ════════════════════════════════════════════════ */
 
-.pv-identity {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    overflow: visible;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-    position: sticky;
-    top: 24px;
-    animation: pv-card-in 0.35s ease both;
-}
-
-@keyframes pv-card-in {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.pv-identity-banner {
-    height: 80px;
-    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
-    position: relative;
-    border-radius: 14px 14px 0 0;
-    overflow: visible;
-}
-
-.pv-identity-avatar-wrap {
-    position: absolute;
-    bottom: -36px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2;
-}
-
-.pv-identity-avatar {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    border: 3px solid #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 1px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-.pv-identity-body {
-    padding: 44px 24px 24px;
-    text-align: center;
-}
-
-.pv-identity-name {
-    font-size: 18px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.2px;
-}
+.pv-identity { display: none; }
 
 .pv-identity-email {
     font-size: 13px;
@@ -258,14 +340,8 @@
 .pv-identity-action--danger:hover { background: #fef2f2; }
 
 /* ════════════════════════════════════════════════
-   SECTIONS (RIGHT)
+   SECTIONS
    ════════════════════════════════════════════════ */
-
-.profiel-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
 
 .pv-section {
     background: #ffffff;
@@ -274,6 +350,7 @@
     overflow: hidden;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     animation: pv-section-in 0.3s ease both;
+    margin-bottom: 16px;
 }
 
 .pv-section:nth-child(1) { animation-delay: 0s; }

@@ -43,6 +43,11 @@
     <link rel="stylesheet" href="css/PlanningModal.css?v=2">
     <link rel="stylesheet" href="css/AgendaView.css">
 
+    <!-- Sidebar, Topbar & FaseBar -->
+    <link rel="stylesheet" href="css/components/Sidebar.css">
+    <link rel="stylesheet" href="css/components/Topbar.css">
+    <link rel="stylesheet" href="css/components/FaseBar.css">
+
     <!-- TenderCard componenten CSS — volgorde belangrijk -->
     <link rel="stylesheet" href="css/components/TenderCardHeader.css?v=2">
     <link rel="stylesheet" href="css/components/TenderCardBody.css?v=1">
@@ -61,6 +66,14 @@
 
     <!-- Icons — moet vóór TCC scripts laden zodat tccIcon() beschikbaar is -->
     <script src="js/icons.js"></script>
+
+    <!-- Centrale fase-kleuren config — BRON VAN WAARHEID, vóór alle componenten laden -->
+    <script src="js/config/FaseKleuren.js"></script>
+
+    <!-- Sidebar, Topbar & FaseBar (non-module globals, vóór main.js) -->
+    <script src="js/components/Sidebar.js"></script>
+    <script src="js/components/Topbar.js"></script>
+    <script src="js/components/FaseBar.js"></script>
 
     <!-- Tender Command Center — CSS -->
     <link rel="stylesheet" href="css/TenderCommandCenter/TenderCommandCenter.css?v=3">
@@ -104,15 +117,44 @@
 
         #app {
             height: 100vh;
-            display: flex;
-            flex-direction: column;
             overflow: hidden;
         }
 
+        /* Oud header — verborgen maar actief voor JS state management */
         #app-header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            display: none;
+        }
+
+        /* Nieuwe layout — sidebar is position:fixed, main gebruikt margin */
+        #tz-app-layout {
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* #app-sidebar is een lege wrapper (geen afmetingen) — de echte sidebar is position:fixed */
+        #app-sidebar {
+            flex-shrink: 0;
+            width: 0;
+        }
+
+        #app-main {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            margin-left: 52px; /* breedte ingeklapte sidebar */
+            transition: margin-left 0.22s ease;
+        }
+
+        #app-main.sidebar-expanded {
+            margin-left: 224px; /* breedte uitgeklapte sidebar */
+        }
+
+        #app-topbar {
+            flex-shrink: 0;
+        }
+
+        #app-phase-tabs {
             flex-shrink: 0;
         }
 
@@ -154,11 +196,21 @@
 
 <body>
     <div id="app">
+        <!-- Verborgen oud header — JS state management blijft actief -->
         <div id="app-header"></div>
-        <div id="app-content">
-            <div class="loading-screen">
-                <div class="loading-spinner"></div>
-                <p>TenderPlanner wordt geladen...</p>
+
+        <!-- Nieuwe sidebar layout -->
+        <div id="tz-app-layout">
+            <div id="app-sidebar"></div>
+            <div id="app-main">
+                <div id="app-topbar"></div>
+                <div id="app-phase-tabs"></div>
+                <div id="app-content">
+                    <div class="loading-screen">
+                        <div class="loading-spinner"></div>
+                        <p>TenderPlanner wordt geladen...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

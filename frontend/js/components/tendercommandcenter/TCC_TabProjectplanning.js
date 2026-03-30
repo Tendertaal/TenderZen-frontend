@@ -419,6 +419,7 @@ function _ppRenderTaak(taak) {
         </div>
         <span class="planning-task-name ${isDone ? 'done' : ''} ${isActive ? 'active' : ''}"${naamStyle}>
             ${escHtml(naam)}
+            ${taak.beschrijving ? `<button class="tcc-pp-info-btn" data-action="pp-toon-info" data-taak-id="${escHtml(taak.id)}" title="Meer informatie">${tccIcon('info', 15, '#7c3aed')}</button>` : ''}
         </span>
         <div class="planning-task-assignees" data-action="pp-assign" data-taak-id="${taak.id}"
              style="cursor:pointer;min-width:80px;display:flex;align-items:center;gap:4px;"
@@ -1179,6 +1180,52 @@ async function _ppVoerTemplateLaden(templateId, templateNaam, overschrijf) {
 // CSS INJECTIE
 // ============================================
 
+// ── Info popup handler ──────────────────────────────────────────
+function handlePpToonInfo(taakId) {
+    console.log('[PP] toon info taakId:', taakId,
+                'taken:', tccState.data?.projectplanning?.taken?.length);
+    const taak = (tccState.data?.projectplanning?.taken || []).find(t => String(t.id) === String(taakId));
+    if (!taak?.beschrijving) return;
+
+    const bestaand = document.querySelector(`.tcc-pp-info-popup[data-info-id="${taakId}"]`);
+    if (bestaand) {
+        document.querySelector(`.planning-task-row[data-taak-id="${taakId}"]`)?.classList.remove('is-actief');
+        bestaand.remove();
+        return;
+    }
+
+    document.querySelectorAll('.tcc-pp-info-popup').forEach(p => p.remove());
+    document.querySelectorAll('.planning-task-row.is-actief').forEach(r => r.classList.remove('is-actief'));
+
+    const popup = document.createElement('div');
+    popup.className = 'tcc-pp-info-popup';
+    popup.dataset.infoId = taakId;
+    popup.innerHTML = `
+        <div class="tcc-pp-info-popup-header">
+            <div class="tcc-pp-info-popup-icon">${tccIcon('info', 13, '#64748b')}</div>
+            <span class="tcc-pp-info-popup-title">Taakinformatie</span>
+        </div>
+        <div class="tcc-pp-info-popup-body">
+            <div class="tcc-pp-info-popup-tekst">${escHtml(taak.beschrijving)}</div>
+        </div>`;
+
+    const rij = document.querySelector(`.planning-task-row[data-taak-id="${taakId}"]`);
+    console.log('[PP] rij gevonden:', rij);
+    if (!rij) return;
+    rij.classList.add('is-actief');
+    rij.insertAdjacentElement('afterend', popup);
+
+    setTimeout(() => {
+        document.addEventListener('click', function sluit(e) {
+            if (!popup.contains(e.target) && !e.target.closest(`[data-taak-id="${taakId}"]`)) {
+                rij.classList.remove('is-actief');
+                popup.remove();
+                document.removeEventListener('click', sluit);
+            }
+        });
+    }, 0);
+}
+
 (function injectProjectplanningCSS() {
     if (document.getElementById('tcc-projectplanning-css')) return;
     const style = document.createElement('style');
@@ -1407,6 +1454,48 @@ async function _ppVoerTemplateLaden(templateId, templateNaam, overschrijf) {
 .pp-date-picker,
 .pp-assignee-dd,
 .pp-taak-menu-popup { font-family: inherit; }
+
+/* ── Info popup ── */
+.tcc-pp-info-popup {
+    background: #ffffff;
+    border: 0.5px solid #c4b5fd;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    margin-bottom: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+.tcc-pp-info-popup-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px 8px;
+    border-bottom: 0.5px solid #f1f5f9;
+    background: #f8fafc;
+}
+.tcc-pp-info-popup-icon {
+    width: 28px;
+    height: 28px;
+    background: #ede9fe;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.tcc-pp-info-popup-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.tcc-pp-info-popup-body { padding: 12px 14px; }
+.tcc-pp-info-popup-tekst {
+    font-size: 13px;
+    color: #374151;
+    line-height: 1.6;
+}
 
 `;
     document.head.appendChild(style);

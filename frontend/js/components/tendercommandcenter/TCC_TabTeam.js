@@ -81,23 +81,21 @@ function transformTeam(tender, bureauTeamMembers) {
         { key: 'designer',      label: 'Designer',      icon: 'fileText',    required: false }
     ];
 
+    // FIX 2: directe mapping — alle velden zitten al op het assignment object
     const members = assignments.map(a => {
-        const nested = a.team_member || {};
-        const bureauInfo = bureauTeamMembers.find(bm => bm.id === (a.team_member_id || a.user_id)) || {};
-        const naam = a.naam || nested.naam || bureauInfo.naam || bureauInfo.email || 'Onbekend';
+        const naam = a.naam || 'Onbekend';
         const initialen = naam.split(' ').map(w => w[0]?.toUpperCase()).join('').slice(0, 2);
-        // Workload percentage: gebruik beschikbare data of default 0
-        const workloadPct = a.workload_pct || bureauInfo.workload_pct || 0;
         return {
-            id: a.team_member_id || a.user_id || a.id,
+            id:            a.user_id,
             assignment_id: a.id,
-            naam, email: a.email || nested.email || bureauInfo.email || '',
+            naam,
+            email:         a.email || '',
             initialen,
-            rol: a.rol_in_tender || a.rol || 'schrijver',
-            uren: a.geplande_uren || a.uren || a.geschatte_uren || 0,
-            avatar_kleur: a.avatar_kleur || nested.avatar_kleur || bureauInfo.avatar_kleur || '#6366f1',
-            functie_titel: a.functie_titel || nested.functie_titel || bureauInfo.functie_titel || '',
-            workload_pct: workloadPct
+            rol:           a.rol_in_tender || 'schrijver',
+            uren:          a.geplande_uren || 0,
+            avatar_kleur:  a.avatar_kleur || '#6366f1',
+            functie_titel: a.functie_titel || '',
+            workload_pct:  0
         };
     });
 
@@ -106,8 +104,9 @@ function transformTeam(tender, bureauTeamMembers) {
         return { ...role, assigned, vacant: assigned.length === 0 };
     });
 
+    // FIX 1+5: bureauTeamMembers gebruiken user_id (niet id)
     const assignedIds = members.map(m => m.id);
-    const available = bureauTeamMembers.filter(bm => !assignedIds.includes(bm.id));
+    const available = bureauTeamMembers.filter(bm => !assignedIds.includes(bm.user_id));
 
     return {
         members, rolVerdeling, available, allRoles,
@@ -148,7 +147,7 @@ function _renderMemberCard(m) {
         <div class="tcc-team-member-actions">
             <button class="tcc-btn tcc-btn--ghost tcc-btn--xs"
                     data-action="team-remove"
-                    data-member-id="${m.id}"
+                    data-member-id="${m.assignment_id}"
                     title="Verwijderen uit tender">
                 ${tccIcon('close', 12, '#dc2626')}
             </button>
@@ -188,11 +187,12 @@ function _renderSearchResults(available, query) {
         const wPct = a.workload_pct || 0;
         const badgeClass = _workloadBadgeClass(wPct);
         const badgeLabel = _workloadBadgeLabel(wPct);
-        const isSelected = _tccTeamState.selectedMemberId === a.id;
+        // FIX 3: bureauleden hebben user_id, niet id
+        const isSelected = _tccTeamState.selectedMemberId === a.user_id;
         return `
         <div class="tcc-team-search-result-item${isSelected ? ' selected' : ''}"
              data-action="team-search-select"
-             data-member-id="${a.id}">
+             data-member-id="${a.user_id}">
             <div class="tcc-team-result-avatar" style="background:${kleur};">${escHtml(initialen)}</div>
             <div class="tcc-team-result-info">
                 <div class="tcc-team-result-name">${escHtml(naam)}</div>
@@ -296,9 +296,9 @@ function renderTabTeam(data) {
     const allRoles = team.allRoles || [];
     const requiredVacant = team.requiredVacant || [];
 
-    // Reset selectedMemberId als het lid al is toegevoegd
+    // Reset selectedMemberId als het lid al is toegevoegd (FIX 3)
     if (_tccTeamState.selectedMemberId &&
-        !available.find(a => a.id === _tccTeamState.selectedMemberId)) {
+        !available.find(a => a.user_id === _tccTeamState.selectedMemberId)) {
         _tccTeamState.selectedMemberId = null;
     }
 
@@ -486,8 +486,8 @@ async function handleTeamRemoveMember(memberId) {
 
     const tender = window.app?.tenders?.find(t => t.id === tccState.tenderId);
     const assignments = tender?.tender_team_assignments || tender?.team_members || [];
-    const member = assignments.find(a => (a.team_member_id || a.user_id || a.id) === memberId);
-    const naam = member?.naam || member?.team_member?.naam || 'dit teamlid';
+    const member = assignments.find(a => a.id === memberId);
+    const naam = member?.naam || 'dit teamlid';
 
     if (!confirm(`Weet je zeker dat je ${naam} wilt verwijderen?`)) return;
 
@@ -553,6 +553,11 @@ async function refreshTccAfterTeamChange() {
         }
 
         if (tccState.activeTab === 'team') loadTeamWorkload();
+
+        // Notities teamleden-lijst bijwerken zodat @mention actueel is
+        if (tccState._notities?.refreshTeamleden) {
+            await tccState._notities.refreshTeamleden();
+        }
 
     } catch (e) {
         console.error('[TCC] Team refresh error:', e);

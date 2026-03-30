@@ -92,8 +92,9 @@ export class FaseTransitieModal {
         const iconOpts = { size: 14, color: 'currentColor' };
         const configs = {
             acquisitie:     { kleur: '#ea580c', label: 'Acquisitie',  icon: Icons.search(iconOpts) },
-            inschrijvingen: { kleur: '#2563eb', label: 'Lopend',      icon: Icons.edit(iconOpts) },
+            inschrijvingen: { kleur: '#7c3aed', label: 'Inschrijvingen', icon: Icons.edit(iconOpts) },
             ingediend:      { kleur: '#16a34a', label: 'Ingediend',   icon: Icons.checkCircle(iconOpts) },
+            evaluatie:      { kleur: '#0d9488', label: 'Afronden',    icon: Icons.clock(iconOpts) },
             archief:        { kleur: '#64748b', label: 'Archief',     icon: Icons.archive(iconOpts) }
         };
         return configs[fase] || { kleur: '#94a3b8', label: fase, icon: Icons.clipboardList(iconOpts) };

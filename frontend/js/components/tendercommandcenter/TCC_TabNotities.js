@@ -52,19 +52,6 @@ class TCC_TabNotities {
     // INIT
     // ────────────────────────────────────────────────────────────────────
 
-    constructor() {
-        this._injectStyles();
-    }
-
-    _injectStyles() {
-        if (document.getElementById('tcc-notities-styles')) return;
-        const link = document.createElement('link');
-        link.id   = 'tcc-notities-styles';
-        link.rel  = 'stylesheet';
-        link.href = 'js/components/TenderCommandCenter/tcc-tab-notities_20260323_1900.css';
-        document.head.appendChild(link);
-    }
-
     // ────────────────────────────────────────────────────────────────────
     // PUBLIEKE API — aangeroepen door TCC_Core
     // ────────────────────────────────────────────────────────────────────
@@ -87,7 +74,16 @@ class TCC_TabNotities {
             const sb = window.supabaseClient || window.supabase;
             const { data: { user } } = await sb.auth.getUser();
             this._currentUserId = user?.id || null;
-            this._currentUser   = user?.user_metadata || {};
+
+            // Laad ook public.users profiel voor naam/initialen/kleur
+            if (this._currentUserId) {
+                const { data: profiel } = await sb
+                    .from('users')
+                    .select('id, naam, email, initialen, avatar_kleur')
+                    .eq('id', this._currentUserId)
+                    .single();
+                this._currentUser = profiel || user?.user_metadata || {};
+            }
         } catch {}
 
         // Footer knop toevoegen
@@ -101,6 +97,8 @@ class TCC_TabNotities {
             this._loadNotities(),
             this._loadTeamleden()
         ]);
+
+        this._updateTextareaPlaceholder();
     }
 
     /** Sluit en verwijder alles (bij TCC sluiten) */
@@ -108,6 +106,12 @@ class TCC_TabNotities {
         this._paneel?.remove();
         this._toggleBtn?.remove();
         this._tccBody?.classList.remove('notities-open');
+    }
+
+    /** Herlaad teamleden en update placeholder — aanroepen na teamwijziging */
+    async refreshTeamleden() {
+        await this._loadTeamleden();
+        this._updateTextareaPlaceholder();
     }
 
     // ────────────────────────────────────────────────────────────────────
@@ -259,9 +263,20 @@ class TCC_TabNotities {
         this._paneel.querySelector('#tcc-np-file-input')
             .addEventListener('change', (e) => this._onFileSelect(e));
 
-        // Klik buiten mention dropdown
+        // Klik buiten mention dropdown / contextmenu
         document.addEventListener('click', (e) => {
             if (!this._paneel.contains(e.target)) this._sluitMentionDropdown();
+        });
+
+        // Contextmenu acties (event delegation op feed)
+        this._feed.addEventListener('click', (e) => {
+            const item = e.target.closest('.tcc-np-menu-item');
+            if (!item) return;
+            e.stopPropagation();
+            const { action, id } = item.dataset;
+            if (action === 'np-kopieren')  this._kopierenNotitie(id);
+            if (action === 'np-markeer')   showTccToast('Binnenkort beschikbaar', 'info');
+            if (action === 'np-verwijder') this._verwijderNotitie(id);
         });
     }
 
@@ -383,6 +398,13 @@ class TCC_TabNotities {
             return;
         }
 
+        // Enter zonder Shift verstuurt de notitie (tenzij mention dropdown open is)
+        if (e.key === 'Enter' && !e.shiftKey && !this._mentionOpen) {
+            e.preventDefault();
+            this._verzendNotitie();
+            return;
+        }
+
         // Navigeer mention dropdown met pijltjes
         if (this._mentionOpen) {
             const items = this._mentionDropdown.querySelectorAll('.tcc-np-mention-item');
@@ -422,7 +444,16 @@ class TCC_TabNotities {
         );
 
         if (gefilterd.length === 0) {
-            this._sluitMentionDropdown();
+            this._mentionDropdown.innerHTML = `
+                <div class="tcc-np-mention-empty">
+                    ${this._teamleden.length === 0
+                        ? 'Geen teamleden gekoppeld aan deze tender. Voeg eerst teamleden toe via de Team tab.'
+                        : 'Geen teamleden gevonden voor "' + this._mentionQuery + '".'
+                    }
+                </div>
+            `;
+            this._mentionDropdown.classList.add('is-open');
+            this._mentionOpen = true;
             return;
         }
 
@@ -430,7 +461,7 @@ class TCC_TabNotities {
             <div class="tcc-np-mention-item"
                  data-naam="${t.naam}"
                  data-user-id="${t.userId}">
-                <div class="tcc-np-avatar tcc-np-avatar--${this._avatarKleur(t.naam)}">
+                <div class="tcc-np-avatar" style="background:${this._avatarKleurHex(t.naam)}">
                     ${this._initialen(t.naam)}
                 </div>
                 <span>${t.naam}</span>
@@ -549,20 +580,27 @@ class TCC_TabNotities {
                     mentions:  JSON.stringify(mentions),
                     bijlagen:  JSON.stringify(bijlagen)
                 })
-                .select(`
-                    *,
-                    auteur:users(id, email, user_metadata)
-                `)
+                .select('*')
                 .single();
 
             if (error) throw error;
-            return this._enrichNotitie(data);
+
+            const naam = this._currentUser?.naam
+                || this._currentUser?.full_name
+                || (this._currentUser?.email ? this._currentUser.email.split('@')[0] : 'Ik');
+
+            return this._enrichNotitieMetUser(data, {
+                naam,
+                email: this._currentUser?.email || '',
+                initialen: this._currentUser?.initialen || this._initialen(naam),
+                avatar_kleur: this._currentUser?.avatar_kleur || '#667eea'
+            });
         } catch (err) {
             console.error('[TCC_TabNotities] Fout bij opslaan notitie:', err);
             // Optimistische UI: toon toch lokaal
             const email = this._currentUser?.email || '';
-            const naam  = this._currentUser?.full_name
-                || this._currentUser?.name
+            const naam  = this._currentUser?.naam
+                || this._currentUser?.full_name
                 || (email ? email.split('@')[0] : 'Ik');
             return {
                 id: crypto.randomUUID(),
@@ -572,7 +610,7 @@ class TCC_TabNotities {
                 bijlagen,
                 created_at: new Date().toISOString(),
                 auteur_naam: naam,
-                auteur_initialen: this._initialen(naam),
+                auteur_initialen: this._currentUser?.initialen || this._initialen(naam),
                 auteur_kleur: 'purple',
                 _lokaal: true
             };
@@ -611,23 +649,25 @@ class TCC_TabNotities {
             const verantwoordelijke = mentions[0];
 
             // Taaknaam = eerste 80 tekens van notitietekst (zonder @mentions)
-            const taaknaam = inhoud
-                .replace(/@\w+/g, '').trim()
-                .substring(0, 80) + (inhoud.length > 80 ? '…' : '');
+            const taaknaam = (inhoud
+                .replace(/@\S+/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .substring(0, 80) || 'Actie uit notitie')
+                + (inhoud.length > 80 ? '…' : '');
 
             const sb = window.supabaseClient || window.supabase;
             const { data: taak, error } = await sb
                 .from('planning_taken')
                 .insert({
-                    tender_id:          this._tenderId,
-                    tenderbureau_id:    this._tenderData?.tenderbureau_id,
-                    naam:               taaknaam,
-                    beschrijving:       inhoud,
-                    status:             'todo',
-                    verantwoordelijke:  verantwoordelijke.userId,
-                    bron:               'notitie',
-                    notitie_id:         notitie.id,
-                    aangemaakt_door:    this._currentUserId
+                    tender_id:       this._tenderId,
+                    tenderbureau_id: this._tenderData?.tenderbureau_id,
+                    taak_naam:       taaknaam,
+                    categorie:       'notitie',
+                    status:          'todo',
+                    toegewezen_aan:  verantwoordelijke?.userId ? [verantwoordelijke.userId] : [],
+                    volgorde:        0,
+                    is_milestone:    false
                 })
                 .select()
                 .single();
@@ -645,6 +685,11 @@ class TCC_TabNotities {
             notitie.actie_taak_persoon = verantwoordelijke.naam;
 
             console.log('[TCC_TabNotities] Projectplanning taak aangemaakt:', taak.id);
+
+            console.log('[TCC_TabNotities] refresh aanroepen:', typeof _refreshNaDownstream);
+            if (typeof window._refreshNaDownstream === 'function') {
+                await window._refreshNaDownstream(['projectplanning']);
+            }
         } catch (err) {
             console.error('[TCC_TabNotities] Fout bij aanmaken taak:', err);
         }
@@ -657,14 +702,34 @@ class TCC_TabNotities {
     async _loadNotities() {
         try {
             const sb = window.supabaseClient || window.supabase;
+
+            // Stap 1: notities ophalen zonder auteur join
             const { data, error } = await sb
                 .from('tender_notities')
-                .select('*, auteur:users(id, email, user_metadata)')
+                .select('*')
                 .eq('tender_id', this._tenderId)
                 .order('created_at', { ascending: true });
 
             if (error) throw error;
-            this._notities = (data || []).map(n => this._enrichNotitie(n));
+
+            // Stap 2: unieke auteur_ids verzamelen
+            const auteurIds = [...new Set((data || []).map(n => n.auteur_id))];
+
+            // Stap 3: gebruikersdata ophalen uit public.users
+            let gebruikers = {};
+            if (auteurIds.length > 0) {
+                const { data: users } = await sb
+                    .from('users')
+                    .select('id, naam, email, initialen, avatar_kleur')
+                    .in('id', auteurIds);
+
+                (users || []).forEach(u => { gebruikers[u.id] = u; });
+            }
+
+            this._notities = (data || []).map(n =>
+                this._enrichNotitieMetUser(n, gebruikers[n.auteur_id])
+            );
+
         } catch (err) {
             console.error('[TCC_TabNotities] Fout bij laden notities:', err);
             this._notities = [];
@@ -679,7 +744,7 @@ class TCC_TabNotities {
             const sb = window.supabaseClient || window.supabase;
             const { data, error } = await sb
                 .from('tender_team_assignments')
-                .select('user_id, users(id, user_metadata)')
+                .select('user_id, users(id, naam, email, initialen)')
                 .eq('tender_id', this._tenderId);
 
             if (error) throw error;
@@ -688,10 +753,12 @@ class TCC_TabNotities {
                 .filter(t => t.users)
                 .map(t => ({
                     userId: t.user_id,
-                    naam:   t.users?.user_metadata?.full_name || 'Onbekend'
-                }));
+                    naam:   t.users?.naam
+                        || (t.users?.email ? t.users.email.split('@')[0] : 'Onbekend')
+                }))
+                .filter(t => t.userId !== this._currentUserId);
+
         } catch {
-            // Geen team data — mention dropdown blijft leeg
             this._teamleden = [];
         }
     }
@@ -712,27 +779,42 @@ class TCC_TabNotities {
         }
 
         this._feed.innerHTML = '';
-        this._notities.forEach(n => this._renderNotitie(n));
+        let vorigeDatumKey = null;
+        this._notities.forEach(n => {
+            const datumKey = n.created_at
+                ? new Date(n.created_at).toDateString()
+                : null;
+            if (datumKey && datumKey !== vorigeDatumKey) {
+                this._renderDatumScheiding(n.created_at);
+                vorigeDatumKey = datumKey;
+            }
+            this._renderNotitie(n);
+        });
     }
 
     _renderNotitie(notitie) {
-        // Verwijder lege state als die er nog staat
-        const empty = this._feed.querySelector('.tcc-np-empty');
-        if (empty) empty.remove();
+        this._feed.querySelector('.tcc-np-empty')?.remove();
 
-        const item = document.createElement('div');
-        item.className = 'tcc-np-item';
-        item.dataset.id = notitie.id;
+        const isEigen = notitie.auteur_id === this._currentUserId;
+        const isActie = notitie.label === 'actie';
+        const naamLabel = isEigen ? 'Jij' : (notitie.auteur_naam || 'Onbekend');
 
-        const labelHtml = notitie.label && notitie.label !== 'notitie'
-            ? `<span class="tcc-np-label tcc-np-label--${notitie.label}">${this._labelNaam(notitie.label)}</span>`
-            : '';
+        const row = document.createElement('div');
+        row.className = 'tcc-np-row' + (isEigen ? ' tcc-np-row--own' : '');
+        row.dataset.id = notitie.id;
 
-        const bubbelInhoud = this._renderInhoud(notitie.inhoud);
+        // ── Contextmenu items ──
+        const verwijderMenuHtml = isEigen ? `
+            <div class="tcc-np-menu-sep"></div>
+            <div class="tcc-np-menu-item tcc-np-menu-item--danger"
+                 data-action="np-verwijder" data-id="${notitie.id}">
+                ${tccIcon('trash', 13)} Verwijderen
+            </div>` : '';
 
+        // ── Bijlagen ──
         const bijlagenHtml = (notitie.bijlagen || []).map(b => `
             <div class="tcc-np-bijlage">
-                <div class="tcc-np-bijlage-icon">${this._icon('fileText', '#64748b', 14)}</div>
+                <div class="tcc-np-bijlage-icon">${tccIcon('fileText', 14)}</div>
                 <div class="tcc-np-bijlage-info">
                     <div class="tcc-np-bijlage-naam">${this._esc(b.naam)}</div>
                     <div class="tcc-np-bijlage-grootte">${this._formatBestandsgrootte(b.grootte)}</div>
@@ -740,30 +822,46 @@ class TCC_TabNotities {
             </div>
         `).join('');
 
-        const taakKoppelingHtml = notitie.actie_taak_id ? `
-            <div class="tcc-np-taak-koppeling">
-                ${this._icon('checkCircle', '#16a34a', 12)}
+        const taakBadgeHtml = notitie.actie_taak_id ? `
+            <div class="tcc-np-taak-badge">
+                ${tccIcon('checkCircle', 11, '#16a34a')}
                 Taak aangemaakt voor ${this._esc(notitie.actie_taak_persoon || 'teamlid')}
-            </div>
-        ` : '';
+            </div>` : '';
 
-        item.innerHTML = `
-            <div class="tcc-np-avatar tcc-np-avatar--${notitie.auteur_kleur}">
-                ${notitie.auteur_initialen}
-            </div>
-            <div class="tcc-np-content">
-                <div class="tcc-np-meta">
-                    <span class="tcc-np-naam">${this._esc(notitie.auteur_naam)}</span>
-                    <span class="tcc-np-tijd">${this._formatTijd(notitie.created_at)}</span>
-                    ${labelHtml}
+        const actieBadgeHtml = isActie
+            ? `<span class="tcc-np-actie-badge">Actie</span>` : '';
+
+        row.innerHTML = `
+            <div class="tcc-np-av-wrap">
+                <div class="tcc-np-av" style="background:${notitie.auteur_kleur}">
+                    ${notitie.auteur_initialen}
                 </div>
-                <div class="tcc-np-bubble">${bubbelInhoud}</div>
-                ${bijlagenHtml}
-                ${taakKoppelingHtml}
+                <div class="tcc-np-menu">
+                    <div class="tcc-np-menu-item" data-action="np-kopieren" data-id="${notitie.id}">
+                        ${tccIcon('copy', 13)} Kopiëren
+                    </div>
+                    <div class="tcc-np-menu-item tcc-np-menu-item--star"
+                         data-action="np-markeer" data-id="${notitie.id}">
+                        ${tccIcon('star', 13)} Markeer als belangrijk
+                    </div>
+                    ${verwijderMenuHtml}
+                </div>
+            </div>
+            <div class="tcc-np-bubble">
+                <div class="tcc-np-meta">
+                    <span class="tcc-np-naam">${this._esc(naamLabel)}</span>
+                    <span class="tcc-np-tijd">${this._formatTijd(notitie.created_at)}</span>
+                    ${actieBadgeHtml}
+                </div>
+                <div class="tcc-np-card ${isEigen ? 'tcc-np-card--own' : 'tcc-np-card--other'}">
+                    ${this._renderInhoud(notitie.inhoud)}
+                    ${bijlagenHtml}
+                    ${taakBadgeHtml}
+                </div>
             </div>
         `;
 
-        this._feed.appendChild(item);
+        this._feed.appendChild(row);
     }
 
     /** Render notitietekst: @mentions → paars, **bold** → <strong> */
@@ -803,7 +901,7 @@ class TCC_TabNotities {
     _resetInvoer() {
         this._textarea.value     = '';
         this._textarea.style.height = 'auto';
-        this._textarea.placeholder = 'Schrijf een notitie… typ @ om iemand te taggen';
+        this._updateTextareaPlaceholder();
         this._pendingMentions    = [];
         this._pendingBijlagen    = null;
         this._boldActive         = false;
@@ -823,21 +921,39 @@ class TCC_TabNotities {
     // HELPERS
     // ────────────────────────────────────────────────────────────────────
 
-    _enrichNotitie(n) {
-        const meta  = n.auteur?.user_metadata || {};
-        const email = n.auteur?.email || '';
-        const naam  = meta.full_name
-            || meta.name
-            || (email ? email.split('@')[0] : null)
+    _updateTextareaPlaceholder() {
+        if (!this._textarea) return;
+        if (this._pendingBijlagen?.length) return; // bijlage preview actief — niet overschrijven
+        this._textarea.placeholder = this._teamleden.length > 0
+            ? 'Schrijf een notitie… typ @ om iemand te taggen'
+            : 'Schrijf een notitie… (voeg teamleden toe via Team tab om @ te gebruiken)';
+    }
+
+    _enrichNotitieMetUser(n, user) {
+        const naam = user?.naam
+            || (user?.email ? user.email.split('@')[0] : null)
             || 'Onbekend';
+        const initialen = user?.initialen || this._initialen(naam);
+        const kleur = user?.avatar_kleur || this._avatarKleurHex(naam);
+
         return {
             ...n,
-            bijlagen:          typeof n.bijlagen === 'string'  ? JSON.parse(n.bijlagen)  : (n.bijlagen  || []),
-            mentions:          typeof n.mentions === 'string'  ? JSON.parse(n.mentions)  : (n.mentions  || []),
-            auteur_naam:       naam,
-            auteur_initialen:  this._initialen(naam),
-            auteur_kleur:      this._avatarKleur(naam)
+            bijlagen: typeof n.bijlagen === 'string' ? JSON.parse(n.bijlagen) : (n.bijlagen || []),
+            mentions: typeof n.mentions === 'string' ? JSON.parse(n.mentions) : (n.mentions || []),
+            auteur_naam:      naam,
+            auteur_initialen: initialen,
+            auteur_kleur:     kleur   // hex waarde voor inline style
         };
+    }
+
+    _cssKleurNaarNaam(hex) {
+        const map = {
+            '#667eea': 'purple', '#7c3aed': 'purple',
+            '#16a34a': 'green',  '#0d9488': 'teal',
+            '#2563eb': 'blue',   '#ea580c': 'orange',
+            '#db2777': 'pink'
+        };
+        return map[hex] || this._avatarKleur('');
     }
 
     _initialen(naam) {
@@ -857,6 +973,15 @@ class TCC_TabNotities {
         return colors[Math.abs(hash) % colors.length];
     }
 
+    _avatarKleurHex(naam) {
+        const hexColors = ['#7c3aed', '#16a34a', '#ea580c', '#2563eb', '#0d9488', '#db2777'];
+        let hash = 0;
+        for (let i = 0; i < (naam || '').length; i++) {
+            hash = naam.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return hexColors[Math.abs(hash) % hexColors.length];
+    }
+
     _labelNaam(label) {
         const map = { intern: 'Intern', klant: 'Klant', actie: 'Actie' };
         return map[label] || label;
@@ -864,17 +989,65 @@ class TCC_TabNotities {
 
     _formatTijd(iso) {
         if (!iso) return '';
-        const d   = new Date(iso);
-        const nu  = new Date();
-        const diff = nu - d;
-        const dag  = 86400000;
-        if (diff < dag && d.getDate() === nu.getDate()) {
-            return `vandaag ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+        const d = new Date(iso);
+        return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    _datumLabel(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const nu = new Date();
+        const vandaag   = new Date(nu.getFullYear(), nu.getMonth(), nu.getDate());
+        const gisteren  = new Date(vandaag);
+        gisteren.setDate(gisteren.getDate() - 1);
+        const dag = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        if (dag.getTime() === vandaag.getTime())  return 'Vandaag';
+        if (dag.getTime() === gisteren.getTime()) return 'Gisteren';
+        const maanden = ['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+        return `${d.getDate()} ${maanden[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    _renderDatumScheiding(iso) {
+        const label = this._datumLabel(iso);
+        console.log('[TCC_TabNotities] datumscheiding:', label);
+        const el = document.createElement('div');
+        el.className = 'tcc-np-datum-scheiding';
+        el.innerHTML = `<span>${this._esc(label)}</span>`;
+        this._feed.appendChild(el);
+    }
+
+    _kopierenNotitie(id) {
+        const notitie = this._notities.find(n => n.id === id);
+        if (!notitie?.inhoud) return;
+        navigator.clipboard.writeText(notitie.inhoud)
+            .then(() => showTccToast('Gekopieerd', 'success'))
+            .catch(() => showTccToast('Kopiëren mislukt', 'error'));
+    }
+
+    async _verwijderNotitie(id) {
+        const notitie = this._notities.find(n => n.id === id);
+        if (!notitie) return;
+
+        const bevestiging = notitie.actie_taak_id
+            ? 'Notitie verwijderen?\n\nLet op: de bijbehorende taak in de projectplanning blijft bestaan.'
+            : 'Notitie verwijderen?';
+
+        if (!confirm(bevestiging)) return;
+
+        try {
+            const sb = window.supabaseClient || window.supabase;
+            const { error } = await sb
+                .from('tender_notities')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+
+            this._notities = this._notities.filter(n => n.id !== id);
+            this._renderFeed();
+            this._updateBadges();
+        } catch (err) {
+            console.error('[TCC_TabNotities] Fout bij verwijderen notitie:', err);
         }
-        if (diff < 2 * dag) {
-            return `gisteren ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
-        }
-        return `${d.getDate()} ${['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]}`;
     }
 
     _formatBestandsgrootte(bytes) {

@@ -16,7 +16,7 @@
 
    Data model (checklist_items):
      id, tender_id, tenderbureau_id, naam (taak_naam), sectie (categorie),
-     is_verplicht, status ('pending'|'in_progress'|'done'), volgorde,
+     is_verplicht, status ('pending'|'in_progress'|'completed'), volgorde,
      toegewezen_aan (array UUID[]), deadline (date), beschrijving
 
    API endpoints (nieuw toe te voegen in ai_documents.py):
@@ -31,7 +31,7 @@
      case 'cl-annuleer':          handleClAnnuleer(); break;
      case 'cl-picker-toggle':     handleClPickerToggle(btn.dataset.docId, btn.dataset.docNaam); break;
      case 'cl-start-extractie':   handleClStartExtractie(); break;
-     case 'cl-toggle-item':       handleClToggleItem(btn.dataset.itemId, btn.dataset.status); break;
+     case 'cl-toggle-item':       handleClToggleItem(btn.dataset.itemId); break;
      case 'cl-set-deadline':      handleClSetDeadline(btn.dataset.itemId, btn); break;
      case 'cl-assign':            handleClAssign(btn.dataset.itemId, btn); break;
      case 'cl-item-menu':         handleClItemMenu(btn.dataset.itemId); break;
@@ -87,7 +87,7 @@ function _clGroupBySectie(items) {
 
 function _clGetStatusConfig(status) {
     const map = {
-        'done':        { label: 'Afgerond',    cls: 'cl-status--done' },
+        'completed':   { label: 'Afgerond',    cls: 'cl-status--done' },
         'in_progress': { label: 'In uitvoering', cls: 'cl-status--active' },
         'pending':     { label: 'Te doen',     cls: 'cl-status--todo' },
     };
@@ -100,11 +100,13 @@ function _clGetPanel() {
 
 function _clRerender() {
     const panel = _clGetPanel();
+    const container = panel?.querySelector('.tcc-cl-container');
     if (!panel) return;
-    const container = panel.querySelector('.tcc-cl-container');
     if (!container) return;
     const items = tccState.data?.checklist?.items || [];
-    const state = tccState.checklistState || (items.length > 0 ? 'data' : 'leeg');
+    const state = tccState.checklistState !== null
+        ? tccState.checklistState
+        : (items.length > 0 ? 'data' : 'leeg');
     container.innerHTML = _renderClInhoud(state, tccState.data?.checklist || {}, tccState.data || {});
     _updateChecklistBadge();
 }
@@ -129,7 +131,7 @@ function renderTabChecklist(data) {
 
 function _renderClInhoud(state, clData, globalData) {
     if (state === 'loading') return _renderClLoading();
-    if (state === 'picker') return _renderClPicker(globalData);
+    if (state === 'picker' || state === 'aanvullen-picker') return _renderClPicker(globalData);
     if (state === 'data') return _renderClData(clData, globalData);
     return _renderClLeeg(globalData);
 }
@@ -138,26 +140,21 @@ function _renderClInhoud(state, clData, globalData) {
 // STATE: LEEG
 // ============================================
 
-function _renderClLeeg(globalData) {
-    const docs = globalData?.brondocumenten || [];
+function _renderClLeeg(_globalData) {
     return `
     <div class="tcc-cl-state-leeg">
-        <div class="tcc-actie-balk">
-            <div class="tcc-actie-balk-icon tcc-actie-balk-icon--green">
-                ${tccIcon('checkSquare', 18, '#16a34a')}
-            </div>
-            <div class="tcc-actie-balk-info">
-                <div class="tcc-actie-balk-title">Checklist extraheren</div>
-                <div class="tcc-actie-balk-desc">Extraheer automatisch alle verplichte inleveritems uit aanbestedingsdocumenten.</div>
-            </div>
-            <button class="tcc-btn tcc-btn--primary" data-action="cl-toon-picker">
-                ${tccIcon('sparkles', 14, '#fff')} Extraheer checklist
-            </button>
-        </div>
         <div class="tcc-empty">
             ${tccIcon('checkSquare', 48, '#cbd5e1')}
             <div class="tcc-empty-title">Geen checklist beschikbaar</div>
-            <div class="tcc-empty-desc">Klik op "Extraheer checklist" om alle verplichte inleveritems automatisch te extraheren uit de aanbestedingsdocumenten.</div>
+            <div class="tcc-empty-desc">Start met AI extractie op basis van het aanbestedingsdocument, of laad een standaard template als startpunt.</div>
+            <div class="tcc-cl-leeg-acties">
+                <button class="tcc-btn tcc-btn--primary" data-action="cl-toon-picker">
+                    ${tccIcon('sparkles', 14, '#fff')} AI Extractie
+                </button>
+                <button class="tcc-btn tcc-btn--ghost" data-action="cl-load-template" id="cl-template-btn">
+                    ${tccIcon('fileText', 14)} Template laden
+                </button>
+            </div>
         </div>
     </div>`;
 }
@@ -167,7 +164,7 @@ function _renderClLeeg(globalData) {
 // ============================================
 
 function _renderClPicker(globalData) {
-    const docs = globalData?.brondocumenten || [];
+    const docs = globalData?.documenten || [];
     const geselecteerd = tccState._clPickerSelected || [];
 
     return `
@@ -196,13 +193,13 @@ function _renderClPicker(globalData) {
                 <div class="tcc-pp-picker-item${isSelected ? ' selected' : ''}"
                      data-action="cl-picker-toggle"
                      data-doc-id="${escHtml(doc.id)}"
-                     data-doc-naam="${escHtml(doc.bestandsnaam || doc.naam || '')}">
+                     data-doc-naam="${escHtml(doc.original_file_name || doc.file_name || '')}">
                     <div class="tcc-pp-picker-checkbox${isSelected ? ' checked' : ''}">
                         ${isSelected ? tccIcon('check', 11, '#fff') : ''}
                     </div>
                     <div class="tcc-pp-picker-meta">
-                        <div class="tcc-pp-picker-naam">${escHtml(doc.bestandsnaam || doc.naam || 'Document')}</div>
-                        <div class="tcc-pp-picker-sub">${doc.bestand_type ? doc.bestand_type.toUpperCase() : 'PDF'} · ${doc.created_at ? _clFormatDate(doc.created_at) : ''}</div>
+                        <div class="tcc-pp-picker-naam">${escHtml(doc.original_file_name || doc.file_name || 'Document')}</div>
+                        <div class="tcc-pp-picker-sub">${doc.file_type ? doc.file_type.toUpperCase() : 'PDF'} · ${doc.uploaded_at ? _clFormatDate(doc.uploaded_at) : ''}</div>
                     </div>
                     ${doc.is_primair ? `<span class="tcc-pp-picker-badge tcc-pp-picker-badge--green">Aanbevolen</span>` : ''}
                 </div>`;
@@ -226,15 +223,12 @@ function _renderClPicker(globalData) {
 function _renderClLoading() {
     return `
     <div class="tcc-cl-state-loading">
-        <div class="tcc-actie-balk">
-            <div class="tcc-actie-balk-icon tcc-actie-balk-icon--green">
-                ${tccIcon('checkSquare', 18, '#16a34a')}
+        <div class="tcc-cl-loading">
+            <div class="tcc-cl-loading-spinner"></div>
+            <div class="tcc-cl-loading-tekst">
+                <div class="tcc-cl-loading-titel">Checklist wordt geëxtraheerd…</div>
+                <div class="tcc-cl-loading-sub">AI analyseert de documenten op inleveritems. Dit duurt ~15 seconden.</div>
             </div>
-            <div class="tcc-actie-balk-info">
-                <div class="tcc-actie-balk-title">Checklist wordt geëxtraheerd…</div>
-                <div class="tcc-actie-balk-desc">AI analyseert de documenten op inleveritems. Dit duurt ~15 seconden.</div>
-            </div>
-            <div class="tcc-pp-spinner"></div>
         </div>
         <div class="tcc-pp-loading-rows">
             ${[...Array(6)].map(() => `
@@ -255,7 +249,7 @@ function _renderClLoading() {
 
 function _renderClData(clData, globalData) {
     const items = clData?.items || [];
-    const done = items.filter(i => i.status === 'done').length;
+    const done = items.filter(i => i.status === 'completed').length;
     const total = items.length;
     const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     const teamleden = globalData?._bureauTeamMembers || [];
@@ -292,10 +286,13 @@ function _renderClData(clData, globalData) {
                         id="cl-template-btn" title="Template laden">
                     ${tccIcon('fileText', 14)} Template laden
                 </button>
+                <button class="tcc-btn tcc-btn--ghost tcc-btn--sm" data-action="cl-aanvullen-picker" title="Aanvullen met AI">
+                    ${tccIcon('sparkles', 14)} + Aanvullen met AI
+                </button>
                 <button class="tcc-btn tcc-btn--primary tcc-btn--sm" data-action="cl-add-item">
                     ${tccIcon('plus', 14, '#fff')} Item toevoegen
                 </button>
-                <button class="tcc-btn tcc-btn--ghost tcc-btn--sm" data-action="cl-toon-picker" title="Opnieuw extraheren">
+                <button class="tcc-btn tcc-btn--ghost tcc-btn--sm" data-action="cl-toon-picker" title="Opnieuw extraheren (alles vervangen)">
                     ${tccIcon('refresh', 14)} Opnieuw
                 </button>
             </div>
@@ -311,7 +308,7 @@ function _renderClData(clData, globalData) {
 
         <!-- Groepen -->
         ${Object.entries(groepen).map(([sectie, groepItems]) => {
-            const grDone = groepItems.filter(i => i.status === 'done').length;
+            const grDone = groepItems.filter(i => i.status === 'completed').length;
             const grTotal = groepItems.length;
             return `
             <div class="tcc-cl-groep">
@@ -335,8 +332,9 @@ function _renderClData(clData, globalData) {
 // ============================================
 
 function _renderClItem(item, teamleden) {
-    const isDone = item.status === 'done';
+    const isDone = item.status === 'completed';
     const statusCfg = _clGetStatusConfig(item.status);
+    const itemId = escHtml(item.id);
 
     // Assignees
     const assignees = Array.isArray(item.toegewezen_aan) ? item.toegewezen_aan : [];
@@ -347,44 +345,52 @@ function _renderClItem(item, teamleden) {
         ? `<span class="tcc-cl-datum-val${_clIsUrgent(item.deadline) ? ' tcc-cl-datum--urgent' : ''}">${_clFormatDate(item.deadline)}</span>`
         : `<span class="tcc-cl-datum-placeholder">${tccIcon('calendar', 12, '#cbd5e1')} Datum</span>`;
 
+    // Naam-cel: alleen klikbaar voor bron als bron_tekst aanwezig
+    const naamCelAttr = item.bron_tekst
+        ? `data-action="cl-toon-bron" data-item-id="${itemId}"`
+        : '';
+    const naamCelCls = `tcc-cl-item-naam${item.bron_tekst ? ' tcc-cl-item--heeft-bron' : ''}`;
+
     return `
-    <div class="tcc-cl-item${isDone ? ' tcc-cl-item--done' : ''}" data-item-id="${item.id}">
-        <!-- Checkbox -->
+    <div class="tcc-cl-item${isDone ? ' tcc-cl-item--done' : ''}" data-item-id="${itemId}">
+
+        <!-- Checkbox: eigen data-action, geen stopPropagation -->
         <div class="tcc-cl-item-left">
             <button class="tcc-cl-checkbox${isDone ? ' tcc-cl-checkbox--checked' : ''}"
                     data-action="cl-toggle-item"
-                    data-item-id="${item.id}"
-                    data-status="${item.status}"
+                    data-item-id="${itemId}"
                     title="${isDone ? 'Markeer als te doen' : 'Markeer als afgerond'}">
                 ${isDone ? tccIcon('check', 12, '#fff') : ''}
             </button>
         </div>
 
-        <!-- Naam + verplicht badge -->
-        <div class="tcc-cl-item-naam">
+        <!-- Naam-cel: data-action="cl-toon-bron" ALLEEN hier, niet op de item-rij -->
+        <div class="${naamCelCls}" ${naamCelAttr}>
             <span class="tcc-cl-item-tekst${isDone ? ' tcc-cl-item-tekst--done' : ''}">${escHtml(item.naam || item.taak_naam || '')}</span>
             ${item.is_verplicht ? `<span class="tcc-cl-verplicht">Verplicht</span>` : ''}
+            ${item.bron_tekst ? `<span class="tcc-cl-item-info-btn">${tccIcon('info', 15, '#7c3aed')}</span>` : ''}
         </div>
 
-        <!-- Assignee -->
-        <div class="tcc-cl-item-assign" data-action="cl-assign" data-item-id="${item.id}">
+        <!-- Toegewezen aan -->
+        <div class="tcc-cl-item-assign" data-action="cl-assign" data-item-id="${itemId}">
             ${assigneeHtml}
         </div>
 
         <!-- Deadline -->
-        <div class="tcc-cl-item-deadline" data-action="cl-set-deadline" data-item-id="${item.id}">
+        <div class="tcc-cl-item-deadline" data-action="cl-set-deadline" data-item-id="${itemId}">
             ${datumHtml}
         </div>
 
         <!-- Status badge -->
         <div class="tcc-cl-item-status">
-            <span class="tcc-cl-status-badge ${statusCfg.cls}">${statusCfg.label}</span>
+            <span class="tcc-cl-status-badge tcc-cl-status--${item.status === 'completed' ? 'done' : item.status === 'in_progress' ? 'active' : 'todo'}">${statusCfg.label}</span>
         </div>
 
         <!-- 3-dot menu -->
-        <button class="tcc-cl-menu-btn" data-action="cl-item-menu" data-item-id="${item.id}">
+        <button class="tcc-cl-menu-btn" data-action="cl-item-menu" data-item-id="${itemId}">
             ${tccIcon('moreVertical', 14, '#94a3b8')}
         </button>
+
     </div>`;
 }
 
@@ -396,7 +402,7 @@ function _clIsUrgent(dateStr) {
     return diff < 3;
 }
 
-function _renderClAssignees(assigneeIds, teamleden, itemId) {
+function _renderClAssignees(assigneeIds, teamleden) {
     if (!assigneeIds || assigneeIds.length === 0) {
         return `<span class="tcc-cl-assign-placeholder">${tccIcon('user', 12, '#cbd5e1')} Toewijzen</span>`;
     }
@@ -406,7 +412,7 @@ function _renderClAssignees(assigneeIds, teamleden, itemId) {
         if (!lid) return '';
         const naam = lid.naam || lid.name || lid.email || '?';
         const initialen = naam.split(/\s+/).map(w => w[0]).join('').toUpperCase().substring(0, 2);
-        const kleur = _ppAvatarKleur ? _ppAvatarKleur(naam) : '#7c3aed';
+        const kleur = _clAvatarKleur(naam);
         return `<span class="tcc-cl-avatar" style="background:${kleur}" title="${escHtml(naam)}">${initialen}</span>`;
     }).join('');
 
@@ -414,9 +420,8 @@ function _renderClAssignees(assigneeIds, teamleden, itemId) {
     return `<div class="tcc-cl-avatars">${avatarHtml}${extra}</div>`;
 }
 
-// Avatar kleurberekening (hergebruik van PP als beschikbaar)
+// Avatar kleurberekening
 function _clAvatarKleur(naam) {
-    if (typeof _ppAvatarKleur === 'function') return _ppAvatarKleur(naam);
     const kleuren = ['#7c3aed','#2563eb','#16a34a','#ea580c','#db2777','#0891b2'];
     let h = 0;
     for (let i = 0; i < naam.length; i++) h = (h * 31 + naam.charCodeAt(i)) & 0xFFFF;
@@ -429,7 +434,7 @@ function _clAvatarKleur(naam) {
 
 function _updateChecklistBadge() {
     const items = tccState.data?.checklist?.items || [];
-    const done = items.filter(i => i.status === 'done').length;
+    const done = items.filter(i => i.status === 'completed').length;
     const total = items.length;
     const badge = tccState.overlay?.querySelector('[data-tab="checklist"] .tcc-tab-badge');
     if (badge) badge.textContent = total > 0 ? `${done}/${total}` : '';
@@ -449,13 +454,19 @@ function handleClToonPicker() {
     _clRerender();
 }
 
+function handleClAanvullenPicker() {
+    tccState.checklistState = 'aanvullen-picker';
+    tccState._clPickerSelected = [];
+    _clRerender();
+}
+
 function handleClAnnuleer() {
     const items = tccState.data?.checklist?.items || [];
     tccState.checklistState = items.length > 0 ? 'data' : 'leeg';
     _clRerender();
 }
 
-function handleClPickerToggle(docId, docNaam) {
+function handleClPickerToggle(docId, _docNaam) {
     if (!tccState._clPickerSelected) tccState._clPickerSelected = [];
     const idx = tccState._clPickerSelected.indexOf(docId);
     if (idx >= 0) {
@@ -470,6 +481,7 @@ async function handleClStartExtractie() {
     const geselecteerd = tccState._clPickerSelected || [];
     if (geselecteerd.length === 0) return;
 
+    const isAanvullen = tccState.checklistState === 'aanvullen-picker';
     tccState.checklistState = 'loading';
     _clRerender();
 
@@ -480,43 +492,54 @@ async function handleClStartExtractie() {
                 method: 'POST',
                 body: JSON.stringify({
                     document_ids: geselecteerd,
-                    overschrijf: true
+                    overschrijf: !isAanvullen,
+                    aanvullen: isAanvullen
                 })
             }
         );
 
         if (resp?.success) {
-            // Herlaad checklist data
-            const clResp = await tccApiCall(
-                `/api/v1/ai-documents/tenders/${tccState.tenderId}/checklist-items`
-            );
-            if (clResp?.items) {
+            if (resp.items) {
                 if (!tccState.data) tccState.data = {};
-                tccState.data.checklist = clResp;
+                tccState.data.checklist = { items: resp.items, total: resp.items.length };
+            } else {
+                const clResp = await tccApiCall(
+                    `/api/v1/ai-documents/tenders/${tccState.tenderId}/checklist-items`
+                );
+                if (clResp?.items) {
+                    if (!tccState.data) tccState.data = {};
+                    tccState.data.checklist = clResp;
+                }
             }
             tccState.checklistState = 'data';
-            showTccToast(`${resp.total || clResp?.total || 0} checklist items geëxtraheerd`, 'success');
+            if (isAanvullen) {
+                showTccToast(`${resp.toegevoegd} nieuwe items toegevoegd, ${resp.overgeslagen} al aanwezig`, 'success');
+            } else {
+                showTccToast(`${resp.toegevoegd || resp.items?.length || 0} items gegenereerd`, 'success');
+            }
         } else {
             throw new Error(resp?.detail || 'Extractie mislukt');
         }
     } catch (err) {
         console.error('[TCC Checklist] Extractie mislukt:', err);
         showTccToast(`Extractie mislukt: ${err.message}`, 'error');
-        tccState.checklistState = 'leeg';
+        const items = tccState.data?.checklist?.items || [];
+        tccState.checklistState = items.length > 0 ? 'data' : 'leeg';
     }
     _clRerender();
 }
 
-// Toggle checkbox: pending → done of done → pending
-async function handleClToggleItem(itemId, huidigStatus) {
-    const nieuweStatus = huidigStatus === 'done' ? 'pending' : 'done';
+// Toggle checkbox: pending/in_progress → done, done → pending
+async function handleClToggleItem(itemId) {
+    const item = (tccState.data?.checklist?.items || []).find(i => i.id === itemId);
+    if (!item) return;
+
+    // Lees altijd de echte status uit state (niet uit DOM-attribuut)
+    const oudeStatus = item.status;
+    const nieuweStatus = oudeStatus === 'completed' ? 'pending' : 'completed';
 
     // Optimistic update
-    const item = (tccState.data?.checklist?.items || []).find(i => i.id === itemId);
-    if (item) {
-        item.status = nieuweStatus;
-        item.checked = nieuweStatus === 'done';
-    }
+    item.status = nieuweStatus;
     _clRerender();
 
     window.showAutoSaveIndicator?.('saving');
@@ -528,7 +551,7 @@ async function handleClToggleItem(itemId, huidigStatus) {
         window.showAutoSaveIndicator?.('saved');
     } catch (err) {
         // Revert
-        if (item) { item.status = huidigStatus; item.checked = huidigStatus === 'done'; }
+        item.status = oudeStatus;
         _clRerender();
         window.showAutoSaveIndicator?.('error');
         showTccToast('Status bijwerken mislukt', 'error');
@@ -556,8 +579,6 @@ function handleClSetDeadline(itemId, btn) {
         </div>`;
 
     const rect = btn.closest('.tcc-cl-item-deadline').getBoundingClientRect();
-    const panel = tccState.overlay?.querySelector('#tcc-panel');
-    const panelRect = panel?.getBoundingClientRect() || { top: 0, left: 0 };
     popup.style.cssText = `position:fixed;top:${rect.bottom + 4}px;left:${rect.left}px;z-index:99999;`;
     document.body.appendChild(popup);
 
@@ -733,10 +754,7 @@ function handleClItemMenu(itemId) {
                 );
             }
         } else if (actie === 'cl-status-toggle') {
-            const volgorde = ['pending', 'in_progress', 'done'];
-            const idx = volgorde.indexOf(item.status);
-            const nieuw = volgorde[(idx + 1) % volgorde.length];
-            await handleClToggleItem(itemId, item.status === 'done' ? 'in_progress' : item.status);
+            await handleClToggleItem(itemId);
         } else if (actie === 'cl-verplicht-toggle') {
             item.is_verplicht = !item.is_verplicht;
             _clRerender();
@@ -763,6 +781,57 @@ function handleClItemMenu(itemId) {
             if (!menu.contains(e.target)) {
                 menu.remove();
                 document.removeEventListener('click', closeOnOutside);
+            }
+        });
+    }, 0);
+}
+
+function handleClToonBron(itemId, btn) {
+    const item = (tccState.data?.checklist?.items || []).find(i => i.id === itemId);
+    if (!item?.bron_tekst) return;
+
+    // Sluit als al open voor dit item
+    const bestaand = document.querySelector(`.tcc-cl-bron-popup[data-bron-id="${itemId}"]`);
+    if (bestaand) {
+        btn.closest('.tcc-cl-item')?.classList.remove('is-actief');
+        bestaand.remove();
+        return;
+    }
+
+    // Sluit alle andere open popups + verwijder is-actief van andere rijen
+    document.querySelectorAll('.tcc-cl-bron-popup').forEach(p => p.remove());
+    document.querySelectorAll('.tcc-cl-item.is-actief').forEach(r => r.classList.remove('is-actief'));
+
+    const popup = document.createElement('div');
+    popup.className = 'tcc-cl-bron-popup';
+    popup.dataset.bronId = itemId;
+    popup.innerHTML = `
+        <div class="tcc-cl-bron-popup-header">
+            <div class="tcc-cl-bron-popup-icon">
+                ${tccIcon('info', 13, '#7c3aed')}
+            </div>
+            <span class="tcc-cl-bron-popup-title">Bronvermelding</span>
+        </div>
+        <div class="tcc-cl-bron-popup-body">
+            <div class="tcc-cl-bron-popup-tekst">"${escHtml(item.bron_tekst)}"</div>
+            ${item.document_naam ? `
+            <div class="tcc-cl-bron-popup-doc">
+                ${tccIcon('fileText', 11, '#475569')} ${escHtml(item.document_naam)}
+            </div>` : ''}
+        </div>`;
+
+    // Inline invoegen na de item-rij (niet als body overlay)
+    const itemRij = btn.closest('.tcc-cl-item');
+    if (!itemRij) return;
+    itemRij.classList.add('is-actief');
+    itemRij.insertAdjacentElement('afterend', popup);
+
+    setTimeout(() => {
+        document.addEventListener('click', function sluit(e) {
+            if (!popup.contains(e.target) && !btn.contains(e.target)) {
+                itemRij.classList.remove('is-actief');
+                popup.remove();
+                document.removeEventListener('click', sluit);
             }
         });
     }, 0);
@@ -873,11 +942,12 @@ async function handleClLoadTemplate() {
 
     popover.querySelector('#cl-template-annuleer')?.addEventListener('click', () => popover.remove());
 
+    const aanvullen = (tccState.data?.checklist?.items || []).length > 0;
     popover.querySelectorAll('.tcc-pp-template-item').forEach(el => {
         el.addEventListener('click', async () => {
             const templateId = el.dataset.templateId;
             popover.remove();
-            await _clLaadTemplate(templateId);
+            await _clLaadTemplate(templateId, aanvullen);
         });
     });
 
@@ -891,25 +961,34 @@ async function handleClLoadTemplate() {
     }, 0);
 }
 
-async function _clLaadTemplate(templateId) {
+async function _clLaadTemplate(templateId, aanvullen = false) {
     tccState.checklistState = 'loading';
     _clRerender();
 
     try {
         const resp = await tccApiCall(
             `/api/v1/ai-documents/tenders/${tccState.tenderId}/populate-checklist-from-template`,
-            { method: 'POST', body: JSON.stringify({ template_id: templateId, overschrijf: true }) }
+            { method: 'POST', body: JSON.stringify({ template_id: templateId, overschrijf: !aanvullen, aanvullen }) }
         );
 
-        const clResp = await tccApiCall(
-            `/api/v1/ai-documents/tenders/${tccState.tenderId}/checklist-items`
-        );
-        if (clResp?.items) {
+        if (resp?.items) {
             if (!tccState.data) tccState.data = {};
-            tccState.data.checklist = clResp;
+            tccState.data.checklist = { items: resp.items, total: resp.items.length };
+        } else {
+            const clResp = await tccApiCall(
+                `/api/v1/ai-documents/tenders/${tccState.tenderId}/checklist-items`
+            );
+            if (clResp?.items) {
+                if (!tccState.data) tccState.data = {};
+                tccState.data.checklist = clResp;
+            }
         }
         tccState.checklistState = 'data';
-        showTccToast('Template geladen', 'success');
+        if (aanvullen) {
+            showTccToast(`${resp?.toegevoegd ?? '?'} template items toegevoegd`, 'success');
+        } else {
+            showTccToast(`Template geladen met ${resp?.toegevoegd ?? '?'} items`, 'success');
+        }
     } catch (err) {
         showTccToast(`Template laden mislukt: ${err.message}`, 'error');
         const items = tccState.data?.checklist?.items || [];
@@ -924,7 +1003,9 @@ async function _clLaadTemplate(templateId) {
 
 function renderChecklistFooter() {
     const items = tccState.data?.checklist?.items || [];
-    const state = tccState.checklistState || (items.length > 0 ? 'data' : 'leeg');
+    const state = tccState.checklistState !== null
+        ? tccState.checklistState
+        : (items.length > 0 ? 'data' : 'leeg');
 
     if (state === 'picker') {
         const geselecteerd = tccState._clPickerSelected || [];
