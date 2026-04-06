@@ -1,0 +1,543 @@
+/* ============================================
+   KalenderView.css — TenderZen Kalender View
+   ============================================ */
+
+.kalender-wrap {
+  padding: 14px 20px 20px;
+  background: var(--color-bg, #F4F5F7);
+  min-height: calc(100vh - 94px);
+}
+
+/* Toolbar */
+.kalender-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.kalender-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+}
+
+.kal-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--color-border, #E5E7EB);
+  background: #fff;
+  color: var(--color-muted, #6B7280);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: background 0.12s;
+}
+.kal-nav-btn:hover { background: #F9FAFB; }
+
+.kal-today-btn {
+  padding: 4px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--color-border, #E5E7EB);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-muted, #6B7280);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.kal-today-btn:hover { background: #F9FAFB; }
+
+.kal-mode-group {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.kal-mode-btn {
+  padding: 4px 12px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-muted, #6B7280);
+  transition: all 0.12s;
+}
+.kal-mode-btn.active {
+  background: #fff;
+  border-color: var(--color-border, #E5E7EB);
+  color: var(--color-text, #111827);
+}
+
+/* ── MAAND GRID ── */
+.kal-month-grid {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--color-border, #E5E7EB);
+  overflow: hidden;
+}
+
+.kal-month-head {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+}
+
+.kal-mh {
+  padding: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+  border-right: 1px solid var(--color-border, #E5E7EB);
+}
+.kal-mh:last-child { border-right: none; }
+
+.kal-month-body {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.kal-day {
+  border-right: 1px solid var(--color-border, #E5E7EB);
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  padding: 6px 5px;
+  min-height: 100px;
+}
+.kal-day:nth-child(7n) { border-right: none; }
+.kal-day.kal-dim { background: #FAFAFA; }
+.kal-day.kal-today { background: #F5F3FF; }
+
+.kal-day-num {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-muted, #6B7280);
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+.kal-day-num.kal-today-num {
+  background: #7C3AED;
+  color: #fff;
+  font-weight: 600;
+}
+.kal-day-num.kal-other-month { color: #D1D5DB; }
+
+/* ── WEEK GRID ── */
+.kal-week-grid {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--color-border, #E5E7EB);
+  overflow: hidden;
+}
+
+.kal-week-head {
+  display: grid;
+  grid-template-columns: 36px repeat(7, minmax(0, 1fr));
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+}
+
+.kal-week-corner {
+  background: #FAFAFA;
+  border-right: 1px solid var(--color-border, #E5E7EB);
+}
+
+.kal-week-dh {
+  padding: 8px 6px;
+  text-align: center;
+  border-right: 1px solid var(--color-border, #E5E7EB);
+  background: #FAFAFA;
+}
+.kal-week-dh:last-child { border-right: none; }
+.kal-week-dh.kal-wk-today { background: #F5F3FF; }
+
+.kal-wk-day-name {
+  font-size: 9px;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.kal-wk-day-num {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  line-height: 1.2;
+}
+.kal-wk-day-num.kal-today-num { color: #7C3AED; }
+
+.kal-week-body {
+  display: grid;
+  grid-template-columns: 36px repeat(7, minmax(0, 1fr));
+}
+
+.kal-week-aside {
+  border-right: 1px solid var(--color-border, #E5E7EB);
+  background: #FAFAFA;
+}
+
+.kal-week-cell {
+  border-right: 1px solid var(--color-border, #E5E7EB);
+  padding: 6px 4px;
+  min-height: 300px;
+}
+.kal-week-cell:last-child { border-right: none; }
+.kal-week-cell.kal-today-cell { background: rgba(245, 243, 255, 0.5); }
+
+/* ── CHIPS ── */
+.kal-chip-wrap {
+  position: relative;
+  margin-bottom: 3px;
+}
+
+.kal-chip {
+  border-radius: 8px;
+  cursor: grab;
+  border: 1.5px solid transparent;
+  background: #FAFAFA;
+  padding: 7px 8px;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+  display: block;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+.kal-chip:hover { background: #F3F4F6; }
+.kal-chip.kal-chip-dimmed { opacity: 0.2; pointer-events: none; }
+.kal-chip-deadline { cursor: default; }
+
+/* Project naam (tendernaam) */
+.kal-chip-project {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+/* Taaknaam */
+.kal-chip-naam {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text, #111827);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+  margin-bottom: 5px;
+}
+
+/* Divider */
+.kal-chip-divider {
+  border: none;
+  border-top: 0.5px solid #E5E7EB;
+  margin: 5px 0;
+}
+
+/* Meta rijen */
+.kal-chip-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 5px;
+}
+.kal-chip-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #6B7280;
+  min-width: 0;
+}
+.kal-chip-meta-row svg {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+}
+.kal-chip-meta-val {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Footer */
+.kal-chip-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+/* Avatars */
+.kal-chip-avs { display: flex; }
+.kal-chip-av {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #FAFAFA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.kal-chip-av + .kal-chip-av { margin-left: -5px; }
+.kal-chip-av-empty {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px dashed #D1D5DB;
+  flex-shrink: 0;
+}
+
+/* Fase badge */
+.kal-fase-badge {
+  font-size: 9px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Deadline chip */
+.kal-deadline-wrap { }
+.kal-deadline-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.kal-dl-diamond {
+  width: 8px;
+  height: 8px;
+  background: #EF4444;
+  transform: rotate(45deg);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+.kal-dl-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #DC2626;
+}
+.kal-dl-date {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #DC2626;
+}
+
+/* ── HOVER DETAIL PANEL ── */
+.kal-chip-wrap .kal-detail-panel {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: calc(100% + 8px);
+  width: 280px;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 300;
+  border: 1.5px solid #E5E7EB;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+}
+.kal-chip-wrap:hover .kal-detail-panel { display: block; }
+.kal-chip-wrap.kal-flip-left .kal-detail-panel {
+  left: auto;
+  right: calc(100% + 8px);
+}
+
+.kal-dp-bar { height: 4px; }
+.kal-dp-body { padding: 13px 14px; }
+.kal-dp-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.kal-dp-project {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.kal-dp-status {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.kal-dp-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+.kal-dp-divider {
+  border: none;
+  border-top: 1px solid #F3F4F6;
+  margin: 8px 0;
+}
+.kal-dp-meta { display: flex; flex-direction: column; gap: 4px; }
+.kal-dp-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-muted, #6B7280);
+}
+.kal-dp-section {
+  font-size: 9px;
+  font-weight: 600;
+  color: #9CA3AF;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 10px 0 5px;
+}
+.kal-dp-prog-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--color-muted, #6B7280);
+  margin-bottom: 4px;
+}
+.kal-dp-track {
+  height: 4px;
+  background: #F3F4F6;
+  border-radius: 2px;
+  margin-bottom: 8px;
+}
+.kal-dp-fill { height: 100%; border-radius: 2px; }
+
+.kal-subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 0;
+  border-bottom: 1px solid #F9FAFB;
+}
+.kal-subtask-row:last-child { border-bottom: none; }
+.kal-st-check {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  border: 1.5px solid #D1D5DB;
+  flex-shrink: 0;
+  position: relative;
+}
+.kal-st-check.done { background: #6366F1; border-color: #6366F1; }
+.kal-st-check.done::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 7px;
+  height: 4px;
+  border-left: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: rotate(-45deg);
+}
+.kal-st-name { flex: 1; font-size: 10px; color: var(--color-text, #111827); }
+.kal-st-name.done { color: #9CA3AF; text-decoration: line-through; }
+.kal-st-avatar {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.kal-dp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid #F3F4F6;
+  margin-top: 6px;
+}
+.kal-dp-avatars { display: flex; }
+.kal-dp-av {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+}
+.kal-dp-av + .kal-dp-av { margin-left: -6px; }
+
+.kal-dl-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+}
+.kal-dl-ok   { background: #ECFDF5; color: #059669; }
+.kal-dl-warn { background: #FFF7ED; color: #D97706; }
+.kal-dl-urg  { background: #FEF2F2; color: #DC2626; }
+.kal-dl-done { background: #ECFDF5; color: #059669; }
+
+/* Lege state */
+.kal-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--color-muted, #6B7280);
+}
+.kal-empty-state-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text, #111827);
+  margin-bottom: 6px;
+}
+.kal-empty-state-sub { font-size: 12px; }
+
+/* ─── Drag & Drop ─────────────────────────────── */
+
+.kal-chip[draggable="true"]:active {
+  cursor: grabbing;
+}
+.kal-chip.kal-chip-dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+.kal-drop-target {
+  background: #F5F3FF !important;
+  outline: 2px dashed #7C3AED;
+  outline-offset: -2px;
+  transition: background 0.1s ease;
+}

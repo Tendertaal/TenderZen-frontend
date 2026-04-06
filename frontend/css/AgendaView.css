@@ -15,27 +15,6 @@
    ══════════════════════════════════════════════ */
 
 .agenda-view {
-    /* Fase-kleuren (gradient start, end, accent) */
-    --acquisitie-start: #d97706;
-    --acquisitie-end: #e5921a;
-    --acquisitie-accent: #ea580c;
-
-    --lopend-start: #6d5ccd;
-    --lopend-end: #7c6fe0;
-    --lopend-accent: #7c3aed;
-
-    --ingediend-start: #0d9263;
-    --ingediend-end: #10b981;
-    --ingediend-accent: #16a34a;
-
-    --afronden-start: #0d9488;
-    --afronden-end: #14b8a6;
-    --afronden-accent: #0d9488;
-
-    --archief-start: #475569;
-    --archief-end: #5a6b80;
-    --archief-accent: #64748b;
-
     /* Surfaces */
     --agenda-bg-app: #f1f5f9;
     --agenda-bg-surface: #ffffff;
@@ -147,59 +126,7 @@
 /* ── Periode switch (Week/Maand/Kwartaal/Jaar) ── */
 .agenda-period-switch {
     display: flex;
-    border: 1px solid var(--agenda-border);
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-.agenda-period-btn {
-    padding: 5px 12px;
-    font-size: 11.5px;
-    font-weight: 500;
-    border: none;
-    background: var(--agenda-bg-surface);
-    color: var(--agenda-text-2);
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
-}
-
-.agenda-period-btn:not(:last-child) {
-    border-right: 1px solid var(--agenda-border);
-}
-
-.agenda-period-btn:hover {
-    background: var(--agenda-bg-muted);
-}
-
-.agenda-period-btn.active {
-    background: var(--agenda-text-1);
-    color: #fff;
-    font-weight: 600;
-}
-
-/* ── Navigatie knoppen ── */
-.agenda-arrow-btn {
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--agenda-border);
-    border-radius: 6px;
-    background: var(--agenda-bg-surface);
-    cursor: pointer;
-    color: var(--agenda-text-2);
-    font-size: 15px;
-    transition: all 0.15s;
-    user-select: none;
-    padding: 0;
-    font-family: inherit;
-}
-
-.agenda-arrow-btn:hover {
-    background: var(--agenda-bg-muted);
-    border-color: var(--agenda-border-dark);
+    gap: 4px;
 }
 
 .agenda-nav-indicator {
@@ -208,23 +135,6 @@
     color: var(--agenda-text-1);
     min-width: 100px;
     text-align: center;
-}
-
-.agenda-today-btn {
-    padding: 5px 12px;
-    border: 1.5px solid var(--agenda-accent);
-    border-radius: 6px;
-    background: var(--agenda-bg-surface);
-    color: var(--agenda-accent);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
-}
-
-.agenda-today-btn:hover {
-    background: var(--agenda-accent-bg);
 }
 
 
@@ -246,38 +156,7 @@
 /* Filter groep (Alle/Mijn) */
 .agenda-filter-group {
     display: flex;
-    border: 1px solid var(--agenda-border);
-    border-radius: 6px;
-    overflow: hidden;
-}
-
-.agenda-filter-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 12px;
-    font-size: 11.5px;
-    font-weight: 500;
-    border: none;
-    background: var(--agenda-bg-surface);
-    color: var(--agenda-text-2);
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
-}
-
-.agenda-filter-btn:not(:last-child) {
-    border-right: 1px solid var(--agenda-border);
-}
-
-.agenda-filter-btn:hover {
-    background: var(--agenda-bg-muted);
-}
-
-.agenda-filter-btn.active {
-    background: var(--agenda-accent);
-    color: #fff;
-    font-weight: 600;
+    gap: 4px;
 }
 
 .agenda-filter-sep {
@@ -684,37 +563,7 @@
     flex-shrink: 0;
 }
 
-/* Deadline badge */
-.agenda-deadline-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 7px;
-    border-radius: 5px;
-    font-size: 10px;
-    font-weight: 600;
-    width: fit-content;
-}
-
-.agenda-deadline-badge.ok {
-    background: var(--agenda-ok-bg);
-    color: var(--agenda-ok);
-}
-
-.agenda-deadline-badge.warn {
-    background: var(--agenda-warn-bg);
-    color: var(--agenda-warn);
-}
-
-.agenda-deadline-badge.danger {
-    background: var(--agenda-danger-bg);
-    color: var(--agenda-danger);
-}
-
-.agenda-deadline-badge.verlopen {
-    background: var(--agenda-verlopen-bg);
-    color: var(--agenda-verlopen);
-}
+/* Deadline pill — vervangen door .tz-dl-pill uit utilities.css */
 
 /* Sidebar footer */
 .agenda-sidebar-footer {
@@ -724,28 +573,9 @@
     margin-top: auto;
 }
 
-/* Avatars */
+/* Avatars — vervangen door .tz-av-circle.tz-av--sm uit utilities.css */
 .agenda-sidebar-avatars {
     display: flex;
-}
-
-.agenda-sidebar-avatar {
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 7px;
-    font-weight: 700;
-    color: #fff;
-    border: 2px solid #fff;
-    margin-left: -3px;
-    flex-shrink: 0;
-}
-
-.agenda-sidebar-avatar:first-child {
-    margin-left: 0;
 }
 
 /* Voortgang */
@@ -1442,283 +1272,57 @@
 }
 
 /* ================================================================
-   AgendaView — "Niet Gepland" sectie
-   TenderZen — 2026-02-11
-   
-   Prefix: ngp- (niet gepland)
-   
-   TOEVOEGEN AAN: Frontend/css/AgendaView.css
-   Plak deze CSS onderaan het bestaande bestand.
+   AgendaView — Lege tijdlijn (tenders zonder planning)
    ================================================================ */
 
-
-/* ════════════════════════════════════════════════
-   SECTIE CONTAINER
-   ════════════════════════════════════════════════ */
-
-.ngp-section {
-    margin-top: 28px;
-    padding-top: 24px;
-    border-top: 1px solid #e2e8f0;
-}
-
-.ngp-header {
+.agenda-timeline-empty {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
+    justify-content: center;
+    min-height: 80px;
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.02) 10px,
+        rgba(0, 0, 0, 0.02) 20px
+    );
 }
 
-.ngp-header-left {
+.agenda-timeline-empty-content {
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-
-.ngp-header-icon {
-    color: #f59e0b;
-    flex-shrink: 0;
-}
-
-.ngp-header-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.2px;
-}
-
-.ngp-header-count {
-    font-size: 12px;
-    color: #94a3b8;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    padding: 2px 10px;
-    border-radius: 10px;
-    font-weight: 500;
-}
-
-
-/* ════════════════════════════════════════════════
-   CARDS GRID
-   ════════════════════════════════════════════════ */
-
-.ngp-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 12px;
-}
-
-@media (max-width: 768px) {
-    .ngp-cards {
-        grid-template-columns: 1fr;
-    }
-}
-
-
-/* ════════════════════════════════════════════════
-   TENDER CARD
-   ════════════════════════════════════════════════ */
-
-.ngp-card {
-    display: flex;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    overflow: hidden;
-    transition: box-shadow 0.2s, border-color 0.2s;
-    animation: ngp-card-in 0.3s ease both;
-}
-
-.ngp-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-color: var(--fase-color, #cbd5e1);
-}
-
-@keyframes ngp-card-in {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Stagger animatie per card */
-.ngp-card:nth-child(1) { animation-delay: 0s; }
-.ngp-card:nth-child(2) { animation-delay: 0.04s; }
-.ngp-card:nth-child(3) { animation-delay: 0.08s; }
-.ngp-card:nth-child(4) { animation-delay: 0.12s; }
-.ngp-card:nth-child(5) { animation-delay: 0.16s; }
-.ngp-card:nth-child(6) { animation-delay: 0.20s; }
-
-/* Accent strip links */
-.ngp-card-accent {
-    width: 4px;
-    flex-shrink: 0;
-    border-radius: 10px 0 0 10px;
-}
-
-/* Card body */
-.ngp-card-body {
-    flex: 1;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
     gap: 10px;
-    min-width: 0;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    border: 1px dashed var(--agenda-border-dark, #cbd5e1);
 }
 
-
-/* ════════════════════════════════════════════════
-   CARD TOP ROW — Fase badge + checklist count
-   ════════════════════════════════════════════════ */
-
-.ngp-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-}
-
-.ngp-fase-badge {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-}
-
-.ngp-checklist-count {
-    font-size: 11px;
-    color: #64748b;
-    font-weight: 500;
-}
-
-
-/* ════════════════════════════════════════════════
-   CARD INFO — Naam, org, deadline
-   ════════════════════════════════════════════════ */
-
-.ngp-card-info {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.ngp-tender-naam {
+.agenda-timeline-empty-text {
     font-size: 13px;
-    font-weight: 600;
-    color: #0f172a;
-    letter-spacing: -0.1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.ngp-tender-org {
-    font-size: 12px;
-    color: #94a3b8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Deadline labels */
-.ngp-deadline {
-    font-size: 11px;
+    color: var(--agenda-text-3, #94a3b8);
     font-weight: 500;
-    margin-top: 4px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
 }
 
-.ngp-deadline--ok { color: #16a34a; }
-.ngp-deadline--warn { color: #d97706; }
-.ngp-deadline--danger { color: #dc2626; font-weight: 600; }
-.ngp-deadline--verlopen { color: #dc2626; font-weight: 700; }
-.ngp-deadline--none { color: #94a3b8; font-style: italic; }
-
-
-/* ════════════════════════════════════════════════
-   CARD ACTIONS — Buttons
-   ════════════════════════════════════════════════ */
-
-.ngp-card-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 4px;
-}
-
-/* Primary: Automatisch plannen */
-.ngp-btn-plan {
-    flex: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 7px 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #ffffff;
-    background: linear-gradient(135deg, #3b82f6, #6366f1);
-    border: none;
+.agenda-timeline-empty-btn {
+    padding: 5px 14px;
     border-radius: 6px;
+    background: #7c3aed;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
     cursor: pointer;
-    transition: all 0.2s;
     white-space: nowrap;
 }
 
-.ngp-btn-plan:hover:not(:disabled) {
-    background: linear-gradient(135deg, #2563eb, #4f46e5);
-    box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
-    transform: translateY(-1px);
-}
-
-.ngp-btn-plan:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.ngp-btn-plan:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    background: #94a3b8;
-}
-
-/* Secondary: Open TCC */
-.ngp-btn-tcc {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    padding: 0;
-    color: #64748b;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-
-.ngp-btn-tcc:hover {
-    color: #3b82f6;
-    border-color: #3b82f6;
-    background: #eff6ff;
+.agenda-timeline-empty-btn:hover {
+    background: #6d28d9;
 }
 
 
-/* ════════════════════════════════════════════════
-   LOADING SPINNER (in button)
-   ════════════════════════════════════════════════ */
-
-.ngp-spinner {
-    animation: ngp-spin 0.8s linear infinite;
-}
-
-@keyframes ngp-spin {
-    to { transform: rotate(360deg); }
-}
-
+/* legacy ngp-section CSS verwijderd — 2026-03-30 */
 
 /* ════════════════════════════════════════════════
    TOAST NOTIFICATIONS (fallback)

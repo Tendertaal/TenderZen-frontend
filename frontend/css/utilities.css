@@ -1,0 +1,171 @@
+/* ============================================
+   utilities.css — Gedeelde UI-patronen TenderZen
+   v1.0 (2026-04-06)
+
+   Klassen:
+     .tz-nav-btn         — pijl-navigatieknop (◀ ▶)
+     .tz-zoom-btn        — periode/filter toggle knop
+     .tz-today-btn       — vandaag-knop
+     .tz-dl-pill         — deadline pill (ok / warn / danger / verlopen)
+     .tz-av-circle       — avatar cirkel (--sm / --md)
+   ============================================ */
+
+
+/* ── Navigatieknop (◀ ▶) ─────────────────── */
+
+.tz-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #374151;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0;
+    font-family: inherit;
+    user-select: none;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.tz-nav-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+
+/* ── Zoom / periode / filter knop ─────────── */
+
+.tz-zoom-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    height: 28px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.tz-zoom-btn:hover {
+    background: #f1f5f9;
+    color: #374151;
+}
+
+.tz-zoom-btn.active {
+    background: #ede9fe;
+    color: #7c3aed;
+    border-color: #c4b5fd;
+    font-weight: 600;
+}
+
+
+/* ── Vandaag-knop ─────────────────────────── */
+
+.tz-today-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    height: 28px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.tz-today-btn:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+
+/* ── Deadline pill ────────────────────────── */
+
+.tz-dl-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 600;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.tz-dl-pill--ok {
+    background: #f0fdf4;
+    color: #16a34a;
+}
+
+.tz-dl-pill--warn {
+    background: #fefce8;
+    color: #a16207;
+}
+
+.tz-dl-pill--danger {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.tz-dl-pill--verlopen {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+
+/* ── Avatar cirkel ────────────────────────── */
+
+.tz-av-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 700;
+    color: #ffffff;
+    flex-shrink: 0;
+    border: 2px solid #ffffff;
+    /* Standaard (md) */
+    width: 24px;
+    height: 24px;
+    font-size: 9px;
+}
+
+.tz-av--sm {
+    width: 18px;
+    height: 18px;
+    font-size: 7px;
+    margin-left: -3px;
+}
+
+.tz-av--sm:first-child {
+    margin-left: 0;
+}
+
+.tz-av--md {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+    margin-left: -5px;
+}
+
+.tz-av--md:first-child {
+    margin-left: 0;
+}

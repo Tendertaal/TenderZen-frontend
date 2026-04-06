@@ -27,6 +27,10 @@ class PlanningServiceClass {
     this._countsCache = null;
     this._countsCacheTime = 0;
     this._countsCacheTTL = 30000; // 30 seconden
+    // Agenda data cache (gedeeld tussen AgendaView, KalenderView, GanttView)
+    this._cache = null;
+    this._cacheKey = null;
+    this._cachePromise = null;
   }
 
   /**
@@ -102,6 +106,50 @@ class PlanningServiceClass {
   // ============================================
 
   /**
+   * Haal planning data op voor het actieve bureau met cache.
+   * Gedeeld tussen AgendaView, KalenderView en GanttView.
+   * Cache invalideert automatisch bij bureau switch via invalidateCache().
+   */
+  async getDataForActiveBureau(startDate, endDate) {
+    const bureauId = window.app?.currentBureau?.bureau_id;
+    const cacheKey = `${bureauId}_${startDate}_${endDate}`;
+
+    // Cache hit
+    if (this._cache && this._cacheKey === cacheKey) {
+      return this._cache;
+    }
+
+    // Lopende fetch — wacht op dezelfde promise (geen dubbele API calls)
+    if (this._cachePromise && this._cacheKey === cacheKey) {
+      return this._cachePromise;
+    }
+
+    this._cacheKey = cacheKey;
+    this._cachePromise = this.getAgendaData(startDate, endDate, null, bureauId)
+      .then(data => {
+        this._cache = data;
+        this._cachePromise = null;
+        return data;
+      })
+      .catch(err => {
+        this._cachePromise = null;
+        this._cacheKey = null;
+        throw err;
+      });
+
+    return this._cachePromise;
+  }
+
+  /**
+   * Invalideer de agenda cache (aanroepen bij bureau switch).
+   */
+  invalidateCache() {
+    this._cache = null;
+    this._cacheKey = null;
+    this._cachePromise = null;
+  }
+
+  /**
    * Haal agenda-data op: alle taken over alle tenders voor het bureau binnen een datumbereik
    * Endpoint: GET /api/v1/planning/agenda?start_date=...&end_date=...
    * 
@@ -110,12 +158,13 @@ class PlanningServiceClass {
    * @param {string|null} teamMemberId - Optioneel: filter op teamlid UUID
    * @returns {Promise<object>} { taken, tenders, team_members }
    */
-  async getAgendaData(startDate, endDate, userId = null) {
+  async getAgendaData(startDate, endDate, userId = null, bureauId = null) {
     const params = new URLSearchParams({
       start_date: startDate,
       end_date: endDate
     });
     if (userId) params.append('user_id', userId);
+    if (bureauId) params.append('tenderbureau_id', bureauId);
 
     const url = `/api/v1/planning/agenda?${params.toString()}`;
     console.log('📡 PlanningService.getAgendaData() →', url);
@@ -394,3 +443,6 @@ class PlanningServiceClass {
 // Singleton export
 export const planningService = new PlanningServiceClass();
 export default planningService;
+
+// Expose globally zodat non-module scripts (KalenderView, GanttView) er bij kunnen
+window.planningService = planningService;

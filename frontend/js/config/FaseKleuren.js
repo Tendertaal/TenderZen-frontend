@@ -77,8 +77,13 @@ const FaseKleuren = {
  */
 FaseKleuren.get = function(faseId) {
     const aliassen = {
-        afronden: 'evaluatie',
-        lopend:   'inschrijvingen',
+        afronden:           'evaluatie',
+        wacht_op_evaluatie: 'evaluatie',
+        lopend:             'inschrijvingen',
+        zoeken_bedrijf:     'acquisitie',
+        gewonnen:           'archief',
+        verloren:           'archief',
+        ingetrokken:        'archief',
     };
     const key = aliassen[faseId] || faseId;
     return this[key] || this.archief;

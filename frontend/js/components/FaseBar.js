@@ -74,9 +74,7 @@ class FaseBar {
             const count = this._counts[f.id] || 0;
             const isActive = this._selectedFases.has(f.id);
             const k = this._kleur(f.id);
-            const badgeStyle = isActive
-                ? `background:${k.activeBadgeBg};color:#fff`
-                : `background:${k.badgeBg};color:${k.badgeText}`;
+            const badgeStyle = `background:${k.activeBadgeBg};color:#fff`;
             const badge = count > 0
                 ? `<span class="tz-fasebar-count" style="${badgeStyle}">${count}</span>`
                 : '';
@@ -176,13 +174,8 @@ class FaseBar {
 
             const countEl = btn.querySelector('.tz-fasebar-count');
             if (countEl) {
-                if (isActive) {
-                    countEl.style.background = k.activeBadgeBg;
-                    countEl.style.color = '#fff';
-                } else {
-                    countEl.style.background = k.badgeBg;
-                    countEl.style.color = k.badgeText;
-                }
+                countEl.style.background = k.activeBadgeBg;
+                countEl.style.color = '#fff';
             }
         });
     }
@@ -219,8 +212,8 @@ class FaseBar {
                     btn.appendChild(countEl);
                 }
                 countEl.textContent = count;
-                countEl.style.background = isActive ? k.activeBadgeBg : k.badgeBg;
-                countEl.style.color = isActive ? '#fff' : k.badgeText;
+                countEl.style.background = k.activeBadgeBg;
+                countEl.style.color = '#fff';
             } else if (countEl) {
                 countEl.remove();
             }

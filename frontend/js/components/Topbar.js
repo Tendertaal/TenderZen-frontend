@@ -58,7 +58,13 @@ class Topbar {
                         ${this._icon('listView')}<span>Lijst</span>
                     </button>
                     <button class="tz-topbar-pill${this._activeView === 'planning' ? ' active' : ''}" data-view="planning">
-                        ${this._icon('calendarView')}<span>Agenda</span>
+                        ${this._icon('calendarView')}<span>Planning</span>
+                    </button>
+                    <button class="tz-topbar-pill${this._activeView === 'kalender' ? ' active' : ''}" data-view="kalender">
+                        ${this._icon('calendar')}<span>Kalender</span>
+                    </button>
+                    <button class="tz-topbar-pill${this._activeView === 'gantt' ? ' active' : ''}" data-view="gantt">
+                        ${this._icon('barChart')}<span>Gantt</span>
                     </button>
                     <button class="tz-topbar-pill${this._activeView === 'kanban' ? ' active' : ''}" data-view="kanban">
                         ${this._icon('grid')}<span>Kanban</span>

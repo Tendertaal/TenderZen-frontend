@@ -87,10 +87,16 @@ export class App {
         // KanbanView (apart beheerd)
         this.kanbanView = null;
 
+        // KalenderView (apart beheerd)
+        this.kalenderView = null;
+
+        // GanttView (apart beheerd)
+        this.ganttView = null;
+
         // State
         this.currentView = 'totaal';
         this.previousView = 'totaal';
-        this.currentViewType = 'lijst'; // lijst, planning, kanban
+        this.currentViewType = 'lijst'; // lijst, planning, kanban, kalender
         this.tenders = []; // Master data - all tenders
         this.isSuperAdmin = false;
 
@@ -291,6 +297,7 @@ export class App {
         try {
             bedrijvenService.clearCache();
             teamService.clearCache();
+            window.planningService?.invalidateCache?.();
 
             const bureauId = newBureau?.bureau_id || null;
             await bedrijvenService.loadBedrijven(
@@ -320,6 +327,16 @@ export class App {
 
         if (this.currentViewType === 'kanban' && this.kanbanView) {
             this.kanbanView.setTenders(this.tenders);
+            return;
+        }
+
+        if (this.currentViewType === 'kalender' && this.kalenderView) {
+            this.kalenderView.refresh();
+            return;
+        }
+
+        if (this.currentViewType === 'gantt' && this.ganttView) {
+            this.ganttView.refresh();
             return;
         }
 
@@ -662,7 +679,17 @@ export class App {
             }
 
             if (this.currentViewType === 'planning') {
-                // AgendaView laadt eigen data, fase filter hier niet van toepassing
+                if (this.agendaView) this.agendaView.setFaseFilter(fases);
+                return;
+            }
+
+            if (this.currentViewType === 'kalender') {
+                if (this.kalenderView) this.kalenderView.setFaseFilter(fases);
+                return;
+            }
+
+            if (this.currentViewType === 'gantt') {
+                if (this.ganttView) this.ganttView.setFaseFilter(fases);
                 return;
             }
 
@@ -809,6 +836,16 @@ export class App {
         this.agendaView.onOpenPlanningModal = (tenderId, openType) => {
             this.handleOpenPlanningModal(tenderId, openType || 'planning');
         };
+
+        // Initialize KalenderView
+        if (window.KalenderView) {
+            this.kalenderView = new window.KalenderView();
+        }
+
+        // Initialize GanttView
+        if (window.GanttView) {
+            this.ganttView = new window.GanttView();
+        }
 
         // ⭐ v3.1: Initialize KanbanView met dynamische fase config
         this.kanbanView = new KanbanView({
@@ -1122,6 +1159,20 @@ export class App {
             this.header.setActiveView('lijst');
         }
 
+        // Unmount kalender als die actief was
+        if (this.currentViewType === 'kalender' && this.kalenderView) {
+            this.kalenderView.unmount();
+            this.currentViewType = 'lijst';
+            if (this.topbar) this.topbar.setActiveView('lijst');
+        }
+
+        // Unmount gantt als die actief was
+        if (this.currentViewType === 'gantt' && this.ganttView) {
+            this.ganttView.unmount();
+            this.currentViewType = 'lijst';
+            if (this.topbar) this.topbar.setActiveView('lijst');
+        }
+
         if (this.views[this.currentView]) {
             this.views[this.currentView].unmount();
         }
@@ -1216,35 +1267,51 @@ export class App {
         // Sync topbar pill
         if (this.topbar) this.topbar.setActiveView(viewType);
 
-        if (viewType === 'planning') {
-            if (previousViewType === 'kanban' && this.kanbanView) {
-                this.kanbanView.unmount();
-            } else if (this.views[this.currentView]) {
-                this.views[this.currentView].unmount();
-            }
+        // Helper: unmount de vorige view
+        const unmountPrevious = () => {
+            if (previousViewType === 'planning' && this.agendaView) this.agendaView.unmount();
+            if (previousViewType === 'kanban' && this.kanbanView) this.kanbanView.unmount();
+            if (previousViewType === 'kalender' && this.kalenderView) this.kalenderView.unmount();
+            if (previousViewType === 'gantt' && this.ganttView) this.ganttView.unmount();
+            if (previousViewType === 'lijst' && this.views[this.currentView]) this.views[this.currentView].unmount();
+        };
 
+        if (viewType === 'planning') {
+            unmountPrevious();
             this.agendaView.mount(this.contentContainer);
+            if (this.currentFaseFilter) this.agendaView.setFaseFilter(this.currentFaseFilter);
             console.log('📅 AgendaView gemount');
 
-        } else if (viewType === 'kanban') {
-            if (previousViewType === 'planning' && this.agendaView) {
-                this.agendaView.unmount();
-            } else if (this.views[this.currentView]) {
-                this.views[this.currentView].unmount();
+        } else if (viewType === 'kalender') {
+            unmountPrevious();
+            if (this.kalenderView) {
+                window.planningService?.invalidateCache?.();
+                this.kalenderView.mount(this.contentContainer);
+                if (this.currentFaseFilter) this.kalenderView.setFaseFilter(this.currentFaseFilter);
             }
+            console.log('📆 KalenderView gemount');
 
+        } else if (viewType === 'gantt') {
+            unmountPrevious();
+            if (this.ganttView) {
+                window.planningService?.invalidateCache?.();
+                this.ganttView.mount(this.contentContainer);
+                if (this.currentFaseFilter) this.ganttView.setFaseFilter(this.currentFaseFilter);
+            }
+            console.log('📊 GanttView gemount');
+
+        } else if (viewType === 'kanban') {
+            unmountPrevious();
             this.kanbanView.mount(this.contentContainer);
             this.kanbanView.setTenders(this.tenders);
             if (this.currentFaseFilter) this.kanbanView.setFaseFilter(this.currentFaseFilter);
             console.log('⊞ KanbanView gemount');
 
         } else if (viewType === 'lijst') {
-            if (previousViewType === 'planning' && this.agendaView) {
-                this.agendaView.unmount();
-            }
-            if (previousViewType === 'kanban' && this.kanbanView) {
-                this.kanbanView.unmount();
-            }
+            if (previousViewType === 'planning' && this.agendaView) this.agendaView.unmount();
+            if (previousViewType === 'kanban' && this.kanbanView) this.kanbanView.unmount();
+            if (previousViewType === 'kalender' && this.kalenderView) this.kalenderView.unmount();
+            if (previousViewType === 'gantt' && this.ganttView) this.ganttView.unmount();
 
             const currentTenderView = this.views[this.currentView];
             if (currentTenderView) {

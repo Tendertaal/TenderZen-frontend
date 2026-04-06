@@ -61,10 +61,10 @@
     padding: 0 16px;
     border: none;
     background: transparent;
-    border-radius: 6px;
+    border-radius: 7px;
     font-size: 14px;
-    font-weight: 400;
-    color: #64748b;
+    font-weight: 500;
+    color: #6B7280;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
     white-space: nowrap;
@@ -72,14 +72,16 @@
 }
 
 .tz-topbar-pill:hover {
-    color: #1e293b;
-    background: rgba(255, 255, 255, 0.6);
+    background: #F9FAFB;
+    color: #374151;
 }
 
 .tz-topbar-pill.active {
-    background: #ffffff;
-    color: #1e293b;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: #F5F3FF;
+    color: #5B21B6;
+    font-weight: 600;
+    border: 1.5px solid #C4B5FD;
+    border-radius: 8px;
 }
 
 /* ── Context-gevoelige actieknop ────────────── */

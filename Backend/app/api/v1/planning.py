@@ -317,8 +317,69 @@ async def get_agenda_data(
     db: Client = Depends(get_user_db)
 ):
     try:
+        # Resolve bureau eerst — nodig om alle tenders voor dit bureau op te halen
+        bureau_id = await resolve_bureau_id(
+            user,
+            explicit_bureau_id=tenderbureau_id,
+            db=db,
+            required=False
+        )
+
+        is_super_admin = user.get('is_super_admin', False)
+
+        def _map_tender(t: dict) -> dict:
+            """Plat de geneste bedrijven-relatie uit naar bedrijfsnaam."""
+            bedrijven_data = t.get('bedrijven') or {}
+            bedrijfsnaam = bedrijven_data.get('bedrijfsnaam', '') if isinstance(bedrijven_data, dict) else ''
+            return {
+                'id':                 t['id'],
+                'naam':               t.get('naam'),
+                'opdrachtgever':      t.get('opdrachtgever'),
+                'bedrijfsnaam':       bedrijfsnaam,
+                'fase':               t.get('fase'),
+                'fase_status':        t.get('fase_status'),
+                'deadline_indiening': t.get('deadline_indiening'),
+                'tenderbureau_id':    t.get('tenderbureau_id'),
+            }
+
+        TENDERS_SELECT = 'id, naam, opdrachtgever, fase, fase_status, deadline_indiening, tenderbureau_id, bedrijven(bedrijfsnaam)'
+
+        # Haal ALLE tenders op voor dit bureau (ook zonder planning)
+        tenders = {}
+        bureau_tender_ids = []
+        if bureau_id:
+            # Specifiek bureau geselecteerd (normale user of super-admin met bureau)
+            all_tenders_result = db.table('tenders') \
+                .select(TENDERS_SELECT) \
+                .eq('tenderbureau_id', bureau_id) \
+                .neq('fase', 'archief') \
+                .execute()
+            for t in (all_tenders_result.data or []):
+                mapped = _map_tender(t)
+                tenders[mapped['id']] = mapped
+                bureau_tender_ids.append(mapped['id'])
+        elif is_super_admin:
+            # Super-admin "Alle bureau's" — haal alle niet-archief tenders op
+            all_tenders_result = db.table('tenders') \
+                .select(TENDERS_SELECT) \
+                .neq('fase', 'archief') \
+                .execute()
+            for t in (all_tenders_result.data or []):
+                mapped = _map_tender(t)
+                tenders[mapped['id']] = mapped
+                bureau_tender_ids.append(mapped['id'])
+
+        if not bureau_tender_ids:
+            # Geen bureau context en geen super-admin → lege response
+            return {
+                "success": True,
+                "data": {"taken": [], "tenders": tenders, "v_bureau_team": []}
+            }
+
+        # Planning taken gefilterd op bureau tenders
         planning_query = db.table('planning_taken') \
             .select('*') \
+            .in_('tender_id', bureau_tender_ids) \
             .gte('datum', start_date) \
             .lte('datum', end_date)
 
@@ -330,6 +391,7 @@ async def get_agenda_data(
 
         checklist_query = db.table('checklist_items') \
             .select('*') \
+            .in_('tender_id', bureau_tender_ids) \
             .gte('deadline', start_date) \
             .lte('deadline', end_date)
 
@@ -345,22 +407,7 @@ async def get_agenda_data(
             c['datum'] = c.get('deadline')
             taken.append(c)
 
-        tender_ids = list(set(t.get('tender_id') for t in taken if t.get('tender_id')))
-        tenders = {}
-        if tender_ids:
-            tender_result = db.table('tenders') \
-                .select('id, naam, opdrachtgever, fase, fase_status, deadline_indiening') \
-                .in_('id', tender_ids) \
-                .execute()
-            tenders = {t['id']: t for t in (tender_result.data or [])}
-
         team_members = []
-        bureau_id = await resolve_bureau_id(
-            user,
-            explicit_bureau_id=tenderbureau_id,
-            db=db,
-            required=False
-        )
         if bureau_id:
             team_result = db.table('v_bureau_team') \
                 .select('user_id, naam, email, initialen, avatar_kleur, bureau_rol') \
@@ -374,7 +421,7 @@ async def get_agenda_data(
             "data": {
                 "taken": taken,
                 "tenders": tenders,
-                "team_members": team_members
+                "v_bureau_team": team_members,
             }
         }
 

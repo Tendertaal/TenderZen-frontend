@@ -534,13 +534,17 @@ async function handlePpStartGenereren() {
         return;
     }
 
+    const tenderId = tccState.tenderId;
+    if (!tenderId) {
+        showTccToast('Geen tender geselecteerd', 'error');
+        return;
+    }
+
     tccState.projectplanningState = 'loading';
     panel.querySelector('.tcc-pp-container').innerHTML = _renderPpLoading();
     _animeerPpStappen();
 
     try {
-        const tenderId = tccState.tenderId;
-        if (!tenderId) throw new Error('Geen tender geselecteerd');
 
         const result = await tccApiCall(
             `/api/v1/ai-documents/tenders/${tenderId}/generate-backplanning`,
@@ -568,12 +572,67 @@ async function handlePpStartGenereren() {
         showTccToast(`✅ ${aangemaakt} taken aangemaakt`, 'success');
 
     } catch (err) {
+        const errMsg = err.message || String(err);
+        const isApiLimiet = errMsg.includes('API usage limits') || errMsg.includes('rate_limit') ||
+                            errMsg.includes('overloaded') || err.status === 429;
+
+        if (isApiLimiet) {
+            console.warn('[TCC] AI API limiet bereikt — probeer template fallback');
+            showTccToast(
+                'AI-credits zijn tijdelijk op. Planning wordt aangemaakt op basis van het template — je kunt handmatig aanvullen.',
+                'warn',
+                8000
+            );
+            try {
+                await _ppTemplateOnlyFallback(tenderId, deadline, uitvoerder);
+                return;
+            } catch (fallbackErr) {
+                console.error('[TCC] Template fallback ook mislukt:', fallbackErr);
+            }
+        }
+
         console.error('[TCC] Backplanning genereren mislukt:', err);
         tccState.projectplanningState = 'config';
         const panelEl = _ppGetPanel();
         if (panelEl) panelEl.outerHTML = renderTabProjectplanning(tccState.data || {});
-        showTccToast(`Genereren mislukt: ${err.message}`, 'error');
+        showTccToast(`Genereren mislukt: ${errMsg}`, 'error');
     }
+}
+
+async function _ppTemplateOnlyFallback(tenderId, deadline, uitvoerder) {
+    const bureauId = tccState.data?.tender?.tenderbureau_id;
+    if (!bureauId) throw new Error('Geen tenderbureau_id beschikbaar voor template fallback');
+
+    // Haal template-lijst op voor dit bureau
+    const templatesResp = await tccApiCall(`/api/v1/planning-templates?tenderbureau_id=${bureauId}`);
+    const templates = templatesResp?.data || templatesResp || [];
+    const template = Array.isArray(templates)
+        ? templates.find(t => t.is_standaard) || templates[0]
+        : null;
+
+    if (!template) throw new Error('Geen planning template gevonden voor dit bureau');
+
+    const teamAssignments = uitvoerder ? { tendermanager: uitvoerder } : {};
+
+    await tccApiCall('/api/v1/planning/generate-backplanning', {
+        method: 'POST',
+        body: JSON.stringify({
+            deadline,
+            template_id: template.id,
+            team_assignments: teamAssignments,
+            tenderbureau_id: bureauId,
+            tender_id: tenderId,
+            include_checklist: true
+        })
+    });
+
+    const freshData = await fetchTccData(tenderId);
+    tccState.data = freshData;
+    tccState.projectplanningState = 'data';
+    const panelEl = _ppGetPanel();
+    if (panelEl) panelEl.outerHTML = renderTabProjectplanning(freshData);
+    const aangemaakt = freshData.projectplanning?.taken?.length || 0;
+    showTccToast(`${aangemaakt} taken aangemaakt (template, zonder AI)`, 'success');
 }
 
 function _animeerPpStappen() {
