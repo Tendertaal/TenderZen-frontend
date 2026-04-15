@@ -225,7 +225,7 @@ export class TeamledenView extends BaseView {
         const initials = member.initialen || this.generateInitials(member.naam);
         const capaciteit = member.capaciteit_uren_per_week || 0;
         const invitationStatus = member.invitation_status || 'not_invited';
-        const bureauNaam = member.bureau_naam || member.tenderbureau?.naam || '-';
+        const bureauNaam = member.bureau_naam || member.tenderbureau?.bureau_naam || '-';
 
         // Add inactive class if member is not active
         const inactiveClass = member.is_active === false ? ' teamlid--inactive' : '';

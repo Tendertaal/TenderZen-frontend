@@ -74,7 +74,7 @@ async def get_profile(
         if is_super:
             # Super-admin: toon alle bureaus
             bureau_result = db.table('tenderbureaus').select(
-                'id, naam'
+                'id, bureau_naam'
             ).execute()
             for bureau in (bureau_result.data or []):
                 # Tel teamleden en tenders per bureau
@@ -88,7 +88,7 @@ async def get_profile(
 
                 bureaus.append({
                     'bureau_id': bureau['id'],
-                    'bureau_naam': bureau['naam'],
+                    'bureau_naam': bureau['bureau_naam'],
                     'role': 'super-admin',
                     'is_active': True,
                     'team_count': team_count.count if team_count.count else 0,
@@ -97,12 +97,12 @@ async def get_profile(
         else:
             # Normale user: toon eigen bureau-koppelingen
             access_result = db.table('user_bureau_access').select(
-                'tenderbureau_id, role, is_active, tenderbureaus(naam)'
+                'tenderbureau_id, role, is_active, tenderbureaus(bureau_naam)'
             ).eq('user_id', user_id).eq('is_active', True).execute()
 
             for access in (access_result.data or []):
                 bureau_id = access.get('tenderbureau_id')
-                bureau_naam = access.get('tenderbureaus', {}).get('naam', 'Onbekend')
+                bureau_naam = access.get('tenderbureaus', {}).get('bureau_naam', 'Onbekend')
 
                 tender_count = db.table('tenders').select(
                     'id', count='exact'

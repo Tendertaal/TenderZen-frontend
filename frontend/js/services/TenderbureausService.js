@@ -25,7 +25,7 @@ class TenderbureausService {
             const { data: bureaus, error } = await supabase
                 .from('tenderbureaus')
                 .select('*')
-                .order('naam');
+                .order('bureau_naam');
 
             if (error) throw error;
 
@@ -117,7 +117,7 @@ class TenderbureausService {
      */
     async createBureau(bureauData) {
         try {
-            console.log('🏢 Creating new tenderbureau:', bureauData.naam);
+            console.log('🏢 Creating new tenderbureau:', bureauData.bureau_naam);
 
             // Check if slug is unique
             const slugExists = await this.checkSlugExists(bureauData.slug);
@@ -128,7 +128,7 @@ class TenderbureausService {
             const { data, error } = await supabase
                 .from('tenderbureaus')
                 .insert([{
-                    naam: bureauData.naam,
+                    bureau_naam: bureauData.bureau_naam,
                     slug: bureauData.slug,
                     email: bureauData.email || null,
                     telefoon: bureauData.telefoon || null,
@@ -146,7 +146,7 @@ class TenderbureausService {
 
             if (error) throw error;
 
-            console.log('✅ Tenderbureau created:', data.naam);
+            console.log('✅ Tenderbureau created:', data.bureau_naam);
             
             // Refresh cache
             this.loaded = false;
@@ -178,7 +178,7 @@ class TenderbureausService {
             // Build update object - only include fields that are provided
             const updateData = {};
             
-            if (bureauData.naam !== undefined) updateData.naam = bureauData.naam;
+            if (bureauData.bureau_naam !== undefined) updateData.bureau_naam = bureauData.bureau_naam;
             if (bureauData.slug !== undefined) updateData.slug = bureauData.slug;
             if (bureauData.email !== undefined) updateData.email = bureauData.email || null;
             if (bureauData.telefoon !== undefined) updateData.telefoon = bureauData.telefoon || null;
@@ -204,7 +204,7 @@ class TenderbureausService {
 
             if (error) throw error;
 
-            console.log('✅ Tenderbureau updated:', data.naam);
+            console.log('✅ Tenderbureau updated:', data.bureau_naam);
             
             // Refresh cache
             this.loaded = false;

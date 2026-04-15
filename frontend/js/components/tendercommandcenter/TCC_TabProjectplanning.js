@@ -7,7 +7,7 @@
    - Inline datum-picker (identiek aan PlanningEventHandlers.handleSetDate)
    - Assignee dropdown met teamleden (meerdere tegelijk, identiek aan standalone)
    - 3-dot menu: Naam bewerken | Status wijzigen | Verwijderen
-   - Template laden via /api/v1/planning/tenders/{id}/populate-from-template
+   - Template laden via /api/v1/ai-documents/tenders/{id}/populate-from-template
    - Taak toevoegen via prompt (inline in data-state)
    - Auto-save indicator via window.showAutoSaveIndicator?.()
    - Alle handlers via switch in TCC_Core.js initTccEvents()
@@ -98,6 +98,19 @@ function _ppRerender() {
     const taken = tccState.data?.projectplanning?.taken || [];
     const state = tccState.projectplanningState || (taken.length > 0 ? 'data' : 'leeg');
     container.innerHTML = _renderPpInhoud(state, tccState.data?.projectplanning || {}, tccState.data || {});
+    _ppAttachBufferListener(panel);
+}
+
+function _ppAttachBufferListener(panel) {
+    const select = panel?.querySelector('#pp-buffer');
+    const toelichting = panel?.querySelector('#pp-buffer-toelichting');
+    if (!select || !toelichting) return;
+    select.addEventListener('change', () => {
+        const v = parseInt(select.value, 10);
+        toelichting.textContent = v === 0
+            ? 'De interne deadline valt op de inschrijvingsdeadline zelf.'
+            : `De interne deadline wordt ${v} werkdag${v === 1 ? '' : 'en'} vóór de inschrijvingsdeadline gezet.`;
+    });
 }
 
 // ============================================
@@ -200,16 +213,10 @@ function _renderPpConfig(pp, data) {
         </div>
         <div class="tcc-actie-balk-info">
             <div class="tcc-actie-balk-title">Backplanning genereren</div>
-            <div class="tcc-actie-balk-desc">Automatische backplanning op basis van de inschrijvingsdeadline.</div>
+            <div class="tcc-actie-balk-desc">Laadt automatisch een bureautemplate en laat AI de datums invullen op basis van de inschrijvingsdeadline.</div>
         </div>
         ${heeftTaken ? `<button class="tcc-btn tcc-btn--ghost tcc-btn--sm" data-action="pp-annuleer">Annuleren</button>` : ''}
     </div>
-
-    ${heeftTaken ? `
-    <div class="tcc-pp-warning">
-        ${tccIcon('warning', 16, '#d97706')}
-        <div><strong>Er zijn al ${taken.length} taken aanwezig.</strong> Opnieuw genereren overschrijft de bestaande planning.</div>
-    </div>` : ''}
 
     <div class="tcc-pp-config-card">
         <div class="tcc-pp-config-titel">Configuratie</div>
@@ -219,20 +226,17 @@ function _renderPpConfig(pp, data) {
                 <input type="date" id="pp-deadline" value="${deadlineVal}">
             </div>
             <div class="tcc-pp-config-veld">
-                <label>Werkdagen buffer</label>
+                <label>Interne deadline (vóór externe deadline)</label>
                 <select id="pp-buffer">
+                    <option value="0">0 werkdagen</option>
+                    <option value="1">1 werkdag</option>
                     <option value="2">2 werkdagen</option>
                     <option value="3" selected>3 werkdagen</option>
                     <option value="5">5 werkdagen</option>
                 </select>
-            </div>
-            <div class="tcc-pp-config-veld">
-                <label>Template</label>
-                <select id="pp-template">
-                    <option value="standaard">Standaard inschrijving</option>
-                    <option value="complex">Technisch complex</option>
-                    <option value="snel">Snel traject</option>
-                </select>
+                <div id="pp-buffer-toelichting" style="font-size:11px;color:#64748b;margin-top:4px;">
+                    De interne deadline wordt 3 werkdagen vóór de inschrijvingsdeadline gezet.
+                </div>
             </div>
             <div class="tcc-pp-config-veld">
                 <label>Primaire uitvoerder</label>
@@ -245,13 +249,6 @@ function _renderPpConfig(pp, data) {
                     }).join('')}
                 </select>
             </div>
-            ${heeftTaken ? `
-            <div class="tcc-pp-config-veld tcc-pp-config-veld--full">
-                <div class="tcc-pp-config-checkbox">
-                    <input type="checkbox" id="pp-overschrijf" checked>
-                    <label for="pp-overschrijf">Bestaande taken overschrijven</label>
-                </div>
-            </div>` : ''}
         </div>
         <button class="tcc-btn tcc-btn--primary tcc-pp-genereer-btn" data-action="pp-start-genereren">
             ${tccIcon('zap', 14, '#fff')} Genereer backplanning
@@ -507,6 +504,7 @@ function _ppRenderDatum(taak, isDone, isActive, isDeadline) {
 function handlePpToonConfig() {
     tccState.projectplanningState = 'config';
     _ppRerender();
+    _ppAttachBufferListener(_ppGetPanel());
 }
 
 function handlePpAnnuleer() {
@@ -525,9 +523,7 @@ async function handlePpStartGenereren() {
 
     const deadline   = panel.querySelector('#pp-deadline')?.value || '';
     const buffer     = panel.querySelector('#pp-buffer')?.value || '3';
-    const template   = panel.querySelector('#pp-template')?.value || 'standaard';
     const uitvoerder = panel.querySelector('#pp-uitvoerder')?.value || '';
-    const overschrijf = panel.querySelector('#pp-overschrijf')?.checked ?? true;
 
     if (!deadline) {
         showTccToast('Vul een inschrijvingsdeadline in', 'warn');
@@ -540,19 +536,64 @@ async function handlePpStartGenereren() {
         return;
     }
 
+    // B) Bevestigingsdialoog als er al taken bestaan
+    const bestaandeTaken = tccState.data?.projectplanning?.taken || [];
+    if (bestaandeTaken.length > 0) {
+        const bevestigd = confirm(
+            `Er staan al ${bestaandeTaken.length} taken in de planning. Wil je deze overschrijven?`
+        );
+        if (!bevestigd) return;
+    }
+
     tccState.projectplanningState = 'loading';
     panel.querySelector('.tcc-pp-container').innerHTML = _renderPpLoading();
     _animeerPpStappen();
 
     try {
+        const bureauId = tccState.data?.tender?.tenderbureau_id || window.app?.currentBureau?.id;
 
+        // Als er nog geen taken zijn: laad eerst template zodat de AI datums kan invullen
+        if (bestaandeTaken.length === 0) {
+            let templateId = null;
+            if (bureauId) {
+                try {
+                    const templatesResp = await tccApiCall(
+                        `/api/v1/planning-templates?type=planning&tenderbureau_id=${bureauId}`,
+                        { method: 'GET' }
+                    );
+                    const templates = templatesResp?.data || [];
+                    const gekozenTemplate = templates.find(t => t.is_standaard) || templates[0] || null;
+                    templateId = gekozenTemplate?.id || null;
+                } catch (templateErr) {
+                    console.warn('[TCC] Templates ophalen mislukt:', templateErr);
+                }
+            }
+            if (templateId) {
+                await tccApiCall(
+                    `/api/v1/ai-documents/tenders/${tenderId}/populate-from-template`,
+                    {
+                        method: 'POST',
+                        body: JSON.stringify({ template_id: templateId, overschrijf: false })
+                    }
+                );
+            } else {
+                showTccToast('Geen template gevonden voor dit bureau. Maak eerst een planningstemplate aan.', 'warn', 6000);
+                tccState.projectplanningState = 'config';
+                const panelEl = _ppGetPanel();
+                if (panelEl) panelEl.outerHTML = renderTabProjectplanning(tccState.data || {});
+                return;
+            }
+        }
+
+        // AI vult datums in op de bestaande taken (geen DELETE/INSERT)
         const result = await tccApiCall(
             `/api/v1/ai-documents/tenders/${tenderId}/generate-backplanning`,
             {
                 method: 'POST',
                 body: JSON.stringify({
                     deadline: deadline,
-                    overschrijf: overschrijf
+                    buffer_werkdagen: parseInt(buffer, 10),
+                    overschrijf: false
                 })
             }
         );
@@ -568,8 +609,8 @@ async function handlePpStartGenereren() {
         const badge  = tabBtn?.querySelector('.tcc-tab-badge');
         if (badge && freshData.projectplanning?.badge) badge.textContent = freshData.projectplanning.badge;
 
-        const aangemaakt = result.aangemaakt || (freshData.projectplanning?.taken?.length || 0);
-        showTccToast(`✅ ${aangemaakt} taken aangemaakt`, 'success');
+        const bijgewerkt = result.bijgewerkt || (freshData.projectplanning?.taken?.length || 0);
+        showTccToast(`✅ ${bijgewerkt} taken bijgewerkt met datums`, 'success');
 
     } catch (err) {
         const errMsg = err.message || String(err);

@@ -86,7 +86,7 @@ class TeamService {
                 .select(`
                     *,
                     users(email, naam),
-                    tenderbureaus(naam)
+                    tenderbureaus(bureau_naam)
                 `)
                 .eq('user_id', id)
                 .single();

@@ -55,6 +55,7 @@ import { KanbanView } from './views/KanbanView.js';
 import { teamService } from './services/TeamService.js';
 import { TemplateBeheerView } from './views/TemplateBeheerView.js';
 import { ProfielView } from './views/ProfielView.js';
+import { AIUsageView } from './views/AIUsageView.js';
 
 export class App {
     constructor() {
@@ -644,6 +645,11 @@ export class App {
                     if (phaseTabs) phaseTabs.style.display = 'none';
                     this.showView('profiel');
                     break;
+                case 'ai-usage':
+                    if (this.isSuperAdmin) {
+                        this.showView('ai-usage');
+                    }
+                    break;
                 case 'rapportages':
                 case 'exporteren':
                 case 'instellingen':
@@ -831,6 +837,10 @@ export class App {
             profiel: new ProfielView()
         };
 
+        if (this.isSuperAdmin) {
+            this.views['ai-usage'] = new AIUsageView();
+        }
+
         // Initialize AgendaView
         this.agendaView = new AgendaView();
         this.agendaView.onOpenPlanningModal = (tenderId, openType) => {
@@ -933,7 +943,7 @@ export class App {
 
         this.views.tenderbureaus.onEditBureau = (bureau) => {
             console.log('Edit bureau:', bureau);
-            alert(`Bureau bewerken: ${bureau.naam} - komt binnenkort!`);
+            alert(`Bureau bewerken: ${bureau.bureau_naam} - komt binnenkort!`);
         };
 
         this.views.tenderbureaus.onDeleteBureau = async (bureauId) => {
@@ -949,7 +959,7 @@ export class App {
 
         this.views.tenderbureaus.onViewUsers = (bureau) => {
             console.log('View users for bureau:', bureau);
-            alert(`Users van ${bureau.naam} bekijken - komt binnenkort!`);
+            alert(`Users van ${bureau.bureau_naam} bekijken - komt binnenkort!`);
         };
 
         // Set callbacks for team view
@@ -1235,6 +1245,10 @@ export class App {
             }
             else if (viewName === 'templatebeheer') {
                 this.header.setContext('tenders');
+                this.header.setActiveTab(null);
+            }
+            else if (viewName === 'ai-usage') {
+                this.header.setContext('profiel', { title: 'AI token verbruik' });
                 this.header.setActiveTab(null);
             }
             else if (viewName === 'profiel') {

@@ -436,7 +436,7 @@ class TenderService:
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
                 tenderbureau = tender.pop('tenderbureaus', None) or {}
-                tender['tenderbureau_naam'] = tenderbureau.get('naam')
+                tender['tenderbureau_naam'] = tenderbureau.get('bureau_naam')
                 
                 return tender
             
@@ -616,7 +616,7 @@ class TenderService:
                 return []
             
             result = self.db.table('tenders')\
-                .select('*, tenderbureaus(naam), bedrijven(bedrijfsnaam, kvk_nummer, plaats)')\
+                .select('*, tenderbureaus(bureau_naam), bedrijven(bedrijfsnaam, kvk_nummer, plaats)')\
                 .eq('tenderbureau_id', bureau_id)\
                 .eq('fase', fase)\
                 .order('created_at', desc=True)\
@@ -632,7 +632,7 @@ class TenderService:
                 tender['bedrijfs_plaats'] = bedrijf.get('plaats')
                 
                 tenderbureau = tender.pop('tenderbureaus', None) or {}
-                tender['tenderbureau_naam'] = tenderbureau.get('naam')
+                tender['tenderbureau_naam'] = tenderbureau.get('bureau_naam')
                 
                 tenders.append(tender)
 

@@ -220,7 +220,7 @@ function _renderInfoEditMode(tender) {
 
 function _renderBureauSection(tender) {
   const bureau = tender.tenderbureau || {};
-  const bureauNaam = bureau.naam || tender.bureau_naam || window.app?.currentBureau?.bureau_naam || '';
+  const bureauNaam = bureau.bureau_naam || tender.bureau_naam || window.app?.currentBureau?.bureau_naam || '';
   const bureauId = tender.tenderbureau_id || '';
   const initialen = _getInitialen(bureauNaam);
   const createdAt = tender.created_at ? _formatDateNL(tender.created_at) : '';

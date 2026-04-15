@@ -110,7 +110,7 @@ async def send_invitation(
     
     # Get team member details
     team_member = db.table('team_members')\
-        .select('*, tenderbureaus(naam)')\
+        .select('*, tenderbureaus(bureau_naam)')\
         for user_id in request.team_member_ids:
             try:
                 user = db.table('users')\
@@ -334,7 +334,7 @@ async def verify_invitation(
     Returns invitation details if valid.
     """
     result = db.table('bureau_invites')\
-        .select('*, team_members(naam), tenderbureaus(naam), users!invited_by(naam)')\
+        .select('*, team_members(naam), tenderbureaus(bureau_naam), users!invited_by(naam)')\
         .eq('invite_token', token)\
         .execute()
     
@@ -389,7 +389,7 @@ async def verify_invitation(
         'email': invitation['email'],
         'role': invitation['role'],
         'team_member_name': invitation.get('team_members', {}).get('naam') if invitation.get('team_members') else None,
-        'bureau_name': invitation.get('tenderbureaus', {}).get('naam') if invitation.get('tenderbureaus') else None,
+        'bureau_name': invitation.get('tenderbureaus', {}).get('bureau_naam') if invitation.get('tenderbureaus') else None,
         'invited_by': inviter_name,
         'personal_message': invitation.get('personal_message'),
         'expires_at': invitation['expires_at']

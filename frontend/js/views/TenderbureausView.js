@@ -276,7 +276,7 @@ export class TenderbureausView extends BaseView {
     }
 
     renderBureauCard(bureau) {
-        const initials = this.generateInitials(bureau.naam);
+        const initials = this.generateInitials(bureau.bureau_naam);
         // Gebruik subscription_tier uit database
         const tierConfig = this.tiers.find(t => t.key === bureau.subscription_tier) || this.tiers[0];
         // Gebruik is_active uit database
@@ -291,7 +291,7 @@ export class TenderbureausView extends BaseView {
                         ${initials}
                     </div>
                     <div class="bureau-info">
-                        <div class="bureau-name">${bureau.naam || 'Onbekend'}</div>
+                        <div class="bureau-name">${bureau.bureau_naam || 'Onbekend'}</div>
                         <div class="bureau-meta">${bureau.email || ''}</div>
                     </div>
                 </div>
@@ -384,7 +384,7 @@ export class TenderbureausView extends BaseView {
                 if (action === 'edit' && bureau && this.onEditBureau) {
                     this.onEditBureau(bureau);
                 } else if (action === 'delete' && bureau && this.onDeleteBureau) {
-                    if (confirm(`Weet je zeker dat je "${bureau.naam}" wilt verwijderen? Dit verwijdert ook alle gekoppelde data.`)) {
+                    if (confirm(`Weet je zeker dat je "${bureau.bureau_naam}" wilt verwijderen? Dit verwijdert ook alle gekoppelde data.`)) {
                         this.onDeleteBureau(bureauId);
                     }
                 }

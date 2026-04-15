@@ -47,7 +47,7 @@ class BedrijvenService {
 
             let query = supabase
                 .from('bedrijven')
-                .select('*, tenderbureau:tenderbureaus(id, naam)')
+                .select('*, tenderbureau:tenderbureaus(id, bureau_naam)')
                 .eq('is_actief', true)
                 .order('bedrijfsnaam');
 
@@ -117,7 +117,7 @@ class BedrijvenService {
         try {
             const { data, error } = await supabase
                 .from('bedrijven')
-                .select('*, tenderbureau:tenderbureaus(id, naam)')
+                .select('*, tenderbureau:tenderbureaus(id, bureau_naam)')
                 .eq('id', id)
                 .single();
 
@@ -496,7 +496,7 @@ class BedrijvenService {
             const { data, error } = await supabase
                 .from('bedrijven')
                 .insert([dataWithTenderbureau])
-                .select('*, tenderbureau:tenderbureaus(id, naam)')
+                .select('*, tenderbureau:tenderbureaus(id, bureau_naam)')
                 .single();
 
             if (error) {
@@ -578,7 +578,7 @@ class BedrijvenService {
                 .from('bedrijven')
                 .update(cleanUpdates)
                 .eq('id', id)
-                .select('*, tenderbureau:tenderbureaus(id, naam)')
+                .select('*, tenderbureau:tenderbureaus(id, bureau_naam)')
                 .single();
 
             if (error) throw error;

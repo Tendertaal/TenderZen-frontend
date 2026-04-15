@@ -115,7 +115,7 @@ class InvitationService {
             console.log('📧 Fetching team member details for:', teamMemberId);
             const { data: member, error } = await supabase
                 .from('v_bureau_team')
-                .select('user_id, naam, tenderbureau_id, tenderbureaus(naam)')
+                .select('user_id, naam, tenderbureau_id, tenderbureaus(bureau_naam)')
                 .eq('user_id', teamMemberId)
                 .single();
             if (error) {
@@ -227,7 +227,7 @@ class InvitationService {
                 // Get team member
                 const { data: member, error } = await supabase
                     .from('v_bureau_team')
-                    .select('user_id, naam, email, tenderbureau_id, invitation_status, tenderbureaus(naam)')
+                    .select('user_id, naam, email, tenderbureau_id, invitation_status, tenderbureaus(bureau_naam)')
                     .eq('user_id', teamMemberId)
                     .single();
 
@@ -317,7 +317,7 @@ class InvitationService {
             .select(`
                 *,
                 v_bureau_team(naam),
-                tenderbureaus(naam),
+                tenderbureaus(bureau_naam),
                 users:invited_by(naam)
             `)
             .eq('invite_token', token)
@@ -464,7 +464,7 @@ class InvitationService {
             .select(`
                 *,
                 team_members(naam),
-                tenderbureaus(naam)
+                tenderbureaus(bureau_naam)
             `)
             .eq('id', invitationId)
             .single();

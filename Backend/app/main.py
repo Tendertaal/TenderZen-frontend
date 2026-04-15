@@ -10,6 +10,7 @@ from app.api.v1.planning import router as planning_router
 from app.routers.document_router import router as document_router
 from app.routers.finalize_router import router as finalize_router
 from app.routers.profile_router import router as profile_router
+from app.routers.ai_usage import router as ai_usage_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -40,6 +41,7 @@ app.include_router(planning_router, prefix="/api/v1", tags=["Planning"])
 app.include_router(document_router, prefix="/api/v1")
 app.include_router(finalize_router, prefix="/api/v1")
 app.include_router(profile_router, prefix="/api/v1")
+app.include_router(ai_usage_router)
 
 
 @app.get("/")

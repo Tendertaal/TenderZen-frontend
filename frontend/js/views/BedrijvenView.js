@@ -247,7 +247,7 @@ export class BedrijvenView extends BaseView {
         const initials = this.generateInitials(naam);
         const rating = bedrijf.rating || 0;
         const tenderCount = bedrijf.tender_count || 0;
-        const bureauNaam = bedrijf.bureau_naam || bedrijf.tenderbureau?.naam || '-';
+        const bureauNaam = bedrijf.bureau_naam || bedrijf.tenderbureau?.bureau_naam || '-';
 
         const brancheColors = {
             'Bouw': '#3b82f6',

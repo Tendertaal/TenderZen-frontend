@@ -376,7 +376,7 @@ export class AnalyzeStep {
                     }
 
                     if (this.state._navigateTo) {
-                        this.state._navigateTo(3);
+                        this.state._navigateTo('review');
                     }
 
                 } else if (status.status === 'failed') {
@@ -456,7 +456,7 @@ export class AnalyzeStep {
         `;
 
         this.container.querySelector('#siRetryBtn')?.addEventListener('click', () => {
-            if (this.state._navigateTo) this.state._navigateTo(1);
+            if (this.state._navigateTo) this.state._navigateTo('upload');
         });
     }
 

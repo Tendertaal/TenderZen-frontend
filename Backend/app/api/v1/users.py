@@ -25,7 +25,7 @@ async def get_me(
         # Get real user data from database
         result = db.table('users').select('''
             *,
-            tenderbureaus(naam, slug)
+            tenderbureaus(bureau_naam, slug)
         ''').eq('id', user_id).single().execute()
         
         if not result.data:
@@ -44,7 +44,7 @@ async def get_me(
         
         # Flatten tenderbureau data
         if 'tenderbureaus' in user_data and user_data['tenderbureaus']:
-            user_data['tenderbureau_naam'] = user_data['tenderbureaus'].get('naam')
+            user_data['tenderbureau_naam'] = user_data['tenderbureaus'].get('bureau_naam')
             user_data['tenderbureau_slug'] = user_data['tenderbureaus'].get('slug')
             del user_data['tenderbureaus']
         

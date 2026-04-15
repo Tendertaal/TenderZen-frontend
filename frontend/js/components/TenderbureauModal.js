@@ -411,7 +411,7 @@ export class TenderbureauModal {
         const formData = new FormData(form);
         
         const bureauData = {
-            naam: formData.get('naam')?.trim(),
+            bureau_naam: formData.get('naam')?.trim(),
             slug: formData.get('slug')?.trim(),
             email: formData.get('email')?.trim() || null,
             telefoon: formData.get('telefoon')?.trim() || null,

@@ -55,7 +55,12 @@ class ClaudeAPIService:
         max_tokens: int = 4096,
         temperature: float = 0.3,
         max_retries: int = 3,
-        model: Optional[str] = None  # v2.0: Model parameter
+        model: Optional[str] = None,  # v2.0: Model parameter
+        db=None,
+        tender_id: Optional[str] = None,
+        bureau_id: Optional[str] = None,
+        call_type: str = 'ai_call',
+        log_usage: bool = True,
     ) -> Dict[str, Any]:
         """
         Execute a prompt with automatic retry on failure.
@@ -119,8 +124,33 @@ class ClaudeAPIService:
                     except:
                         pass
                 
+                stop_reason = getattr(response, 'stop_reason', None)
+                if stop_reason == 'max_tokens':
+                    logger.warning(f"⚠️ Response afgekapt door max_tokens limiet. Ontvangen: {len(content)} tekens.")
+                    return {
+                        "success": False,
+                        "error": f"Response afgekapt door max_tokens limiet. Ontvangen: {len(content)} tekens.",
+                        "truncated": True,
+                        "content": content
+                    }
+
                 logger.info(f"✅ API call successful, response length: {len(content)}")
-                
+
+                if log_usage and db is not None:
+                    try:
+                        from app.services.ai_usage_logger import log_ai_usage
+                        log_ai_usage(
+                            db=db,
+                            bureau_id=bureau_id,
+                            tender_id=tender_id,
+                            call_type=call_type,
+                            model=selected_model,
+                            input_tokens=getattr(response.usage, 'input_tokens', 0),
+                            output_tokens=getattr(response.usage, 'output_tokens', 0),
+                        )
+                    except Exception as e:
+                        print(f"[claude_api_service] Logging mislukt (non-fatal): {e}")
+
                 return {
                     "success": True,
                     "content": content,

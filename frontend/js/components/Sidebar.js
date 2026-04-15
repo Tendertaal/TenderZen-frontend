@@ -101,6 +101,12 @@ class Sidebar {
                 ${adminBadge}
                 <span class="tz-sidebar-tooltip">Iconen beheer</span>
             </button>
+            <button class="tz-sidebar-item" data-id="ai-usage">
+                <span class="tz-sidebar-icon">${this._icon('zap', 20, 'currentColor')}</span>
+                <span class="tz-sidebar-label">AI verbruik</span>
+                ${adminBadge}
+                <span class="tz-sidebar-tooltip">AI token verbruik</span>
+            </button>
             <div class="tz-sidebar-divider"></div>
         ` : '';
         const chevronIcon = this._isOpen

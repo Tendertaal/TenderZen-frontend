@@ -17,12 +17,11 @@
 # ================================================================
 
 import json
-import os
 import logging
 from typing import Dict, List, Optional
 from datetime import datetime
 
-import anthropic
+from .anthropic_service import call_claude
 
 logger = logging.getLogger(__name__)
 
@@ -267,9 +266,6 @@ class DocumentGeneratieService:
 
     def __init__(self, supabase_client):
         self.db = supabase_client
-        self.ai_client = anthropic.Anthropic(
-            api_key=os.getenv('ANTHROPIC_API_KEY')
-        )
 
     # ══════════════════════════════════════════════
     # PUBLIEKE METHODES
@@ -331,7 +327,9 @@ class DocumentGeneratieService:
                     team_info=team_info,
                     bureau_context=bureau_context,
                     ai_model_id=ai_model_id,
-                    model_label=model
+                    model_label=model,
+                    tender_id=tender_id,
+                    bureau_id=tenderbureau_id,
                 )
 
                 # 4. Sla op in database
@@ -410,7 +408,9 @@ class DocumentGeneratieService:
         team_info: str,
         bureau_context: str,
         ai_model_id: str,
-        model_label: str
+        model_label: str,
+        tender_id: str = None,
+        bureau_id: str = None,
     ) -> dict:
         """Genereer één document via de Anthropic API."""
         config = DOC_TYPES[doc_type]
@@ -430,13 +430,15 @@ class DocumentGeneratieService:
         logger.debug(f"AI prompt voor {doc_type}: {len(prompt)} chars")
 
         # Anthropic API call
-        message = self.ai_client.messages.create(
+        message = call_claude(
+            messages=[{"role": "user", "content": prompt}],
             model=ai_model_id,
             max_tokens=config['max_tokens'],
             system=SYSTEM_PROMPT,
-            messages=[
-                {"role": "user", "content": prompt}
-            ]
+            db=self.db,
+            bureau_id=bureau_id,
+            tender_id=tender_id,
+            call_type='ai_generatie',
         )
 
         # Verwerk response

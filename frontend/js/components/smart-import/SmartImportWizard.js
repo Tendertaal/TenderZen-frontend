@@ -103,7 +103,12 @@ export class SmartImportWizard {
             tenderNaam: this.tenderNaam || null,
             isExistingTender: false,
 
-            _navigateTo: (stepNum) => this._goToStep(stepNum),
+            _navigateTo: (stepKeyOrNum) => {
+                const step = typeof stepKeyOrNum === 'string'
+                    ? STEPS.find(s => s.key === stepKeyOrNum)
+                    : STEPS.find(s => s.num === stepKeyOrNum);
+                if (step) this._goToStep(step.num);
+            },
         };
     }
 
@@ -427,7 +432,8 @@ export class SmartImportWizard {
         if (!stepDef) return;
 
         let instance = this.stepInstances[stepDef.key];
-        if (!instance) {
+        const isNewInstance = !instance;
+        if (isNewInstance) {
             const Cls = STEP_COMPONENTS[stepDef.key];
             instance = new Cls(this.state);
             this.stepInstances[stepDef.key] = instance;
@@ -441,7 +447,9 @@ export class SmartImportWizard {
         `;
 
         try {
-            await instance.init();
+            if (isNewInstance || (instance.shouldReinit && instance.shouldReinit())) {
+                await instance.init();
+            }
             body.innerHTML = instance.render();
             instance.attachListeners(body);
         } catch (error) {

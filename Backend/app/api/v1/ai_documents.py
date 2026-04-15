@@ -33,7 +33,6 @@ from app.core.database import get_supabase_async
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
-import anthropic
 import os
 import uuid
 import base64
@@ -44,6 +43,7 @@ from app.config import settings
 from fastapi.responses import StreamingResponse
 import io
 from app.utils.markdown_to_docx import convert_markdown_to_docx
+from app.services.anthropic_service import call_claude
 
 
 MAX_PDF_DIRECT_SIZE = 20 * 1024 * 1024
@@ -980,11 +980,14 @@ async def generate_document_for_tender(
             message_content.extend(pdf_content_blocks)
         message_content.append({"type": "text", "text": prompt_content})
 
-        ai_client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        message = ai_client.messages.create(
+        message = call_claude(
+            messages=[{"role": "user", "content": message_content}],
             model=selected_model,
             max_tokens=8192,
-            messages=[{"role": "user", "content": message_content}]
+            db=db,
+            bureau_id=tenderbureau_id,
+            tender_id=str(tender_id),
+            call_type='ai_generatie',
         )
 
         generated_text = message.content[0].text
@@ -1565,42 +1568,6 @@ Regels:
 - Geen dubbelen
 """
 
-PROMPT_GENERATE_BACKPLANNING = """
-Je bent een tender-planningsexpert. Genereer een realistische interne
-projectplanning op basis van de verstrekte gegevens.
-
-Deadline indiening: {deadline}
-Beschikbare teamleden en rollen: {team_info}
-Vandaag: {vandaag}
-
-Maak een terugwaartse planning met taken die op tijd afgerond kunnen worden
-vóór de deadline. Verdeel taken logisch over 3 fasen:
-- "Voorbereiding" — kickoff, analyse, structuur (eerste ~30% van de tijd)
-- "Uitwerking" — schrijven, berekenen, reviewen (middelste ~50%)
-- "Afronding & Indiening" — opmaak, eindcheck, indienen (laatste ~20%)
-
-Geef de output als JSON-array (geen markdown, geen uitleg):
-[
-  {{
-    "taak_naam": "Kickoff intern",
-    "categorie": "Voorbereiding",
-    "rol": "tendermanager",
-    "datum": "2026-03-10",
-    "beschrijving": "Opstartmeeting met het team",
-    "volgorde": 1
-  }}
-]
-
-Regels:
-- datum in ISO-formaat YYYY-MM-DD
-- categorie is ALTIJD één van: "Voorbereiding", "Uitwerking", "Afronding & Indiening"
-- rol is één van: tendermanager, schrijver, calculator, reviewer, designer
-- volgorde begint bij 1, oplopend
-- Maximaal 20 taken
-- Taken na vandaag en vóór of op de deadline
-"""
-
-
 async def _fetch_brondocumenten_voor_tender(
     tender_id: str,
     db: Client,
@@ -1764,6 +1731,9 @@ async def extract_planning(
                 'aangemaakt': 0
             }
 
+        tender_meta = db.table('tenders').select('tenderbureau_id').eq('id', tender_id).single().execute()
+        tenderbureau_id = tender_meta.data.get('tenderbureau_id') if tender_meta.data else None
+
         content_blocks = await _fetch_brondocumenten_voor_tender(tender_id, db, max_docs=3)
         if not content_blocks:
             raise HTTPException(status_code=422, detail="Geen brondocumenten gevonden voor deze tender.")
@@ -1791,14 +1761,17 @@ async def extract_planning(
         gekozen_model = body.model if body.model in GELDIGE_EXTRACTIE_MODELLEN else "claude-haiku-4-5-20251001"
         print(f"🤖 Extractie met model: {gekozen_model}")
 
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        response = client.messages.create(
-            model=gekozen_model,
-            max_tokens=2000,
+        response = call_claude(
             messages=[{
                 'role': 'user',
                 'content': content_blocks + [{'type': 'text', 'text': prompt_tekst}]
-            }]
+            }],
+            model=gekozen_model,
+            max_tokens=2000,
+            db=db,
+            bureau_id=tenderbureau_id,
+            tender_id=str(tender_id),
+            call_type='planning_extractie',
         )
 
         raw = response.content[0].text if response.content else ''
@@ -1834,8 +1807,21 @@ async def extract_planning(
                 'notities': item.get('notities') or None,
             })
 
-        if nieuwe_milestones:
-            db.table('milestones').insert(nieuwe_milestones).execute()
+        nieuwe_milestones = [
+            m for m in nieuwe_milestones
+            if m.get('datum') is not None
+        ]
+
+        if not nieuwe_milestones:
+            return {
+                'success': True,
+                'aangemaakt': 0,
+                'items': [],
+                'model_gebruikt': gekozen_model,
+                'message': 'Geen mijlpalen met geldige datum gevonden'
+            }
+
+        db.table('milestones').insert(nieuwe_milestones).execute()
 
         # Sync milestones naar tender kolommen
         tender_service = TenderService(db)
@@ -1887,14 +1873,17 @@ async def extract_checklist(
 
         gekozen_model = body.model if body.model in GELDIGE_EXTRACTIE_MODELLEN else "claude-haiku-4-5-20251001"
 
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        response = client.messages.create(
-            model=gekozen_model,
-            max_tokens=8000,
+        response = call_claude(
             messages=[{
                 'role': 'user',
                 'content': content_blocks + [{'type': 'text', 'text': PROMPT_EXTRACT_CHECKLIST}]
-            }]
+            }],
+            model=gekozen_model,
+            max_tokens=8000,
+            db=db,
+            bureau_id=tenderbureau_id,
+            tender_id=str(tender_id),
+            call_type='checklist_extractie',
         )
 
         raw = response.content[0].text if response.content else ''
@@ -1949,6 +1938,7 @@ class BackplanningRequest(BaseModel):
     deadline: str
     overschrijf: bool = False
     team_assignments: Optional[dict] = None
+    buffer_werkdagen: int = 3
 
 
 @router.post("/tenders/{tender_id}/generate-backplanning")
@@ -1959,22 +1949,27 @@ async def generate_backplanning(
     db: Client = Depends(get_supabase_async)
 ):
     try:
-        user_id = get_user_id_from_request(request)
         tender_result = db.table('tenders').select('tenderbureau_id, naam').eq('id', tender_id).single().execute()
         tender = tender_result.data or {}
         tenderbureau_id = tender.get('tenderbureau_id')
 
-        bestaand = db.table('planning_taken').select('id').eq('tender_id', tender_id).limit(1).execute()
-        heeft_data = len(bestaand.data or []) > 0
+        # Stap 1 — Haal bestaande taken op (gesorteerd op volgorde)
+        taken_result = db.table('planning_taken') \
+            .select('id, taak_naam, categorie, volgorde') \
+            .eq('tender_id', tender_id) \
+            .order('volgorde') \
+            .execute()
+        bestaande_taken = taken_result.data or []
 
-        if heeft_data and not body.overschrijf:
+        if not bestaande_taken:
             return {
                 'success': False,
                 'overgeslagen': True,
-                'reden': 'Er is al een projectplanning voor deze tender. Gebruik overschrijf=true om te vervangen.',
-                'aangemaakt': 0
+                'reden': 'Geen taken gevonden voor deze tender. Laad eerst een template.',
+                'bijgewerkt': 0
             }
 
+        # Stap 2 — Team info ophalen
         if body.team_assignments:
             team_info = '\n'.join(f"- {rol}: {naam}" for rol, naam in body.team_assignments.items())
         else:
@@ -1984,7 +1979,7 @@ async def generate_backplanning(
                 user_ids = [r['user_id'] for r in team_rows if r.get('user_id')]
                 namen_map = {}
                 if user_ids:
-                    leden_result = db.table('team_members').select('user_id, naam').in_('user_id', user_ids).execute()
+                    leden_result = db.table('v_bureau_team').select('user_id, naam').in_('user_id', user_ids).execute()
                     namen_map = {r['user_id']: r.get('naam', 'onbekend') for r in (leden_result.data or [])}
                 team_info = '\n'.join(
                     f"- {r.get('rol_in_tender', 'onbekend')}: {namen_map.get(r.get('user_id'), 'onbekend')}"
@@ -1993,65 +1988,91 @@ async def generate_backplanning(
             else:
                 team_info = "Geen teamleden toegewezen — gebruik generieke rollen"
 
+        # Stap 3 — Stuur bestaande taken als input naar AI; AI vult alleen datums in
         vandaag = datetime.now().date().isoformat()
-        prompt = PROMPT_GENERATE_BACKPLANNING.format(
-            deadline=body.deadline,
-            team_info=team_info,
-            vandaag=vandaag
-        )
+        taken_json = json.dumps([
+            {
+                "id": str(t['id']),
+                "taak_naam": t['taak_naam'],
+                "categorie": t.get('categorie', ''),
+                "volgorde": t.get('volgorde', 0)
+            }
+            for t in bestaande_taken
+        ], ensure_ascii=False)
 
-        client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-        response = client.messages.create(
+        buffer_werkdagen = body.buffer_werkdagen
+
+        prompt = f"""Je bent een tender-planningsexpert.
+Je krijgt een lijst met vaste projecttaken en moet voor elke taak
+een realistische datum berekenen op basis van terugwaartse planning.
+
+Externe deadline indiening: {body.deadline}
+Vandaag: {vandaag}
+Buffer werkdagen: {buffer_werkdagen}
+Beschikbare teamleden: {team_info}
+
+Taken (vaste volgorde, verander ze NIET):
+{taken_json}
+
+Regels:
+- De inschrijvingsdeadline is {body.deadline} — dit is de EXTERNE deadline van de aanbestedende dienst
+- De INTERNE deadline = {body.deadline} minus {buffer_werkdagen} werkdagen (weekenden overgeslagen). Dit is de laatste dag waarop intern werk afgerond moet zijn.
+- De taak "Indienen" of eindindieningstaak krijgt EXACT de datum {body.deadline} (externe deadline)
+- De taak "Interne deadline" of "INTERNE DEADLINE" krijgt EXACT de datum van (externe deadline - {buffer_werkdagen} werkdagen, weekenden overgeslagen)
+- Alle andere taken worden terugwaarts gepland vóór de interne deadline
+- Verdeel de beschikbare tijd over de taken op basis van hun categorie:
+  * "Afronding & Indiening": laatste 20% van de tijd vóór de interne deadline
+  * "Uitwerking": middelste 50% van de tijd
+  * "Voorbereiding": eerste 30% van de tijd
+- Geen enkele taak valt op een zaterdag of zondag
+- Kick-off valt minimaal 2 werkdagen na vandaag ({vandaag})
+- Gebruik dezelfde taak-id's als in de input
+
+Geef ALLEEN een JSON-array terug, geen uitleg, geen markdown:
+[
+  {{"id": "uuid-hier", "datum": "2026-04-20"}},
+  {{"id": "uuid-hier", "datum": "2026-04-22"}}
+]"""
+
+        response = call_claude(
+            messages=[{'role': 'user', 'content': prompt}],
             model="claude-sonnet-4-6",
-            max_tokens=3000,
-            messages=[{'role': 'user', 'content': prompt}]
+            max_tokens=2000,
+            db=db,
+            bureau_id=tenderbureau_id,
+            tender_id=str(tender_id),
+            call_type='backplanning',
         )
 
         raw = response.content[0].text if response.content else ''
         items = _parse_json_response(raw)
         if not items:
-            raise HTTPException(status_code=500, detail="Claude kon geen projectplanning genereren.")
+            raise HTTPException(status_code=500, detail="Claude kon geen datums genereren voor de planning.")
 
-        if heeft_data and body.overschrijf:
-            db.table('planning_taken').delete().eq('tender_id', tender_id).execute()
-
-        nieuwe_taken = []
-        for i, item in enumerate(items):
-            if not item.get('taak_naam'):
-                continue
+        # Stap 4 — UPDATE elke bestaande taak met de datum die AI teruggaf (geen DELETE/INSERT)
+        bijgewerkt = 0
+        for item in items:
+            taak_id = item.get('id')
             datum_str = item.get('datum')
-            datum_iso = None
-            if datum_str:
-                parsed_datum = _parse_date(datum_str)
-                if parsed_datum:
-                    datum_iso = f"{parsed_datum}T00:00:00+00:00"
-
-            taak = {
-                'tender_id': tender_id,
-                'tenderbureau_id': tenderbureau_id,
-                'taak_naam': str(item['taak_naam'])[:200],
-                'categorie': item.get('categorie') or 'Projectplanning',
-                'status': 'todo',
-                'volgorde': item.get('volgorde', i + 1),
-                'created_by': user_id,
-            }
-            if datum_iso:
-                taak['datum'] = datum_iso
-            if item.get('beschrijving'):
-                taak['beschrijving'] = str(item['beschrijving'])[:500]
-            if item.get('rol'):
-                taak['rol'] = item['rol']
-            nieuwe_taken.append(taak)
-
-        if nieuwe_taken:
-            db.table('planning_taken').insert(nieuwe_taken).execute()
+            if not taak_id or not datum_str:
+                continue
+            parsed_datum = _parse_date(datum_str)
+            if not parsed_datum:
+                continue
+            datum_iso = f"{parsed_datum}T00:00:00+00:00"
+            db.table('planning_taken') \
+                .update({'datum': datum_iso}) \
+                .eq('id', taak_id) \
+                .eq('tender_id', tender_id) \
+                .execute()
+            bijgewerkt += 1
 
         return {
             'success': True,
-            'aangemaakt': len(nieuwe_taken),
-            'items': nieuwe_taken,
+            'bijgewerkt': bijgewerkt,
+            'aangemaakt': 0,
             'deadline': body.deadline,
-            'message': f'{len(nieuwe_taken)} taken gegenereerd voor de projectplanning'
+            'message': f'{bijgewerkt} taken bijgewerkt met datums'
         }
     except HTTPException:
         raise

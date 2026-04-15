@@ -38,17 +38,16 @@ class BureauAccessService {
      */
     async getUserBureaus() {
         try {
-            // Probeer eerst de database functie
-            const { data, error } = await supabase
-                .rpc('get_user_bureaus');
-
-            if (error) {
-                console.warn('RPC get_user_bureaus failed, falling back to query:', error);
-                return await this._getUserBureauxFallback();
-            }
-
-            this._userBureaus = data || [];
-            return this._userBureaus;
+            // RPC tijdelijk uitgeschakeld — Supabase schema cache herkent get_user_bureaus niet (404)
+            // const { data, error } = await supabase
+            //     .rpc('get_user_bureaus');
+            // if (error) {
+            //     console.warn('RPC get_user_bureaus failed, falling back to query:', error);
+            //     return await this._getUserBureauxFallback();
+            // }
+            // this._userBureaus = data || [];
+            // return this._userBureaus;
+            return await this._getUserBureauxFallback();
         } catch (error) {
             console.error('❌ Error fetching user bureaus:', error);
             throw error;
@@ -74,7 +73,7 @@ class BureauAccessService {
                 avatar_kleur,
                 tenderbureau:tenderbureaus (
                     id,
-                    naam,
+                    bureau_naam,
                     slug,
                     logo_url,
                     is_active
@@ -91,7 +90,7 @@ class BureauAccessService {
             .filter(item => item.tenderbureau?.is_active)
             .map(item => ({
                 bureau_id: item.tenderbureau.id,
-                bureau_naam: item.tenderbureau.naam,
+                bureau_naam: item.tenderbureau.bureau_naam,
                 bureau_slug: item.tenderbureau.slug,
                 bureau_logo: item.tenderbureau.logo_url,
                 user_role: item.role,
@@ -350,7 +349,7 @@ class BureauAccessService {
                 })
                 .select(`
                     *,
-                    tenderbureau:tenderbureaus(naam),
+                    tenderbureau:tenderbureaus(bureau_naam),
                     inviter:users!invited_by(naam, email)
                 `)
                 .single();
@@ -476,7 +475,7 @@ class BureauAccessService {
                 .from('bureau_invites')
                 .select(`
                     *,
-                    tenderbureau:tenderbureaus(id, naam)
+                    tenderbureau:tenderbureaus(id, bureau_naam)
                 `)
                 .eq('invite_token', token)
                 .eq('status', 'pending')
@@ -535,7 +534,7 @@ class BureauAccessService {
             this._userBureaus = null;
             await this.getUserBureaus();
 
-            console.log('✅ Uitnodiging geaccepteerd voor:', invite.tenderbureau.naam);
+            console.log('✅ Uitnodiging geaccepteerd voor:', invite.tenderbureau.bureau_naam);
             return access;
 
         } catch (error) {

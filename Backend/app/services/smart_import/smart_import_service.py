@@ -51,6 +51,7 @@ from json_repair import repair_json
 
 from .text_extraction_service import TextExtractionService
 from ..ai_documents.claude_api_service import ClaudeAPIService
+from ..ai_usage_logger import log_ai_usage
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -378,11 +379,22 @@ class SmartImportService:
             logger.info(f"🤖 Starting supplemental AI extraction (focus on: {len(empty_fields)} empty fields)")
             
             new_data = await self._extract_with_ai_supplement(
-                combined_text, 
+                combined_text,
                 empty_fields,
                 existing_data
             )
-            
+
+            # Log AI token verbruik
+            log_ai_usage(
+                db=self.db,
+                bureau_id=import_record.get('tenderbureau_id'),
+                tender_id=import_record.get('tender_id'),
+                call_type='smart_import',
+                model=new_data.get('_meta', {}).get('model', 'claude-haiku-4-5-20251001'),
+                input_tokens=new_data.get('_meta', {}).get('input_tokens', 0),
+                output_tokens=new_data.get('_meta', {}).get('output_tokens', 0),
+            )
+
             # Merge data
             self._update_status(import_id, 'analyzing', progress=80, current_step='merging')
             merged_data, newly_filled = self._merge_extracted_data(existing_data, new_data)
@@ -627,22 +639,26 @@ EXTRAHEER (geef ALLEEN JSON terug):
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             response_format="json",
-            max_tokens=8000,
-            temperature=0.2
+            max_tokens=8192,
+            temperature=0.2,
+            log_usage=False,  # Logging gebeurt in analyze_supplement() met bureau_id/tender_id context
         )
-        
+
+        if result.get('truncated'):
+            raise ValueError(result.get('error', 'AI response afgekapt door token limiet'))
+
         if result['success']:
             content = result['content']
-            
+
             # v3.4: Robuuste JSON parsing met json-repair
             if isinstance(content, str):
                 logger.info("📝 Parsing JSON string response from Claude")
-                
+
                 # Strip markdown codeblocks indien aanwezig
                 json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', content)
                 if json_match:
                     content = json_match.group(1)
-                
+
                 # Gebruik json-repair library voor robuuste parsing
                 try:
                     extracted = json.loads(repair_json(content))
@@ -653,10 +669,12 @@ EXTRAHEER (geef ALLEEN JSON terug):
                     raise ValueError(f"Kon JSON niet parsen: {e}")
             else:
                 extracted = content
-            
+
             # Voeg metadata toe
             extracted['_meta'] = {
                 'model': result.get('model', 'claude-haiku-4-5-20251001'),
+                'input_tokens': result.get('usage', {}).get('input_tokens', 0),
+                'output_tokens': result.get('usage', {}).get('output_tokens', 0),
                 'tokens_used': result.get('usage', {}).get('input_tokens', 0) + result.get('usage', {}).get('output_tokens', 0),
                 'is_supplement': True
             }
@@ -755,7 +773,20 @@ EXTRAHEER (geef ALLEEN JSON terug):
             
             logger.info("🤖 Starting AI extraction")
             extracted_data = await self._extract_with_ai(combined_text, options, selected_model)
-            
+
+            # Log AI token verbruik
+            # tender_id is None bij nieuwe imports (tender bestaat nog niet);
+            # bij reanalyze() kan hij wel gevuld zijn vanuit het import_record.
+            log_ai_usage(
+                db=self.db,
+                bureau_id=import_record.get('tenderbureau_id'),
+                tender_id=import_record.get('tender_id'),
+                call_type='smart_import',
+                model=extracted_data.get('_meta', {}).get('model', selected_model),
+                input_tokens=extracted_data.get('_meta', {}).get('input_tokens', 0),
+                output_tokens=extracted_data.get('_meta', {}).get('output_tokens', 0),
+            )
+
             # Log extracted data for debugging
             logger.info("📊 Extracted data summary:")
             if 'basisgegevens' in extracted_data:
@@ -930,11 +961,15 @@ EXTRAHEER (geef ALLEEN JSON terug):
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             response_format="json",
-            max_tokens=8000,
+            max_tokens=16000 if 'sonnet' in model or 'opus' in model else 8192,
             temperature=0.2,
-            model=model  # v3.5: Gekozen model
+            model=model,  # v3.5: Gekozen model
+            log_usage=False,  # Logging gebeurt in analyze() met bureau_id/tender_id context
         )
-        
+
+        if result.get('truncated'):
+            raise ValueError(result.get('error', 'AI response afgekapt door token limiet'))
+
         if result['success']:
             content = result['content']
             
@@ -962,6 +997,8 @@ EXTRAHEER (geef ALLEEN JSON terug):
             extracted['_meta'] = {
                 'model': result.get('model', model),
                 'model_type': result.get('model_type', 'standaard'),  # v3.5
+                'input_tokens': result.get('usage', {}).get('input_tokens', 0),
+                'output_tokens': result.get('usage', {}).get('output_tokens', 0),
                 'tokens_used': result.get('usage', {}).get('input_tokens', 0) + result.get('usage', {}).get('output_tokens', 0)
             }
             

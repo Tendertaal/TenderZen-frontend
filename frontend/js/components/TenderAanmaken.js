@@ -2055,13 +2055,13 @@ export class TenderAanmaken {
                 }
 
                 const bureau = window.app?.tenderbureaus?.find(b => b.id === bureauId)
-                    || { naam: `Bureau ${String(bureauId).substring(0, 8)}...` };
+                    || { bureau_naam: `Bureau ${String(bureauId).substring(0, 8)}...` };
 
-                displayEl.textContent = bureau.naam;
+                displayEl.textContent = bureau.bureau_naam;
                 displayEl.style.color = '#10b981';
                 displayEl.style.fontWeight = '500';
 
-                console.log('✅ Tenderbureau:', bureau.naam);
+                console.log('✅ Tenderbureau:', bureau.bureau_naam);
             }
         } catch (error) {
             console.error('Error in loadTenderbureaus:', error);
