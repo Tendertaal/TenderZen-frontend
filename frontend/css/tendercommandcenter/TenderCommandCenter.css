@@ -41,14 +41,14 @@
 /* ─── PANEL (modal container) ─── */
 .tcc-panel {
     position: relative;
-    width: 94vw;
-    max-width: 1060px;
-    height: 92vh;
+    width: 98vw;
+    max-width: 1400px;
+    height: 96vh;
     background: #fff;
-    border-radius: 16px;
+    border-radius: 12px;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     overflow: hidden;
     animation: tccSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -67,7 +67,7 @@
 
 /* ─── HEADER ─── */
 .tcc-header {
-    padding: 18px 28px 0;
+    padding: 16px 24px 14px;
     border-bottom: 1px solid #e2e8f0;
     flex-shrink: 0;
     background: linear-gradient(135deg, #f8fafc, #f1f5f9);
@@ -77,7 +77,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 0;
 }
 
 .tcc-header-left {
@@ -156,84 +156,195 @@
     color: #1e293b;
 }
 
-/* ─── TABS ─── */
-.tcc-tabs {
+/* ─── SIDENAV ─── */
+.tcc-sidenav {
+    width: 52px;
+    min-width: 52px;
+    background: #1e1b4b;
     display: flex;
-    gap: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 0;
+    gap: 2px;
+    flex-shrink: 0;
+    transition: width .22s cubic-bezier(.4,0,.2,1), min-width .22s cubic-bezier(.4,0,.2,1);
+    position: relative;
+    border-radius: 12px 0 0 12px;
+    overflow: visible;
 }
 
-.tcc-tabs::-webkit-scrollbar {
-    height: 0;
+.tcc-sidenav.is-expanded {
+    width: 200px;
+    min-width: 200px;
+    align-items: stretch;
 }
 
-.tcc-tab {
-    padding: 10px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
+/* Nav items */
+.tcc-nav-item {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-family: inherit;
-    white-space: nowrap;
+    justify-content: center;
+    cursor: pointer;
+    color: #a5b4fc;
+    transition: all .15s;
     flex-shrink: 0;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    position: relative;
 }
 
-.tcc-tab:hover {
-    color: #1e293b;
-    background: rgba(0, 0, 0, 0.02);
+.tcc-sidenav.is-expanded .tcc-nav-item {
+    width: auto;
+    height: 38px;
+    padding: 0 10px;
+    gap: 10px;
+    margin: 0 6px;
+    border-radius: 8px;
+    justify-content: flex-start;
 }
 
-.tcc-tab.is-active {
-    color: #4338ca;
-    border-bottom-color: #6366f1;
-}
+.tcc-nav-item:hover { background: rgba(255,255,255,.1); color: #fff; }
+.tcc-nav-item.is-active { background: #4338ca; color: #fff; }
 
-.tcc-tab .tcc-icon svg {
-    transition: stroke 0.15s;
-}
+/* Icoonkleuren — expliciete stroke override zodat inline SVG attributen geen effect hebben */
+.tcc-nav-item svg { stroke: #a5b4fc; transition: stroke .15s; }
+.tcc-nav-item:hover svg,
+.tcc-nav-item.is-active svg { stroke: #ffffff; }
 
-.tcc-tab.is-active .tcc-icon svg {
-    stroke: #4338ca;
+/* Nav labels — alleen zichtbaar uitgeklapt */
+.tcc-nav-label {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    display: none;
+    color: #a5b4fc;
 }
+.tcc-sidenav.is-expanded .tcc-nav-label { display: block; }
+.tcc-nav-item:hover .tcc-nav-label,
+.tcc-nav-item.is-active .tcc-nav-label { color: #ffffff; }
 
-.tcc-tab-badge {
+/* Badges */
+.tcc-nav-badge {
     font-size: 10px;
     font-weight: 700;
-    padding: 1px 6px;
-    border-radius: 10px;
+    padding: 1px 5px;
+    border-radius: 8px;
+    background: rgba(255,255,255,.2);
+    color: #fff;
+    margin-left: auto;
+    display: none;
+    white-space: nowrap;
+}
+.tcc-sidenav.is-expanded .tcc-nav-badge { display: block; }
+.tcc-nav-badge--score { background: #f0fdf4; color: #166534; }
+.tcc-nav-badge--warn  { background: #fef3c7; color: #92400e; }
+
+/* Dividers */
+.tcc-nav-divider {
+    width: 28px;
+    height: 1px;
+    background: rgba(255,255,255,.1);
+    margin: 4px auto;
+    flex-shrink: 0;
+}
+.tcc-sidenav.is-expanded .tcc-nav-divider {
+    width: calc(100% - 12px);
+    margin: 4px 6px;
 }
 
-.tcc-tab-badge--score {
-    background: #f0fdf4;
-    color: #166534;
-}
+/* Spacer */
+.tcc-nav-spacer { flex: 1; }
 
-.tcc-tab-badge--count {
-    background: #eef2ff;
-    color: #4338ca;
+/* Brand header */
+.tcc-brand-header {
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    padding: 0 10px;
+    overflow: hidden;
 }
-
-.tcc-tab-badge--warn {
-    background: #fef3c7;
-    color: #92400e;
+.tcc-brand-short {
+    font-size: 12px;
+    font-weight: 800;
+    color: #a5b4fc;
+    letter-spacing: .1em;
+    display: block;
 }
-
-.tcc-tab-badge--docs {
-    background: #f1f5f9;
-    color: #475569;
+.tcc-brand-full {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    white-space: nowrap;
+    display: none;
 }
+.tcc-sidenav.is-expanded .tcc-brand-header {
+    justify-content: flex-start;
+    padding: 0 14px;
+}
+.tcc-sidenav.is-expanded .tcc-brand-short { display: none; }
+.tcc-sidenav.is-expanded .tcc-brand-full  { display: block; }
 
-.tcc-tab-badge--wf {
-    background: #fef3c7;
-    color: #b45309;
+/* Instellingen item */
+.tcc-nav-item--settings { color: #a5b4fc; }
+.tcc-nav-item--settings:hover { background: rgba(255,255,255,.1); color: #fff; }
+.tcc-nav-item--settings.is-active { background: #4338ca; color: #fff; }
+
+/* Tooltip bij ingeklapt */
+.tcc-nav-item .tcc-nav-tooltip {
+    position: absolute;
+    left: 46px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #1e293b;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .15s;
+    z-index: 200;
+}
+.tcc-sidenav:not(.is-expanded) .tcc-nav-item:hover .tcc-nav-tooltip { opacity: 1; }
+
+/* Toggle knop */
+.tcc-nav-toggle {
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1.5px solid #e2e8f0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6366f1;
+    z-index: 20;
+    transition: background .15s, border-color .15s;
+    flex-shrink: 0;
+}
+.tcc-nav-toggle:hover { background: #eef2ff; border-color: #6366f1; }
+
+/* ─── CONTENT AREA ─── */
+.tcc-content-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
 }
 
 /* ─── BODY (fixed container — tab panel scrollt zelf) ─── */

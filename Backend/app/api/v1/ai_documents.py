@@ -135,14 +135,19 @@ def map_document_row(row):
 
 
 def map_tender_document_row(row):
+    # Fallback voor legacy Smart Import records die met 'naam'/'type'/'size' zijn opgeslagen
+    file_name = row.get("file_name") or row.get("naam") or row.get("original_file_name") or ""
+    original_file_name = row.get("original_file_name") or row.get("naam") or row.get("file_name") or ""
+    file_size = row.get("file_size") or row.get("size") or 0
+    document_type = row.get("document_type") or row.get("type") or "aanbesteding"
     return {
         "id": row.get("id"),
         "tender_id": row.get("tender_id"),
-        "file_name": row.get("file_name"),
-        "original_file_name": row.get("original_file_name"),
-        "file_size": row.get("file_size"),
+        "file_name": file_name,
+        "original_file_name": original_file_name,
+        "file_size": file_size,
         "file_type": row.get("file_type"),
-        "document_type": row.get("document_type"),
+        "document_type": document_type,
         "storage_path": row.get("storage_path"),
         "uploaded_by": row.get("uploaded_by"),
         "uploaded_at": str(row.get("uploaded_at", "")),
@@ -257,10 +262,19 @@ def extract_excel_text(file_bytes: bytes, max_chars: int = 40000) -> str:
 
 def fetch_document_from_storage(db: Client, storage_path: str) -> Optional[bytes]:
     try:
-        response = db.storage.from_(STORAGE_BUCKET).download(storage_path)
+        if storage_path.startswith('smart-imports/'):
+            bucket = 'smart-imports'
+            path = storage_path[len('smart-imports/'):]
+        elif storage_path.startswith('tenders/'):
+            bucket = STORAGE_BUCKET
+            path = storage_path
+        else:
+            bucket = STORAGE_BUCKET
+            path = storage_path
+        response = db.storage.from_(bucket).download(path)
         return response
     except Exception as e:
-        print(f"⚠️ Storage download mislukt voor {storage_path}: {e}")
+        print(f"⚠️ Storage download mislukt voor {storage_path} (bucket={bucket}): {e}")
         return None
 
 
@@ -577,6 +591,52 @@ async def get_tender_document(
         if not result.data:
             raise HTTPException(status_code=404, detail="Document niet gevonden")
         return {'success': True, 'document': map_tender_document_row(result.data)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/tenders/{tender_id}/documents/{document_id}/preview-url")
+async def get_document_preview_url(
+    tender_id: str,
+    document_id: str,
+    db: Client = Depends(get_supabase_async)
+):
+    try:
+        result = db.table('tender_documents') \
+            .select('id, file_name, original_file_name, file_type, storage_path') \
+            .eq('id', document_id) \
+            .eq('tender_id', tender_id) \
+            .eq('is_deleted', False) \
+            .single() \
+            .execute()
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Document niet gevonden")
+
+        doc = result.data
+        storage_path = doc.get('storage_path') or ''
+
+        if storage_path.startswith('smart-imports/'):
+            bucket = 'smart-imports'
+            path = storage_path[len('smart-imports/'):]
+        elif storage_path.startswith('tenders/'):
+            bucket = STORAGE_BUCKET
+            path = storage_path
+        else:
+            bucket = STORAGE_BUCKET
+            path = storage_path
+
+        signed = db.storage.from_(bucket).create_signed_url(path, 3600)
+        signed_url = signed.get('signedURL') or signed.get('signedUrl') or ''
+        if not signed_url:
+            raise HTTPException(status_code=500, detail="Kon geen signed URL aanmaken")
+
+        return {
+            'url': signed_url,
+            'file_type': doc.get('file_type') or 'application/octet-stream',
+            'file_name': doc.get('original_file_name') or doc.get('file_name') or ''
+        }
     except HTTPException:
         raise
     except Exception as e:

@@ -20,7 +20,6 @@
 
 function renderTabDocs(data) {
     const docs = data.documenten || [];
-    const aiDocs = data.generatie?.documenten || [];
     const isActive = tccState.activeTab === 'docs';
 
     return `
@@ -129,7 +128,7 @@ function _renderDocCard(doc) {
     const subParts = [datumStr, grootteStr].filter(Boolean);
 
     return `
-    <div class="tcc-docs-card" data-doc-id="${doc.id}">
+    <div class="tcc-docs-card" data-doc-id="${doc.id}" data-action="doc-preview" data-doc-name="${escHtml(bestandsnaam)}">
         <div class="tcc-docs-card-icon" style="background:${m.bg};">
             ${tccIcon(m.icon, 18, m.color)}
         </div>
@@ -308,6 +307,15 @@ async function handleDocDelete(docId) {
 }
 
 // ============================================
+// HANDLER — Document Preview
+// ============================================
+
+async function handleDocPreview(docId, docName) {
+    if (!docId || !tccState.tenderId) return;
+    await DocPreview.open(docId, tccState.tenderId, docName);
+}
+
+// ============================================
 // HANDLER — Smart Import
 // ============================================
 
@@ -325,9 +333,16 @@ function handleSmartImportTrigger() {
 
 function _updateDocsBadge() {
     const docsTab = tccState.overlay?.querySelector('[data-tab="docs"]');
-    const badge = docsTab?.querySelector('.tcc-tab-badge');
+    const badge = docsTab?.querySelector('.tcc-nav-badge');
     const count = tccState.data?.documenten?.length || 0;
     if (badge) badge.textContent = count;
+    else if (docsTab && count > 0) {
+        // Badge bestaat nog niet (was 0 bij laden) — voeg toe
+        const span = document.createElement('span');
+        span.className = 'tcc-nav-badge';
+        span.textContent = count;
+        docsTab.appendChild(span);
+    }
 }
 
 function _formatFileSize(bytes) {

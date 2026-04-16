@@ -232,6 +232,12 @@ export class App {
             // 9. Hide loading screen
             this.hideLoading();
 
+            // 10. Notities paneel initialiseren
+            if (typeof NotitiesPanel !== 'undefined') {
+                window.notitiesPanel = new NotitiesPanel();
+                window.notitiesPanel.init(document.body);
+            }
+
             console.log('✅ TenderPlanner App succesvol geladen!');
             if (this.currentBureau) {
                 console.log(`📍 Actief bureau: ${this.currentBureau.bureau_naam}`);
@@ -284,6 +290,9 @@ export class App {
      */
     async handleBureauChange(newBureau) {
         console.log('🔄 Bureau gewisseld naar:', newBureau?.bureau_naam || 'Alle bureau\'s');
+
+        // Notities paneel leegmaken bij bureau wisselen
+        window.notitiesPanel?.clear();
 
         this.currentBureau = newBureau;
         if (newBureau === null) {

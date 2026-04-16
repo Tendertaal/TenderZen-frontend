@@ -42,7 +42,6 @@ const tccState = {
   data: null,
   loading: false,
   toastTimer: null,
-  _notities: null,        // TCC_TabNotities instantie
   checklistState: null    // null | 'leeg' | 'picker' | 'loading' | 'data'
 };
 
@@ -53,6 +52,16 @@ const tccState = {
 async function openCommandCenter(tenderId) {
   if (!tenderId) { console.warn('[TCC] Geen tenderId opgegeven'); return; }
   if (tccState.loading) return;
+
+  // Notities paneel koppelen aan geselecteerde tender
+  if (window.notitiesPanel) {
+    const tender = window.app?.tenders?.find(t => t.id === tenderId);
+    window.notitiesPanel.setTender(
+      tenderId,
+      tender?.naam || 'Tender',
+      tender?.tenderbureau_id || null
+    );
+  }
 
   tccState.tenderId = tenderId;
   tccState.activeTab = 'info';
@@ -73,17 +82,6 @@ async function openCommandCenter(tenderId) {
     overlay.innerHTML = renderTcc(data);
     initTccEvents(overlay);
 
-    // ── Notities paneel initialiseren ──────────────────────────────
-    if (typeof TCC_TabNotities !== 'undefined') {
-      tccState._notities = new TCC_TabNotities();
-      await tccState._notities.init(
-        tenderId,
-        overlay.querySelector('.tcc-body'),
-        overlay.querySelector('.tcc-footer'),
-        data.tender
-      );
-    }
-
     overlay.querySelector('[data-tab="team"]')?.addEventListener('click', () => {
       setTimeout(() => loadTeamWorkload(), 100);
     });
@@ -101,12 +99,6 @@ async function openCommandCenter(tenderId) {
 }
 
 function closeTcc() {
-  // ── Notities opruimen ──────────────────────────────────────────
-  if (tccState._notities) {
-    tccState._notities.destroy();
-    tccState._notities = null;
-  }
-
   const overlay = document.getElementById('tcc-overlay');
   if (overlay) {
     overlay.style.opacity = '0';
@@ -261,77 +253,107 @@ function transformProjectplanning(items = []) {
 // ============================================
 
 function renderTcc(data) {
-  const tender     = data.tender || {};
-  const naam       = tender.naam || tender.name || 'Tender';
-  const fase       = tender.fase || tender.status || '';
-  const deadline   = tender.deadline_indiening || tender.sluitingsdatum || '';
+  const tender      = data.tender || {};
+  const naam        = tender.naam || tender.name || 'Tender';
+  const fase        = tender.fase || tender.status || '';
+  const deadline    = tender.deadline_indiening || tender.sluitingsdatum || '';
   const deadlineStr = deadline ? _formatDateNL(deadline) : '';
-
-  const tabs = _getTabs(data);
+  const savedExpanded = localStorage.getItem('tz_tcc_sidebar_open') === 'true';
 
   return `
     <div class="tcc-panel" id="tcc-panel">
-        <div class="tcc-header">
-            <div class="tcc-header-top">
-                <div class="tcc-header-left">
-                    <div class="tcc-header-icon">
-                        ${tccIcon('zap', 22, '#ffffff')}
-                    </div>
-                    <div class="tcc-header-info">
-                        <h2>${escHtml(naam)}</h2>
-                        <div class="tcc-header-meta">
-                            ${fase ? `<span class="tcc-meta-tag tcc-meta-tag--fase">${escHtml(fase)}</span>` : ''}
-                            ${deadlineStr ? `<span class="tcc-meta-tag tcc-meta-tag--date">${tccIcon('clock', 11, '#dc2626')} ${deadlineStr}</span>` : ''}
+        ${_renderSideNav(data, savedExpanded)}
+        <div class="tcc-content-area">
+            <div class="tcc-header">
+                <div class="tcc-header-top">
+                    <div class="tcc-header-left">
+                        <div class="tcc-header-icon">
+                            ${tccIcon('zap', 22, '#ffffff')}
+                        </div>
+                        <div class="tcc-header-info">
+                            <h2>${escHtml(naam)}</h2>
+                            <div class="tcc-header-meta">
+                                ${fase ? `<span class="tcc-meta-tag tcc-meta-tag--fase">${escHtml(fase)}</span>` : ''}
+                                ${deadlineStr ? `<span class="tcc-meta-tag tcc-meta-tag--date">${tccIcon('clock', 11, '#dc2626')} ${deadlineStr}</span>` : ''}
+                            </div>
                         </div>
                     </div>
+                    <button class="tcc-close-btn" data-action="tcc-close" title="Sluiten">
+                        ${tccIcon('close', 16)}
+                    </button>
                 </div>
-                <button class="tcc-close-btn" data-action="tcc-close" title="Sluiten">
-                    ${tccIcon('close', 16)}
-                </button>
             </div>
-            <div class="tcc-tabs" role="tablist">
-                ${renderTccTabs(tabs)}
+            <div class="tcc-body">
+                ${renderTabAI(data)}
+                ${renderTabTenderplanning(data)}
+                ${renderTabProjectplanning(data)}
+                ${renderTabChecklist(data)}
+                ${renderTabTeam(data)}
+                ${renderTabDocs(data)}
+                ${renderTabInfo(data)}
             </div>
+            ${renderTccFooter(tccState.activeTab, data)}
+            <div id="tcc-toast" class="tcc-toast" style="display:none;"></div>
         </div>
-        <div class="tcc-body">
-            ${renderTabAI(data)}
-            ${renderTabTenderplanning(data)}
-            ${renderTabProjectplanning(data)}
-            ${renderTabChecklist(data)}
-            ${renderTabTeam(data)}
-            ${renderTabDocs(data)}
-            ${renderTabInfo(data)}
-        </div>
-        ${renderTccFooter(tccState.activeTab, data)}
-        <div id="tcc-toast" class="tcc-toast" style="display:none;"></div>
+        <div class="dp-panel" id="dp-panel"></div>
     </div>`;
 }
 
-function _getTabs(data) {
+function _getNavItems(data) {
   const totalDocs = (data.documenten?.length || 0) +
     (data.generatie?.documenten?.filter(d => d.status === 'done' || d.status === 'gonogo').length || 0);
 
   return [
-    { key: 'info',           icon: 'info',         label: 'Tenderinformatie', badge: '',                              badgeType: 'count' },
-    { key: 'ai',             icon: 'sparkles',      label: 'AI',               badge: data.generatie?.badge || '',     badgeType: 'score' },
-    { key: 'tenderplanning', icon: 'calendarView',  label: 'Tenderplanning',   badge: data.tenderplanning?.badge || '', badgeType: 'count' },
-    { key: 'projectplanning',icon: 'calendarClock', label: 'Projectplanning',  badge: data.projectplanning?.badge || '', badgeType: 'count' },
-    { key: 'checklist',      icon: 'checkSquare',   label: 'Checklist',        badge: data.checklist?.badge || '',     badgeType: 'count' },
-    { key: 'team',           icon: 'users',         label: 'Team',             badge: data.team?.badge || '',          badgeType: 'count' },
-    { key: 'docs',           icon: 'folderOpen',    label: 'Documenten',       badge: totalDocs > 0 ? String(totalDocs) : '', badgeType: 'docs' }
+    { key: 'info',            icon: 'info',         label: 'Tenderinformatie', badge: '',                                  badgeType: '' },
+    { key: 'ai',              icon: 'sparkles',     label: 'AI',               badge: data.generatie?.badge || '',          badgeType: 'score' },
+    { divider: true },
+    { key: 'tenderplanning',  icon: 'calendarView', label: 'Tenderplanning',   badge: data.tenderplanning?.badge || '',     badgeType: '' },
+    { key: 'projectplanning', icon: 'calendarClock',label: 'Projectplanning',  badge: data.projectplanning?.badge || '',    badgeType: '' },
+    { key: 'checklist',       icon: 'checkSquare',  label: 'Checklist',        badge: data.checklist?.badge || '',          badgeType: 'warn' },
+    { divider: true },
+    { key: 'team',            icon: 'users',        label: 'Team',             badge: data.team?.badge || '',               badgeType: '' },
+    { key: 'docs',            icon: 'folderOpen',   label: 'Documenten',       badge: totalDocs > 0 ? String(totalDocs) : '', badgeType: '' },
+    { spacer: true },
+    { divider: true },
+    { key: 'settings',        icon: 'settings',     label: 'Instellingen',     badge: '',                                  badgeType: '', cls: 'tcc-nav-item--settings' },
   ];
 }
 
-function renderTccTabs(tabs) {
-  return tabs.map(tab => `
-    <button class="tcc-tab${tab.key === tccState.activeTab ? ' is-active' : ''}"
-            data-tab="${tab.key}" role="tab"
-            aria-selected="${tab.key === tccState.activeTab}">
-        ${tccIcon(tab.icon, 15)}
-        <span>${tab.label}</span>
-        ${tab.badge ? `<span class="tcc-tab-badge tcc-tab-badge--${tab.badgeType}">${tab.badge}</span>` : ''}
-    </button>
-  `).join('');
+function _renderSideNav(data, isExpanded) {
+  const items = _getNavItems(data);
+  const expandedCls = isExpanded ? ' is-expanded' : '';
+
+  const itemsHtml = items.map(item => {
+    if (item.divider) return `<div class="tcc-nav-divider"></div>`;
+    if (item.spacer)  return `<div class="tcc-nav-spacer"></div>`;
+
+    const isActive   = item.key === tccState.activeTab;
+    const badgeCls   = item.badgeType ? ` tcc-nav-badge--${item.badgeType}` : '';
+    const badgeHtml  = item.badge
+      ? `<span class="tcc-nav-badge${badgeCls}">${item.badge}</span>`
+      : '';
+
+    return `
+      <button class="tcc-nav-item${isActive ? ' is-active' : ''}${item.cls ? ' ' + item.cls : ''}"
+              data-tab="${item.key}" title="${escHtml(item.label)}">
+          ${tccIcon(item.icon, 17)}
+          <span class="tcc-nav-label">${escHtml(item.label)}</span>
+          ${badgeHtml}
+          <span class="tcc-nav-tooltip">${escHtml(item.label)}</span>
+      </button>`;
+  }).join('');
+
+  return `
+    <nav class="tcc-sidenav${expandedCls}" id="tcc-sidenav">
+        <div class="tcc-brand-header">
+            <span class="tcc-brand-short">TCC</span>
+            <span class="tcc-brand-full">Tender Command Center</span>
+        </div>
+        ${itemsHtml}
+        <button class="tcc-nav-toggle" id="tcc-nav-toggle" title="Zijmenu in-/uitklappen">
+            ${isExpanded ? tccIcon('chevronLeft', 12) : tccIcon('chevronRight', 12)}
+        </button>
+    </nav>`;
 }
 
 // ============================================
@@ -435,6 +457,7 @@ function initTccEvents(overlay) {
       // Documenten — handlers in TCC_TabDocs.js
       case 'docs-upload-trigger': handleDocUpload(); break;
       case 'doc-delete':          handleDocDelete(btn.dataset.docId); break;
+      case 'doc-preview':         handleDocPreview(btn.dataset.docId, btn.dataset.docName); break;
       case 'smart-import-trigger': handleSmartImportTrigger(); break;
 
       // Checklist — handlers in TCC_TabChecklist.js
@@ -482,6 +505,16 @@ function initTccEvents(overlay) {
     container.querySelector(`[data-subpanel="${subKey}"].tcc-subpanel`)?.classList.add('is-active');
   });
 
+  // Sidebar toggle
+  panel.querySelector('#tcc-nav-toggle')?.addEventListener('click', () => {
+    const sidenav = panel.querySelector('#tcc-sidenav');
+    const toggleBtn = panel.querySelector('#tcc-nav-toggle');
+    if (!sidenav || !toggleBtn) return;
+    const isExpanded = sidenav.classList.toggle('is-expanded');
+    toggleBtn.innerHTML = isExpanded ? tccIcon('chevronLeft', 12) : tccIcon('chevronRight', 12);
+    localStorage.setItem('tz_tcc_sidebar_open', isExpanded);
+  });
+
   _initDropZone(panel);
 
   // Zoekbalk input event (Team tab)
@@ -508,9 +541,8 @@ function _switchTab(tabKey, panel) {
   if (!tabKey || tabKey === tccState.activeTab) return;
   tccState.activeTab = tabKey;
 
-  panel.querySelectorAll('.tcc-tab').forEach(t => {
+  panel.querySelectorAll('.tcc-nav-item[data-tab]').forEach(t => {
     t.classList.toggle('is-active', t.dataset.tab === tabKey);
-    t.setAttribute('aria-selected', t.dataset.tab === tabKey);
   });
 
   panel.querySelectorAll('.tcc-tab-panel').forEach(p => {
@@ -524,10 +556,7 @@ function _switchTab(tabKey, panel) {
     tempDiv.innerHTML = renderTccFooter(tabKey, tccState.data);
     footer.replaceWith(tempDiv.firstElementChild);
 
-    // Notities-knop opnieuw plaatsen na footer-wissel
-    if (tccState._notities?._toggleBtn) {
-      panel.querySelector('.tcc-footer .tcc-footer-right')?.appendChild(tccState._notities._toggleBtn);
-    }
+
   }
 
   if (tabKey === 'team') setTimeout(() => loadTeamWorkload(), 100);
