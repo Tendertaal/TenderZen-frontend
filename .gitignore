@@ -204,8 +204,20 @@ supabase/.temp/
 # ============================================
 # PROJECT-SPECIFIC EXCLUSIONS
 # ============================================
-# Add project-specific files that should not be committed
-# Example: generated documentation, local test databases, etc.
+# Claude Code local settings (machine-specific)
+.claude/settings.local.json
+
+# TenderZen backup & test files
+Backend/test_*.py
+Backend/test-*.html
+frontend/test-*.html
+Backend/*_resultaten.json
+frontend/js/components/*_backup_*.js
+frontend/js/components/*_oud_*.js
+frontend/css/*-backup.css
+frontend/css/*backup*
+frontend/js/views/* - Backup.js
+frontend/js/views/*- Backup.js
 
 
 # ============================================
