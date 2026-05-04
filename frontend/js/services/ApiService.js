@@ -260,7 +260,7 @@ class ApiService {
 
         console.log('🧹 Sanitized data:', sanitized);
 
-        return await this.request(API_CONFIG.endpoints.tenders + '/', {
+        return await this.request(API_CONFIG.endpoints.tenders, {
             method: 'POST',
             body: JSON.stringify(sanitized)
         });

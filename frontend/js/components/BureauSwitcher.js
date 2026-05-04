@@ -296,19 +296,19 @@ export class BureauSwitcher {
     }
 
     /**
-     * Genereer bureau icoon (eerste letter of logo)
+     * Genereer bureau icoon (crown icoon of logo)
      */
     _getBureauIcon(bureau) {
         if (bureau.bureau_logo) {
             return `<img src="${bureau.bureau_logo}" alt="" class="bureau-switcher__logo">`;
         }
 
-        const initial = bureau.bureau_naam?.charAt(0)?.toUpperCase() || '?';
         const color = this._stringToColor(bureau.bureau_naam || '');
+        const crownIcon = window.Icons?.crown ? window.Icons.crown({ size: 16, color: 'white' }) : '♛';
 
         return `
             <div class="bureau-switcher__icon" style="background-color: ${color}">
-                ${initial}
+                ${crownIcon}
             </div>
         `;
     }

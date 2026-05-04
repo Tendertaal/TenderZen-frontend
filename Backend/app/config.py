@@ -48,7 +48,11 @@ class Settings(BaseSettings):
     
     # CORS Settings
     cors_origins: list[str] = Field(
-        default_factory=lambda: ["http://localhost:8000", "http://127.0.0.1:8000"]
+        default_factory=lambda: [
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://[::1]:8000"
+        ]
     )
     
     @field_validator("port")
@@ -113,6 +117,18 @@ class Settings(BaseSettings):
 # Global settings instance
 # This will be created once when the app starts
 settings = Settings()
+
+# ──────────────────────────────────────────────
+# Claude AI — centrale model-configuratie
+# ──────────────────────────────────────────────
+TOEGESTANE_MODELLEN: frozenset = frozenset({
+    "claude-haiku-4-5-20251001",
+    "claude-sonnet-4-6",
+    "claude-opus-4-6",
+    "claude-opus-4-7",
+})
+
+DEFAULT_AI_MODEL: str = "claude-sonnet-4-6"
 
 
 # Helper function to reload settings (useful for testing)

@@ -77,6 +77,28 @@ export class TenderListView extends BaseView {
         } catch (e) {
             console.warn('⚠️ Planning counts niet geladen:', e.message);
         }
+
+        try {
+            const tenderIds = this.tenders.map(t => t.id).filter(Boolean);
+            if (tenderIds.length > 0) {
+                const sb = window.supabaseClient || window.supabase;
+                const { data } = await sb
+                    .from('tender_notities')
+                    .select('tender_id')
+                    .in('tender_id', tenderIds);
+                const countMap = {};
+                (data || []).forEach(n => {
+                    countMap[n.tender_id] = (countMap[n.tender_id] || 0) + 1;
+                });
+                for (const tender of this.tenders) {
+                    tender._notitiesCount = countMap[tender.id] || 0;
+                }
+                this.filteredTenders = this.filterTenders(this.tenders);
+                if (this.container) this.render();
+            }
+        } catch (e) {
+            console.warn('⚠️ Notitie counts niet geladen:', e.message);
+        }
     }
 
     setSearchQuery(query) {
@@ -203,7 +225,8 @@ export class TenderListView extends BaseView {
             searchQuery: this.searchQuery,
             allFaseStatussen: this.allFaseStatussen,
             planningCounts: tender._planningCounts || null,
-            checklistCounts: tender._checklistCounts || null
+            checklistCounts: tender._checklistCounts || null,
+            notitiesCount: tender._notitiesCount || 0
         });
         return card.render();
     }
@@ -430,10 +453,18 @@ export class TenderListView extends BaseView {
             });
         });
 
-        // Planning/Checklist shortcuts → Tender Command Center
+        // Planning/Checklist/Notities shortcuts
         this.container.querySelectorAll('.tcf-shortcut').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                if (btn.dataset.action === 'open-notities') {
+                    const tenderId = btn.dataset.tenderId;
+                    const tender   = window.app?.tenders?.find(t => t.id === tenderId);
+                    if (window.notitiesPanel) {
+                        window.notitiesPanel.setTender(tenderId, tender?.naam || 'Tender');
+                    }
+                    return;
+                }
                 const tab = btn.dataset.action === 'open-checklist' ? 'checklist' : 'planning';
                 if (typeof window.openCommandCenter === 'function') {
                     window.openCommandCenter(btn.dataset.tenderId, { tab });

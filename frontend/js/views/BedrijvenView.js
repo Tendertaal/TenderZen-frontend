@@ -32,6 +32,8 @@ export class BedrijvenView extends BaseView {
         this.onCreateBedrijf = null;
         this.onEditBedrijf = null;
         this.onDeleteBedrijf = null;
+        this.onOpenProfiel = null;
+        this.onOpenSignalering = null;
     }
 
     getIcon(name, size = 14, color = null) {
@@ -230,6 +232,9 @@ export class BedrijvenView extends BaseView {
                         ${this.getIcon('fileText', 14)}
                         <span>Tenders</span>
                     </div>
+                    <div class="table-view__col table-view__col--sm">
+                        <span>Acties</span>
+                    </div>
                 </div>
                 <div class="table-view__body">
                     ${this.filteredBedrijven.length > 0
@@ -294,6 +299,16 @@ export class BedrijvenView extends BaseView {
                 <div class="table-view__col table-view__col--sm">
                     <span class="table-view__text">${tenderCount}</span>
                 </div>
+                <div class="table-view__col table-view__col--sm" style="display:flex;gap:4px;">
+                    <button class="bv-actie-btn" data-actie="profiel" data-id="${bedrijf.id}"
+                            title="Bedrijfsprofiel" style="padding:4px 8px;border:1px solid #ddd6fe;border-radius:6px;background:#fff;color:#7c3aed;cursor:pointer;font-size:12px;">
+                        👤
+                    </button>
+                    <button class="bv-actie-btn" data-actie="signalering" data-id="${bedrijf.id}"
+                            title="Tendersignalering" style="padding:4px 8px;border:1px solid #ddd6fe;border-radius:6px;background:#fff;color:#7c3aed;cursor:pointer;font-size:12px;">
+                        ⚡
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -357,6 +372,20 @@ export class BedrijvenView extends BaseView {
                 if (this.onCreateBedrijf) this.onCreateBedrijf();
             });
         }
+
+        // Actieknoppen: profiel en signalering (stop propagation zodat rij-click niet triggert)
+        this.container.querySelectorAll('.bv-actie-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id     = btn.dataset.id;
+                const actie  = btn.dataset.actie;
+                if (actie === 'profiel' && this.onOpenProfiel) {
+                    this.onOpenProfiel(id);
+                } else if (actie === 'signalering' && this.onOpenSignalering) {
+                    this.onOpenSignalering(id);
+                }
+            });
+        });
 
         // Row click = edit modal
         this.container.querySelectorAll('.table-view__row').forEach(row => {

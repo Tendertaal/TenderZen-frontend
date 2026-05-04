@@ -166,7 +166,11 @@ export class AnalyzeStep {
             // 1. Upload bestanden
             const formData = new FormData();
             for (const f of this.state.uploadedFiles) {
-                formData.append('files', f.file);
+                const displayName = f.displayName?.trim();
+                const fileToUpload = (displayName && displayName !== f.file.name)
+                    ? new File([f.file], displayName, { type: f.file.type })
+                    : f.file;
+                formData.append('files', fileToUpload);
             }
 
             const uploadUrl = `${this.state.baseURL}/smart-import/upload?tenderbureau_id=${encodeURIComponent(tenderbureauId)}`;
@@ -198,7 +202,8 @@ export class AnalyzeStep {
                     body: JSON.stringify({
                         extract_gunningscriteria: true,
                         extract_certificeringen: true,
-                        language: 'nl'
+                        language: 'nl',
+                        model: this.state.selectedModel || 'claude-sonnet-4-6'
                     })
                 }
             );
@@ -235,7 +240,7 @@ export class AnalyzeStep {
                         'Authorization': `Bearer ${this.state.authToken}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ model: 'sonnet' })
+                    body: JSON.stringify({ model: this.state.selectedModel || 'claude-opus-4-7' })
                 }
             );
 
@@ -297,7 +302,8 @@ export class AnalyzeStep {
                     body: JSON.stringify({
                         extract_gunningscriteria: true,
                         extract_certificeringen: true,
-                        language: 'nl'
+                        language: 'nl',
+                        model: this.state.selectedModel || 'claude-sonnet-4-6'
                     })
                 }
             );
@@ -367,8 +373,7 @@ export class AnalyzeStep {
                     }
 
                     if (status.ai_model_used) {
-                        this.state.currentModel = status.ai_model_used.includes('sonnet')
-                            ? 'sonnet' : 'haiku';
+                        this.state.currentModel = status.ai_model_used;
                     }
 
                     if (this.state.tenderId && this.state.importId) {

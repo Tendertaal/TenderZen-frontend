@@ -3,6 +3,14 @@
 // Frontend/js/components/smart-import/BasicInfoStep.js
 // ================================================================
 
+const CLAUDE_MODELLEN = [
+    { id: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5',  omschrijving: 'Snel & goedkoop — voor eenvoudige taken',         badge: 'Snel',       badgeKleur: '#16a34a' },
+    { id: 'claude-sonnet-4-6',         label: 'Sonnet 4.6', omschrijving: 'Beste balans van kwaliteit en snelheid',           badge: 'Aanbevolen', badgeKleur: '#7c3aed' },
+    { id: 'claude-opus-4-6',           label: 'Opus 4.6',   omschrijving: 'Hoge kwaliteit — voor complexe analyses',         badge: 'Pro',        badgeKleur: '#d97706' },
+    { id: 'claude-opus-4-7',           label: 'Opus 4.7',   omschrijving: 'Nieuwste flagship — maximale kwaliteit',          badge: 'Nieuwst',    badgeKleur: '#dc2626' },
+];
+const DEFAULT_SI_MODEL = 'claude-sonnet-4-6';
+
 class BasicInfoStep {
     constructor(state) {
         this.state = state;
@@ -17,16 +25,30 @@ class BasicInfoStep {
             || window.bureauAccessService?.getCurrentBureau?.()?.bureau_id
             || null;
 
-        // Laad alleen bedrijven van het actieve tenderbureau
+        // Laad alleen bedrijven van het actieve tenderbureau (via koppeltabel)
         try {
             const sb = window.supabaseClient || window.supabase;
             if (sb && this.bureauId) {
-                const { data } = await sb
-                    .from('bedrijven')
-                    .select('id, bedrijfsnaam, plaats')
+                // Stap 1: gekoppelde bedrijf IDs ophalen
+                const { data: relaties } = await sb
+                    .from('bureau_bedrijf_relaties')
+                    .select('bedrijf_id')
                     .eq('tenderbureau_id', this.bureauId)
-                    .order('bedrijfsnaam', { ascending: true });
-                this.bedrijven = data || [];
+                    .eq('status', 'actief');
+
+                const bedrijfIds = (relaties || []).map(r => r.bedrijf_id);
+
+                if (bedrijfIds.length > 0) {
+                    // Stap 2: bedrijven ophalen
+                    const { data } = await sb
+                        .from('bedrijven')
+                        .select('id, bedrijfsnaam, plaats')
+                        .in('id', bedrijfIds)
+                        .order('bedrijfsnaam', { ascending: true });
+                    this.bedrijven = data || [];
+                } else {
+                    this.bedrijven = [];
+                }
             } else {
                 this.bedrijven = [];
             }
@@ -94,16 +116,43 @@ class BasicInfoStep {
                     <input type="date" class="si-field-input" id="si-basic-deadline"
                            value="${this._esc(this.state.deadline || '')}" />
                 </div>
+
+                <div class="si-basic-field">
+                    <label class="si-field-label">AI Model</label>
+                    <div class="si-model-grid">
+                        ${CLAUDE_MODELLEN.map(m => {
+                            const geselecteerd = (this.state.selectedModel || DEFAULT_SI_MODEL) === m.id;
+                            return `
+                            <label class="si-model-optie${geselecteerd ? ' si-model-optie--actief' : ''}">
+                                <input type="radio" name="si-model" value="${m.id}" ${geselecteerd ? 'checked' : ''} style="display:none;">
+                                <div class="si-model-optie-body">
+                                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;">
+                                        <span style="font-weight:600;font-size:13px;color:#0f172a;">${m.label}</span>
+                                        <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;background:${m.badgeKleur}20;color:${m.badgeKleur};">${m.badge}</span>
+                                    </div>
+                                    <span style="font-size:11px;color:#64748b;">${m.omschrijving}</span>
+                                </div>
+                            </label>`;
+                        }).join('')}
+                    </div>
+                </div>
             </div>
         </div>`;
     }
 
     attachListeners(container) {
-        // Pre-selecteer bedrijf als state al een waarde heeft
         if (this.state.bedrijfId) {
             const sel = container.querySelector('#si-basic-bedrijf');
             if (sel) sel.value = this.state.bedrijfId;
         }
+
+        // Model-selector: highlight actieve optie bij klik
+        container.querySelectorAll('.si-model-optie input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                container.querySelectorAll('.si-model-optie').forEach(el => el.classList.remove('si-model-optie--actief'));
+                radio.closest('.si-model-optie')?.classList.add('si-model-optie--actief');
+            });
+        });
     }
 
     validate() {
@@ -136,12 +185,14 @@ class BasicInfoStep {
     }
 
     getData() {
+        const gekozenModel = document.querySelector('input[name="si-model"]:checked')?.value || DEFAULT_SI_MODEL;
         return {
             tenderNaam: document.getElementById('si-basic-naam')?.value?.trim() || this.state.tenderNaam || '',
             opdrachtgever: document.getElementById('si-basic-opdrachtgever')?.value?.trim() || '',
             bedrijfId: document.getElementById('si-basic-bedrijf')?.value || null,
             deadline: document.getElementById('si-basic-deadline')?.value || null,
             tenderbureauId: this.bureauId,
+            selectedModel: gekozenModel,
         };
     }
 

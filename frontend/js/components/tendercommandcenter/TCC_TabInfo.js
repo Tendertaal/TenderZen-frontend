@@ -591,14 +591,30 @@ async function _loadBedrijven() {
 
     const sb = window.supabaseClient || window.supabase;
     if (sb) {
-      const { data, error } = await sb
-        .from('bedrijven')
-        .select('id, bedrijfsnaam, kvk_nummer, plaats, contactpersoon, branche')
+      // Stap 1: gekoppelde bedrijf IDs ophalen via koppeltabel
+      const { data: relaties, error: relErr } = await sb
+        .from('bureau_bedrijf_relaties')
+        .select('bedrijf_id')
         .eq('tenderbureau_id', bureauId)
-        .order('bedrijfsnaam');
+        .eq('status', 'actief');
 
-      if (error) throw error;
-      _infoState.bedrijven = data || [];
+      if (relErr) throw relErr;
+
+      const bedrijfIds = (relaties || []).map(r => r.bedrijf_id);
+
+      if (bedrijfIds.length > 0) {
+        // Stap 2: bedrijven ophalen via IDs
+        const { data, error } = await sb
+          .from('bedrijven')
+          .select('id, bedrijfsnaam, kvk_nummer, plaats, contactpersoon, branche')
+          .in('id', bedrijfIds)
+          .order('bedrijfsnaam');
+
+        if (error) throw error;
+        _infoState.bedrijven = data || [];
+      } else {
+        _infoState.bedrijven = [];
+      }
     }
 
     _infoState.bedrijvenLoaded = true;

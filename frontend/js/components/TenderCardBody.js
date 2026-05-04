@@ -81,10 +81,10 @@ export class TenderCardBody {
                         </div>
                     ` : ''}
 
-                    ${this.showBureau && (tender.tenderbureau_naam || tender.tenderbureaus?.naam) ? `
+                    ${this.showBureau && (tender.tenderbureau_naam || tender.tenderbureaus?.naam || window.app?.currentBureau?.bureau_naam) ? `
                         <div class="tcb-info-line tcb-info-line--bureau">
-                            ${getIcon('edit', this.size === 'compact' ? 12 : 14, '#94a3b8')}
-                            <span>Bureau: ${this._highlight(tender.tenderbureau_naam || tender.tenderbureaus?.naam)}</span>
+                            ${getIcon('crown', this.size === 'compact' ? 12 : 14)}
+                            <span>Bureau: <strong>${this._highlight(tender.tenderbureau_naam || tender.tenderbureaus?.naam || window.app?.currentBureau?.bureau_naam)}</strong></span>
                         </div>
                     ` : ''}
                 </div>

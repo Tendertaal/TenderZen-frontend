@@ -168,6 +168,26 @@ export class KanbanView {
     setTenders(tenders) {
         this.tenders = tenders || [];
         if (this.container) this.render();
+        this._loadNotitieCounts();
+    }
+
+    async _loadNotitieCounts() {
+        const tenderIds = this.tenders.map(t => t.id).filter(Boolean);
+        if (tenderIds.length === 0) return;
+        const sb = window.supabaseClient || window.supabase;
+        if (!sb) return;
+        const { data } = await sb
+            .from('tender_notities')
+            .select('tender_id')
+            .in('tender_id', tenderIds);
+        const countMap = {};
+        (data || []).forEach(n => {
+            countMap[n.tender_id] = (countMap[n.tender_id] || 0) + 1;
+        });
+        for (const tender of this.tenders) {
+            tender._notitiesCount = countMap[tender.id] || 0;
+        }
+        if (this.container) this.render();
     }
 
     setFaseFilter(fases) {
@@ -289,6 +309,7 @@ export class KanbanView {
             tenderId: tender.id,
             teamAssignments: tender.team_assignments || [],
             planningCounts: planning, checklistCounts: checklist,
+            notitiesCount: tender._notitiesCount || 0,
             size: 'compact'
         });
 
@@ -636,6 +657,13 @@ export class KanbanView {
                     case 'open-settings':
                         console.log('Open settings voor tender:', tenderId);
                         break;
+                    case 'open-notities': {
+                        const tender = window.app?.tenders?.find(t => t.id === tenderId);
+                        if (window.notitiesPanel) {
+                            window.notitiesPanel.setTender(tenderId, tender?.naam || 'Tender');
+                        }
+                        break;
+                    }
                     case 'open-planning':
                     case 'open-checklist':
                     case 'edit-team':

@@ -69,11 +69,20 @@
     <link rel="stylesheet" href="/css/components/TeamStep.css">
     <link rel="stylesheet" href="/css/components/ResultStep.css">
 
+    <!-- BedrijfsprofielModal CSS (vóór icons zodat volgorde klopt) -->
+    <link rel="stylesheet" href="css/BedrijfsprofielModal.css">
+
     <!-- Icons — moet vóór TCC scripts laden zodat tccIcon() beschikbaar is -->
     <script src="js/icons.js"></script>
 
     <!-- Centrale fase-kleuren config — BRON VAN WAARHEID, vóór alle componenten laden -->
     <script src="js/config/FaseKleuren.js"></script>
+
+    <!-- ConfirmDialog singleton (global, vóór main.js) -->
+    <script src="js/components/ConfirmDialog.js"></script>
+
+    <!-- BedrijfsprofielModal (global IIFE, na icons.js) -->
+    <script src="js/components/BedrijfsprofielModal.js"></script>
 
     <!-- Notities paneel (global, vóór main.js) -->
     <script src="js/components/NotitiesPanel.js"></script>
@@ -87,11 +96,36 @@
     <script src="js/views/KalenderView.js"></script>
     <script src="js/views/GanttView.js"></script>
 
+    <!-- TendermatchView (non-module global, vóór main.js) -->
+    <link rel="stylesheet" href="css/TendermatchView.css">
+    <script src="js/views/TendermatchView.js"></script>
+
+    <!-- MatchpoolView (non-module global, vóór main.js) -->
+    <link rel="stylesheet" href="css/MatchpoolView.css">
+    <script src="js/views/MatchpoolView.js"></script>
+
+    <!-- VerrijkingView (non-module global, vóór main.js) -->
+    <link rel="stylesheet" href="css/VerrijkingView.css">
+    <script src="js/views/VerrijkingView.js"></script>
+
+    <!-- BedrijfsProfielView (non-module global, vóór main.js) -->
+    <link rel="stylesheet" href="css/BedrijfsProfielView.css">
+    <script src="js/views/BedrijfsProfielView.js"></script>
+
+    <!-- TendersignaleringView (non-module global, vóór main.js) -->
+    <link rel="stylesheet" href="css/TendersignaleringView.css">
+    <script src="js/views/TendersignaleringView.js"></script>
+
+    <!-- OfferteCalculatorView (non-module global, vóór main.js) -->
+    <link rel="stylesheet" href="css/OfferteCalculatorView.css">
+    <script src="js/views/OfferteCalculatorView.js"></script>
+
     <!-- Tender Command Center — CSS -->
     <link rel="stylesheet" href="css/TenderCommandCenter/TenderCommandCenter.css?v=3">
     <link rel="stylesheet" href="css/TenderCommandCenter/TCC_TabChecklist.css?v=1">
     <link rel="stylesheet" href="css/TenderCommandCenter/TCC_TabInfo.css?v=1">
     <link rel="stylesheet" href="css/TenderCommandCenter/TCC_TabProjectplanning.css?v=1">
+    <link rel="stylesheet" href="css/TenderCommandCenter/TCC_TabImplementatiePlanning.css?v=1">
     <link rel="stylesheet" href="css/TenderCommandCenter/TCC_TabTenderplanning.css?v=1">
     <link rel="stylesheet" href="css/TenderCommandCenter/TCC_TabTeam.css?v=1">
     <link rel="stylesheet" href="css/TenderCommandCenter/TCC_TabNotities.css?v=1">
@@ -101,6 +135,7 @@
     <script src="js/components/TenderCommandCenter/TCC_TabAI.js"></script>
     <script src="js/components/TenderCommandCenter/TCC_TabTenderplanning.js"></script>
     <script src="js/components/TenderCommandCenter/TCC_TabProjectplanning.js"></script>
+    <script src="js/components/TenderCommandCenter/TCC_TabImplementatiePlanning.js"></script>
     <script src="js/components/TenderCommandCenter/TCC_TabTeam.js"></script>
     <script src="js/components/TenderCommandCenter/DocumentPreview.js"></script>
     <script src="js/components/TenderCommandCenter/TCC_TabDocs.js"></script>
@@ -140,6 +175,7 @@
 
         /* Nieuwe layout — sidebar is position:fixed, main gebruikt margin */
         #tz-app-layout {
+            display: flex;
             height: 100vh;
             overflow: hidden;
         }
@@ -153,6 +189,8 @@
         #app-main {
             display: flex;
             flex-direction: column;
+            flex: 1;
+            min-width: 0;
             height: 100vh;
             overflow: hidden;
             margin-left: 52px; /* breedte ingeklapte sidebar */

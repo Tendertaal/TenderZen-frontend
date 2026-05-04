@@ -1069,6 +1069,16 @@ function iconHardhat(options = {}) {
 }
 
 /**
+ * Message Square icoon - Slate (notities/opmerkingen)
+ */
+function iconMessageSquare(options = {}) {
+    return createIcon(
+        `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+        { color: IconColors.slate, ...options }
+    );
+}
+
+/**
  * Archive icoon - Slate (archief)
  */
 function iconArchive(options = {}) {
@@ -1290,6 +1300,7 @@ window.Icons = {
     edit: iconEdit,
     trash: iconTrash,
     save: iconSave,
+    messageSquare: iconMessageSquare,
     copy: iconCopy,
     refresh: iconRefresh,
     close: iconClose,

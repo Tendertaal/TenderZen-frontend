@@ -1,0 +1,1066 @@
+/* ================================================================
+   TendermatchView — Acquisitie matching pagina
+   TenderZen v2.0 — drie-koloms layout + modal
+   ================================================================ */
+
+.tm-layout {
+    display: flex;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+    margin: -20px;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────── */
+
+.tm-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    border-right: 0.5px solid #e2e8f0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tm-sb-header {
+    padding: 14px 16px 12px;
+    border-bottom: 0.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.tm-sb-title {
+    font-size: 12px; /* was 11px */
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-sb-nieuw-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 0.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .1s, border-color .1s;
+}
+
+.tm-sb-nieuw-btn:hover {
+    background: #eef2ff;
+    border-color: #6366f1;
+    color: #4f46e5;
+}
+
+.tm-sb-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.tm-sb-list::-webkit-scrollbar { width: 4px; }
+.tm-sb-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+.tm-sb-leeg {
+    padding: 24px 16px;
+    font-size: 13px;
+    color: #94a3b8;
+    text-align: center;
+    line-height: 1.6;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-sb-loading {
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+}
+
+.tm-sessie-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background .1s;
+    border-left: 2px solid transparent;
+}
+
+.tm-sessie-item:hover { background: #f8fafc; }
+
+.tm-sessie-item.actief {
+    background: #eef2ff;
+    border-left-color: #6366f1;
+}
+
+.tm-sessie-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+}
+
+.tm-dot-blauw  { background: #6366f1; }
+.tm-dot-groen  { background: #10b981; }
+.tm-dot-grijs  { background: #94a3b8; }
+
+.tm-sessie-item-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tm-sessie-delete {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    opacity: 0;
+    transition: opacity .12s;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.tm-sessie-item:hover .tm-sessie-delete { opacity: 1; }
+.tm-sessie-delete:hover svg { color: #ef4444; }
+
+.tm-sessie-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tm-sessie-titel {
+    font-size: 14px; /* was 12px */
+    font-weight: 500;
+    color: #0f172a;
+    font-family: 'DM Sans', sans-serif;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+}
+
+.tm-sessie-meta {
+    font-size: 12px; /* was 11px */
+    color: #94a3b8;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Content area ──────────────────────────────────────────────── */
+
+.tm-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #f8fafc;
+}
+
+/* ── Nieuwe match form ─────────────────────────────────────────── */
+
+.tm-nieuw-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    padding: 24px 32px;
+    gap: 0;
+}
+
+.tm-nieuw-header {
+    margin-bottom: 20px;
+}
+
+.tm-nieuw-title {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: 'DM Sans', sans-serif;
+    margin-bottom: 4px;
+}
+
+.tm-nieuw-sub {
+    font-size: 13px;
+    color: #64748b;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.5;
+}
+
+.tm-nieuw-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 720px;
+}
+
+.tm-textarea {
+    width: 100%;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    resize: vertical;
+    line-height: 1.6;
+    min-height: 200px;
+    transition: border-color .12s;
+    box-sizing: border-box;
+}
+
+.tm-textarea:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.tm-match-btn {
+    width: 100%;
+    padding: 10px;
+    background: #4f46e5;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background .12s;
+}
+
+.tm-match-btn:hover:not(:disabled) { background: #4338ca; }
+.tm-match-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+.tm-hint {
+    font-size: 13px; /* was 11px */
+    color: #94a3b8;
+    text-align: center;
+    line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Analyse blok (nieuw match form) ───────────────────────────── */
+
+.tm-analyse {
+    background: #f0f4ff;
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 0.5px solid #c7d2fe;
+}
+
+.tm-analyse-label {
+    font-size: 12px; /* was 10px */
+    color: #6366f1;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 5px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+}
+
+.tm-analyse-tekst {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+    line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-analyse-meta {
+    font-size: 13px; /* was 11px */
+    color: #94a3b8;
+    margin-top: 6px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-analyse-meta-tabel {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 0.5px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tm-analyse-meta-rij {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-analyse-meta-label {
+    color: #94a3b8;
+    flex-shrink: 0;
+    width: 160px;
+}
+
+.tm-analyse-meta-waarde {
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.tm-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.tm-tag {
+    font-size: 12px; /* was 11px (10px) */
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-tag-sector { background: #eef2ff; color: #4338ca; }
+.tm-tag-regio  { background: #ecfdf5; color: #065f46; }
+.tm-tag-cert   { background: #fff7ed; color: #9a3412; }
+
+/* ── Resultaten wrap (in nieuw-match form) ─────────────────────── */
+
+.tm-resultaten-wrap {
+    margin-top: 8px;
+}
+
+.tm-resultaten-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.tm-resultaten-titel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-resultaten-count {
+    font-size: 12px;
+    color: #94a3b8;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-resultaten-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ── Sessie view (kandidaten) ──────────────────────────────────── */
+
+.tm-sessie-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tm-sessie-topbar {
+    padding: 12px 24px;
+    border-bottom: 0.5px solid #e2e8f0;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+}
+
+.tm-sessie-topbar-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tm-sessie-topbar-titel {
+    font-size: 16px; /* was 14px */
+    font-weight: 600;
+    color: #0f172a;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-sessie-badge {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-badge-blauw { background: #eef2ff; color: #4338ca; }
+.tm-badge-groen { background: #ecfdf5; color: #065f46; }
+.tm-badge-grijs { background: #f1f5f9; color: #64748b; }
+
+.tm-sessie-topbar-rechts {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tm-actie-btn {
+    font-size: 13px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 0.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Sans', sans-serif;
+    transition: background .1s;
+}
+
+.tm-actie-btn:hover { background: #f1f5f9; }
+
+/* ── Aanbesteding tekst blok ───────────────────────────────────── */
+
+.tm-aanbesteding-tekst {
+    margin: 8px 20px 0;
+    border: 0.5px solid #c7d2fe;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.tm-aanbesteding-tekst summary {
+    padding: 8px 14px;
+    font-size: 14px; /* was 12px */
+    color: #4338ca;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    background: #eef2ff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Sans', sans-serif;
+    list-style: none;
+}
+
+.tm-aanbesteding-tekst summary::-webkit-details-marker { display: none; }
+
+.tm-aanbesteding-inhoud {
+    padding: 12px 14px;
+    font-size: 14px; /* was 12px */
+    color: #475569;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    border-top: 0.5px solid #c7d2fe;
+    background: #f5f7ff;
+    font-family: 'DM Sans', sans-serif;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+/* ── Analyse strip (sessie view) ───────────────────────────────── */
+
+.tm-analyse-strip {
+    padding: 10px 24px 12px;
+    border-bottom: 0.5px solid #e2e8f0;
+    background: #fafbff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.tm-analyse-strip .tm-analyse-label {
+    font-size: 12px; /* was 10px */
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.tm-analyse-omschrijving {
+    font-size: 15px; /* was 13px */
+    font-weight: 500;
+    color: #0f172a;
+    margin-bottom: 8px;
+    line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-analyse-strip-tekst {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.4;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Kandidatenlijst ───────────────────────────────────────────── */
+
+.tm-kandlist-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tm-kandlist-body::-webkit-scrollbar { width: 4px; }
+.tm-kandlist-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+/* ── Kandidaat kaart ───────────────────────────────────────────── */
+
+.tm-kandidaat-card {
+    background: #ffffff;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: border-color .12s;
+    max-width: 680px;
+}
+
+.tm-kandidaat-card:hover { border-color: #cbd5e1; }
+
+.tm-card-geconverteerd {
+    border-color: #a7f3d0;
+    background: #f0fdf4;
+}
+
+.tm-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 8px;
+}
+
+.tm-card-top-rechts {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.tm-card-naam {
+    font-size: 15px; /* was 13px */
+    font-weight: 600;
+    color: #0f172a;
+    flex: 1;
+    line-height: 1.3;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-score-badge {
+    font-size: 13px; /* was 12px */
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-score-hoog   { background: #E1F5EE; color: #0F6E56; }
+.tm-score-midden { background: #EAF3DE; color: #3B6D11; }
+.tm-score-laag   { background: #FAEEDA; color: #854F0B; }
+
+.tm-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 6px;
+}
+
+.tm-meta-tag {
+    font-size: 13px; /* was 11px */
+    color: #64748b;
+    background: #f8fafc;
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-cert-ok { color: #0F6E56; background: #E1F5EE; }
+
+.tm-card-reden {
+    font-size: 14px; /* was 12px */
+    color: #64748b;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 0.5px solid #f1f5f9;
+    gap: 8px;
+}
+
+.tm-card-acties {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tm-status-select {
+    font-size: 13px; /* was 11px */
+    color: #475569;
+    background: #f8fafc;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+}
+
+.tm-contact-link {
+    font-size: 13px;
+    color: #4338ca;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-contact-link:hover { text-decoration: underline; }
+
+.tm-tender-btn {
+    font-size: 13px; /* was 11px */
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: none;
+    background: #4f46e5;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    transition: background .1s;
+}
+
+.tm-tender-btn:hover { background: #4338ca; }
+
+.tm-tender-badge {
+    font-size: 13px;
+    color: #0F6E56;
+    background: #E1F5EE;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+}
+
+.tm-tender-verwijderd {
+    font-size: 12px;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    font-style: italic;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* ── States ─────────────────────────────────────────────────────── */
+
+.tm-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #94a3b8;
+    font-size: 13px;
+    text-align: center;
+    padding: 40px 20px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 40px;
+    color: #64748b;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-error {
+    padding: 16px;
+    font-size: 13px;
+    color: #dc2626;
+    background: #fef2f2;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e2e8f0;
+    border-top-color: #6366f1;
+    border-radius: 50%;
+    animation: tm-spin .7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes tm-spin { to { transform: rotate(360deg); } }
+
+/* ── Modal ──────────────────────────────────────────────────────── */
+
+.tm-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+}
+
+.tm-modal {
+    background: #ffffff;
+    border-radius: 12px;
+    width: 480px;
+    max-width: calc(100vw - 32px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tm-modal-breed {
+    width: 560px;
+}
+
+.tm-modal-ai-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #6366f1;
+    background: #eef2ff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+}
+
+.tm-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tm-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.tm-form-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-form-input {
+    padding: 8px 10px;
+    border: 0.5px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    transition: border-color .12s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tm-form-input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.tm-modal-header {
+    padding: 18px 20px 14px;
+    border-bottom: 0.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tm-modal-titel {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-modal-sluit {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    transition: background .1s;
+}
+
+.tm-modal-sluit:hover { background: #f1f5f9; }
+
+.tm-modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.tm-modal-bedrijf {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 10px 14px;
+    border: 0.5px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tm-modal-bedrijf-naam {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-modal-bedrijf-meta {
+    font-size: 12px;
+    color: #64748b;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-modal-rij {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.tm-modal-veld {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tm-modal-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-vereist { color: #dc2626; }
+
+.tm-modal-input {
+    padding: 8px 10px;
+    border: 0.5px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    color: #1e293b;
+    background: #ffffff;
+    transition: border-color .12s;
+}
+
+.tm-modal-input:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.tm-modal-fout {
+    font-size: 12px;
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-modal-footer {
+    padding: 14px 20px;
+    border-top: 0.5px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.tm-modal-annuleer {
+    padding: 8px 16px;
+    border-radius: 7px;
+    border: 0.5px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background .1s;
+}
+
+.tm-modal-annuleer:hover { background: #f1f5f9; }
+
+.tm-modal-opslaan {
+    padding: 8px 18px;
+    border-radius: 7px;
+    border: none;
+    background: #4f46e5;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background .12s;
+}
+
+.tm-modal-opslaan:hover:not(:disabled) { background: #4338ca; }
+.tm-modal-opslaan:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ── Score breakdown ─────────────────────────────────────────────── */
+
+.tm-breakdown {
+    margin: 8px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 12px;
+    background: var(--color-background-secondary, #f8fafc);
+    border-radius: 8px;
+    border: 0.5px solid var(--color-border-tertiary, #e2e8f0);
+}
+
+.tm-breakdown-rij {
+    display: grid;
+    grid-template-columns: 90px 80px 32px 1fr;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-breakdown-label {
+    color: var(--color-text-tertiary, #94a3b8);
+    font-size: 11px;
+}
+
+.tm-breakdown-bar-wrap {
+    height: 4px;
+    background: var(--color-border-tertiary, #e2e8f0);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.tm-breakdown-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width .3s ease;
+}
+
+.tm-breakdown-score {
+    font-size: 11px;
+    font-weight: 500;
+    text-align: right;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-breakdown-reden {
+    font-size: 11px;
+    color: var(--color-text-secondary, #64748b);
+    line-height: 1.4;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Matchingsadvies ─────────────────────────────────────────────── */
+
+.tm-advies-details {
+    margin-top: 6px;
+}
+
+.tm-advies-summary {
+    font-size: 12px;
+    color: #4338ca;
+    cursor: pointer;
+    padding: 4px 0;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+.tm-advies-summary::-webkit-details-marker { display: none; }
+
+.tm-advies-tekst {
+    font-size: 13px;
+    color: var(--color-text-secondary, #64748b);
+    line-height: 1.6;
+    padding: 8px 0 4px;
+    border-top: 0.5px solid var(--color-border-tertiary, #e2e8f0);
+    margin-top: 6px;
+    font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Aanbevolen badge ────────────────────────────────────────────── */
+
+.tm-aanbevolen {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: #E1F5EE;
+    color: #0F6E56;
+    font-weight: 500;
+    white-space: nowrap;
+    font-family: 'DM Sans', sans-serif;
+}

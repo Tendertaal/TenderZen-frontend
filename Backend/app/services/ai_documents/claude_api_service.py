@@ -22,9 +22,10 @@ import anthropic
 logger = logging.getLogger(__name__)
 
 # Model constanten
-MODEL_HAIKU = "claude-haiku-4-5-20251001"      # Standaard - snel, goedkoop
-MODEL_SONNET = "claude-sonnet-4-20250514"      # Pro - nauwkeuriger
-DEFAULT_MODEL = MODEL_HAIKU
+MODEL_HAIKU = "claude-haiku-4-5-20251001"
+MODEL_SONNET = "claude-sonnet-4-6"
+MODEL_OPUS = "claude-opus-4-6"
+DEFAULT_MODEL = MODEL_SONNET
 
 
 class ClaudeAPIService:
@@ -77,14 +78,18 @@ class ClaudeAPIService:
         Returns:
             Dict with success, content, model, usage info
         """
-        # v2.0: Bepaal welk model te gebruiken
-        if model == "sonnet" or model == MODEL_SONNET:
-            selected_model = MODEL_SONNET
-        elif model == "haiku" or model == MODEL_HAIKU or model is None:
-            selected_model = MODEL_HAIKU
+        # Bepaal welk model te gebruiken — shortcodes en volledige IDs worden beide ondersteund
+        _shortcodes = {
+            "haiku": MODEL_HAIKU,
+            "sonnet": MODEL_SONNET,
+            "opus": MODEL_OPUS,
+        }
+        if model in _shortcodes:
+            selected_model = _shortcodes[model]
+        elif model:
+            selected_model = model  # Volledig model-ID doorgeven
         else:
-            # Probeer als exacte model string
-            selected_model = model if model else self.default_model
+            selected_model = self.default_model
         
         logger.info(f"🤖 Using model: {selected_model}")
         

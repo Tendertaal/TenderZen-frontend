@@ -91,6 +91,7 @@ export class TenderCardFooter {
         this.teamAssignments = options.teamAssignments || [];
         this.planningCounts = options.planningCounts || { done: 0, total: 0 };
         this.checklistCounts = options.checklistCounts || { done: 0, total: 0 };
+        this.notitiesCount = options.notitiesCount || 0;
         this.size = options.size || 'default';
         this.maxAvatars = options.maxAvatars || (this.size === 'compact' ? 3 : 5);
     }
@@ -108,19 +109,26 @@ export class TenderCardFooter {
                     ${this._renderTeamAvatars()}
                 </div>
                 <div class="tcf-shortcuts">
-                    <button class="tcf-shortcut tcf-shortcut--planning" 
+                    <button class="tcf-shortcut tcf-shortcut--planning"
                             data-action="open-planning"
-                            data-tender-id="${this.tenderId}" 
+                            data-tender-id="${this.tenderId}"
                             title="Projectplanning openen">
                         ${getIcon('calendar', this.size === 'compact' ? 12 : 13, 'currentColor')}
                         <span class="tcf-shortcut-count">${this.planningCounts.done}/${this.planningCounts.total}</span>
                     </button>
-                    <button class="tcf-shortcut tcf-shortcut--checklist" 
+                    <button class="tcf-shortcut tcf-shortcut--checklist"
                             data-action="open-checklist"
-                            data-tender-id="${this.tenderId}" 
+                            data-tender-id="${this.tenderId}"
                             title="Indieningschecklist openen">
                         ${getIcon('check', this.size === 'compact' ? 12 : 13, 'currentColor')}
                         <span class="tcf-shortcut-count">${this.checklistCounts.done}/${this.checklistCounts.total}</span>
+                    </button>
+                    <button class="tcf-shortcut tcf-shortcut--notities"
+                            data-action="open-notities"
+                            data-tender-id="${this.tenderId}"
+                            title="Notities openen (${this.notitiesCount})">
+                        ${getIcon('messageSquare', this.size === 'compact' ? 12 : 13, 'currentColor')}
+                        ${this.notitiesCount > 0 ? `<span class="tcf-notities-badge">${this.notitiesCount > 99 ? '99+' : this.notitiesCount}</span>` : ''}
                     </button>
                 </div>
             </div>

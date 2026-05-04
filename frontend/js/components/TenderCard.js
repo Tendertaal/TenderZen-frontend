@@ -74,6 +74,7 @@ export class TenderCard {
             this.searchQuery = opts.searchQuery || '';
             this.planningCounts = opts.planningCounts || { done: 0, total: 0 };
             this.checklistCounts = opts.checklistCounts || { done: 0, total: 0 };
+            this.notitiesCount = opts.notitiesCount || 0;
         } else {
             var opts = tenderOrOptions || {};
             this.tender = opts.tender || {};
@@ -81,6 +82,7 @@ export class TenderCard {
             this.searchQuery = opts.searchQuery || '';
             this.planningCounts = opts.planningCounts || { done: 0, total: 0 };
             this.checklistCounts = opts.checklistCounts || { done: 0, total: 0 };
+            this.notitiesCount = opts.notitiesCount || 0;
         }
     }
 
@@ -102,6 +104,7 @@ export class TenderCard {
         var footer = new TenderCardFooter({
             tenderId: tender.id, teamAssignments: tender.team_assignments,
             planningCounts: this.planningCounts, checklistCounts: this.checklistCounts,
+            notitiesCount: this.notitiesCount,
             size: 'default'
         });
 

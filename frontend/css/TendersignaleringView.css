@@ -1,0 +1,1128 @@
+/* =====================================================
+   TendersignaleringView.css — TenderZen
+   ===================================================== */
+
+.tsv-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #f5f3ff;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* Header */
+.tsv-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 28px 16px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+.tsv-header-terug {
+    background: none;
+    border: 1px solid #ddd6fe;
+    color: #7c3aed;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+}
+.tsv-header-terug:hover { background: #f5f3ff; }
+.tsv-header-info { flex: 1; }
+.tsv-header-titel {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin: 0;
+}
+.tsv-header-sub {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 2px 0 0;
+}
+.tsv-header-acties {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.tsv-btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    background: #fff;
+    color: #7c3aed;
+    border: 1.5px solid #ddd6fe;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.tsv-btn-secondary:hover { background: #f5f3ff; border-color: #c4b5fd; }
+.tsv-scan-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 20px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.tsv-scan-btn:hover { opacity: 0.88; }
+.tsv-scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Stats strip */
+.tsv-stats {
+    display: flex;
+    gap: 12px;
+    padding: 16px 28px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+.tsv-stat-kaart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 20px;
+    background: #fafafa;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    min-width: 100px;
+    flex-shrink: 0;
+}
+.tsv-stat-waarde {
+    font-size: 24px;
+    font-weight: 800;
+    color: #1e1b4b;
+    line-height: 1;
+}
+.tsv-stat-label {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 4px;
+    text-align: center;
+    white-space: nowrap;
+}
+.tsv-stat-kaart--groen .tsv-stat-waarde { color: #059669; }
+.tsv-stat-kaart--oranje .tsv-stat-waarde { color: #d97706; }
+.tsv-stat-kaart--paars .tsv-stat-waarde { color: #7c3aed; }
+
+/* Filter balk */
+.tsv-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 28px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+.tsv-filter-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.tsv-filter-btn:hover { border-color: #c4b5fd; color: #4c1d95; }
+.tsv-filter-btn.is-actief {
+    background: #7c3aed;
+    color: #fff;
+    border-color: #7c3aed;
+}
+.tsv-filter-scheider { flex: 1; }
+.tsv-min-score {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #6b7280;
+}
+.tsv-min-score input[type=range] {
+    width: 100px;
+    accent-color: #7c3aed;
+}
+
+/* Main layout: matches-lijst + detail paneel */
+.tsv-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* Matchlijst */
+.tsv-match-lijst {
+    width: 380px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding: 16px 12px 16px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-right: 1px solid #e5e7eb;
+    background: #fafafa;
+}
+
+/* ── Match kaart (TenderCard visual language) ── */
+.tsv-match-kaart {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+}
+.tsv-match-kaart:hover {
+    border-color: #c4b5fd;
+    box-shadow: 0 2px 8px rgba(124,58,237,0.10);
+}
+.tsv-match-kaart.is-actief {
+    border-color: #7c3aed;
+    box-shadow: 0 2px 12px rgba(124,58,237,0.18);
+}
+
+/* Left accent bar — AIDA kleur per status */
+.tsv-mk-accent {
+    width: 4px;
+    flex-shrink: 0;
+    border-radius: 0;
+    background: #e5e7eb;
+}
+.tsv-mk--nieuw        .tsv-mk-accent { background: #7c3aed; }
+.tsv-mk--benaderd     .tsv-mk-accent { background: #2563eb; }
+.tsv-mk--geinteresseerd .tsv-mk-accent { background: #0891b2; }
+.tsv-mk--offerte      .tsv-mk-accent { background: #059669; }
+.tsv-mk--afgewezen    .tsv-mk-accent { background: #9ca3af; }
+.tsv-mk--niet_relevant .tsv-mk-accent { background: #d1d5db; }
+.tsv-mk--bekeken      .tsv-mk-accent { background: #0369a1; }
+.tsv-mk--opgeslagen   .tsv-mk-accent { background: #065f46; }
+
+/* Inner content wrapper */
+.tsv-mk-inner {
+    flex: 1;
+    padding: 12px 14px;
+    min-width: 0;
+}
+
+/* Header: naam + score badge */
+.tsv-mk-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.tsv-mk-naam {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e1b4b;
+    line-height: 1.35;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Score badge — consistent met TenderZen kleuren */
+.tsv-score-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 800;
+    flex-shrink: 0;
+    border: 2px solid currentColor;
+}
+.tsv-score-badge--groen  { color: #059669; background: #d1fae5; }
+.tsv-score-badge--oranje { color: #d97706; background: #fef3c7; }
+.tsv-score-badge--rood   { color: #dc2626; background: #fee2e2; }
+
+/* Info lines — zelfde patroon als TenderCardBody */
+.tsv-mk-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.tsv-mk-info-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.3;
+}
+.tsv-mk-info-line svg { flex-shrink: 0; color: #94a3b8; }
+.tsv-mk-info-line--bedrijf svg { color: #7c3aed; }
+
+/* Footer: status badge + actieknop */
+.tsv-mk-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+/* Status badges — volledig AIDA spectrum */
+.tsv-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.tsv-status-badge--nieuw          { background: #ede9fe; color: #4c1d95; }
+.tsv-status-badge--benaderd       { background: #dbeafe; color: #1d4ed8; }
+.tsv-status-badge--geinteresseerd { background: #cffafe; color: #0e7490; }
+.tsv-status-badge--offerte        { background: #d1fae5; color: #065f46; }
+.tsv-status-badge--afgewezen      { background: #f3f4f6; color: #9ca3af; }
+.tsv-status-badge--niet_relevant  { background: #f9fafb; color: #d1d5db; }
+.tsv-status-badge--bekeken        { background: #e0f2fe; color: #0369a1; }
+.tsv-status-badge--opgeslagen     { background: #d1fae5; color: #065f46; }
+
+/* Afwijzen knop in kaart footer */
+.tsv-status-knop {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #fff;
+}
+.tsv-status-knop--afwijzen { border-color: #dc2626; color: #dc2626; }
+.tsv-status-knop--afwijzen:hover { background: #fee2e2; }
+
+/* Detail paneel */
+.tsv-detail {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+}
+.tsv-detail-leeg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #9ca3af;
+    gap: 12px;
+}
+.tsv-detail-leeg-icon { font-size: 48px; opacity: 0.4; }
+.tsv-detail-leeg-tekst { font-size: 14px; }
+
+.tsv-detail-header {
+    margin-bottom: 20px;
+}
+.tsv-detail-naam {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin: 0 0 6px;
+}
+.tsv-detail-dienst {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 12px;
+}
+.tsv-detail-acties {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.tsv-detail-actie-btn {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.tsv-detail-actie-btn--opslaan { background: #7c3aed; color: #fff; border: none; }
+.tsv-detail-actie-btn--opslaan:hover { opacity: 0.88; }
+.tsv-detail-actie-btn--afwijzen { background: #fff; color: #dc2626; border: 1px solid #fca5a5; }
+.tsv-detail-actie-btn--afwijzen:hover { background: #fee2e2; }
+.tsv-detail-actie-btn--reset { background: #fff; color: #6b7280; border: 1px solid #e5e7eb; }
+.tsv-detail-actie-btn--reset:hover { background: #f3f4f6; }
+
+/* Score kaart in detail */
+.tsv-score-kaart {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+}
+.tsv-score-kaart-titel {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.tsv-totaal-score {
+    font-size: 36px;
+    font-weight: 800;
+    color: #7c3aed;
+}
+.tsv-totaal-score-label { font-size: 14px; color: #6b7280; font-weight: 400; }
+
+/* Score breakdown bars */
+.tsv-breakdown-rij {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.tsv-breakdown-naam {
+    width: 180px;
+    font-size: 12px;
+    color: #4b5563;
+    flex-shrink: 0;
+}
+.tsv-breakdown-bar-wrap {
+    flex: 1;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+}
+.tsv-breakdown-bar {
+    height: 100%;
+    border-radius: 4px;
+    background: #7c3aed;
+    transition: width 0.4s;
+}
+.tsv-breakdown-bar--hoog { background: #059669; }
+.tsv-breakdown-bar--midden { background: #d97706; }
+.tsv-breakdown-bar--laag { background: #dc2626; }
+.tsv-breakdown-waarde {
+    width: 36px;
+    text-align: right;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e1b4b;
+}
+.tsv-breakdown-max { font-size: 11px; color: #9ca3af; }
+
+.tsv-toelichting {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #f5f3ff;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #4c1d95;
+    line-height: 1.5;
+    font-style: italic;
+}
+
+/* Tender detail velden */
+.tsv-tender-info {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+}
+.tsv-tender-info-titel {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin: 0 0 14px;
+}
+.tsv-info-rij {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+.tsv-info-sleutel {
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 140px;
+    flex-shrink: 0;
+}
+.tsv-info-waarde { color: #1e1b4b; }
+
+/* Score popup */
+.tsv-popup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 8000;
+}
+.tsv-popup {
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    width: 460px;
+    max-width: 96vw;
+    padding: 24px;
+    position: relative;
+}
+.tsv-popup-sluit {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #9ca3af;
+}
+.tsv-popup-sluit:hover { color: #1e1b4b; }
+.tsv-popup-titel {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin: 0 0 20px;
+}
+
+/* Loading / fout */
+.tsv-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #7c3aed;
+    font-size: 14px;
+    gap: 10px;
+}
+.tsv-spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid #ede9fe;
+    border-top-color: #7c3aed;
+    border-radius: 50%;
+    animation: tsv-spin 0.7s linear infinite;
+}
+@keyframes tsv-spin { to { transform: rotate(360deg); } }
+
+.tsv-fout {
+    background: #fee2e2;
+    color: #991b1b;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-size: 13px;
+    margin: 20px;
+}
+.tsv-leeg-lijst {
+    text-align: center;
+    padding: 40px 20px;
+    color: #9ca3af;
+    font-size: 13px;
+}
+
+/* Toast */
+.tsv-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1e1b4b;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+}
+.tsv-toast.is-zichtbaar { opacity: 1; transform: translateY(0); }
+.tsv-toast--ok { background: #065f46; }
+.tsv-toast--fout { background: #991b1b; }
+
+/* ── Modal ─────────────────────────────────────────────────── */
+.ts-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+}
+.ts-modal {
+    background: #fff;
+    border-radius: 14px;
+    border: 0.5px solid #e5e7eb;
+    width: 640px;
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+}
+.ts-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 0.5px solid #e5e7eb;
+    flex-shrink: 0;
+}
+.ts-modal-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e1b4b;
+    margin: 0;
+}
+.ts-modal-sluit-btn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: #9ca3af;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 4px;
+    transition: color 0.15s;
+}
+.ts-modal-sluit-btn:hover { color: #374151; }
+.ts-modal-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+}
+.ts-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 0.5px solid #e5e7eb;
+    flex-shrink: 0;
+}
+.ts-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.ts-form-veld label,
+.ts-form-rij label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    display: block;
+    margin-bottom: 5px;
+}
+.ts-form-veld input,
+.ts-form-veld select,
+.ts-form-rij textarea,
+.ts-form-rij input {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 13px;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #111827;
+    font-family: inherit;
+    transition: border-color 0.15s;
+}
+.ts-form-veld input:focus,
+.ts-form-veld select:focus,
+.ts-form-rij textarea:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.08);
+}
+.ts-input-fout { border-color: #dc2626 !important; }
+.ts-verplicht { color: #dc2626; }
+.ts-btn-primary {
+    padding: 9px 20px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.ts-btn-primary:hover { opacity: 0.88; }
+.ts-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.ts-btn-ghost {
+    padding: 9px 16px;
+    background: none;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.ts-btn-ghost:hover { background: #f9fafb; }
+
+/* ── Tabs ──────────────────────────────────────────────────── */
+.tsv-tabs {
+    display: flex;
+    gap: 0;
+    padding: 0 28px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+.tsv-tab-btn {
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    background: none;
+    border: none;
+    border-bottom: 2.5px solid transparent;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+}
+.tsv-tab-btn:hover { color: #4c1d95; }
+.tsv-tab-btn.is-actief {
+    color: #7c3aed;
+    border-bottom-color: #7c3aed;
+}
+.tsv-tab-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.tsv-tab-laden {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #7c3aed;
+    font-size: 14px;
+    gap: 10px;
+}
+
+/* ── Tender Archief tab ────────────────────────────────────── */
+.tsv-archief {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+}
+.tsv-archief-header {
+    margin-bottom: 20px;
+}
+.tsv-archief-header h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin: 0 0 4px;
+}
+.tsv-archief-lijst {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.tsv-archief-rij {
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    transition: border-color 0.15s;
+}
+.tsv-archief-rij:hover { border-color: #c4b5fd; }
+.tsv-archief-rij-hoofd { flex: 1; min-width: 0; }
+.tsv-archief-titel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e1b4b;
+    margin-bottom: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tsv-archief-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+.tsv-archief-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #ede9fe;
+    color: #4c1d95;
+}
+.tsv-archief-datum {
+    font-size: 11px;
+    color: #9ca3af;
+}
+.tsv-archief-rij-acties {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.tsv-archief-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+.tsv-archief-btn--hermatchen {
+    background: #fff;
+    color: #7c3aed;
+    border-color: #ddd6fe;
+}
+.tsv-archief-btn--hermatchen:hover { background: #f5f3ff; }
+.tsv-archief-btn--hermatchen:disabled { opacity: 0.5; cursor: not-allowed; }
+.tsv-archief-btn--verwijderen {
+    background: #fff;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+.tsv-archief-btn--verwijderen:hover { background: #fee2e2; }
+.tsv-archief-leeg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    color: #9ca3af;
+}
+
+/* ── Instellingen tab ──────────────────────────────────────── */
+.tsv-instellingen {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    max-width: 800px;
+}
+.tsv-inst-sectie {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+}
+.tsv-inst-titel {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin: 0 0 6px;
+}
+.tsv-inst-omschrijving {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0 0 20px;
+    line-height: 1.5;
+}
+.tsv-weging-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.tsv-weging-rij {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.tsv-weging-label {
+    width: 200px;
+    font-size: 13px;
+    color: #374151;
+    flex-shrink: 0;
+}
+.tsv-weging-slider {
+    flex: 1;
+    accent-color: #7c3aed;
+    cursor: pointer;
+    height: 6px;
+}
+.tsv-weging-waarde {
+    width: 28px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e1b4b;
+}
+.tsv-weging-pct {
+    font-size: 11px;
+    color: #9ca3af;
+    width: 18px;
+}
+.tsv-weging-totaal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+    font-size: 13px;
+    color: #374151;
+}
+.tsv-weging-totaal strong {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1e1b4b;
+}
+.tsv-weging-totaal-status {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+.tsv-weging-totaal-status.is-ok   { background: #d1fae5; color: #065f46; }
+.tsv-weging-totaal-status.is-fout { background: #fee2e2; color: #991b1b; }
+
+.tsv-drempel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+.tsv-drempel-veld label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    display: block;
+    margin-bottom: 6px;
+}
+.tsv-drempel-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.tsv-drempel-input {
+    width: 80px;
+    padding: 8px 10px;
+    font-size: 15px;
+    font-weight: 700;
+    border: 1.5px solid #d1d5db;
+    border-radius: 8px;
+    color: #1e1b4b;
+    text-align: center;
+    transition: border-color 0.15s;
+}
+.tsv-drempel-input:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.08);
+}
+.tsv-drempel-eenheid {
+    font-size: 12px;
+    color: #9ca3af;
+}
+.tsv-drempel-hint {
+    font-size: 11px;
+    color: #9ca3af;
+    margin: 6px 0 0;
+    line-height: 1.4;
+}
+.tsv-inst-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 4px;
+}
+.tsv-btn-primary {
+    padding: 9px 20px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.tsv-btn-primary:hover { opacity: 0.88; }
+.tsv-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.tsv-btn-ghost {
+    padding: 9px 16px;
+    background: none;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.tsv-btn-ghost:hover { background: #f9fafb; }
+
+/* =====================================================
+   Tender aanmaken (AIDA flow)
+   ===================================================== */
+
+.ts-btn-tender-aanmaken {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px 14px;
+    margin-top: 12px;
+    background: #16a34a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.ts-btn-tender-aanmaken:hover { background: #15803d; }
+
+.ts-tender-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #15803d;
+}
+.ts-btn-link {
+    background: none;
+    border: none;
+    color: #15803d;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+}
+.ts-btn-link:hover { color: #166534; }
+
+.ts-aida-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 12px;
+    background: #f5f3ff;
+    border: 1px solid #c4b5fd;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #4c1d95;
+    margin-bottom: 14px;
+    line-height: 1.5;
+}
+
+.ts-fase-preview {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    margin-top: 10px;
+    background: #f0fdf4;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #166534;
+}
+
+.ts-btn-groen {
+    background: #16a34a !important;
+    border-color: #16a34a !important;
+    color: #fff !important;
+}
+.ts-btn-groen:hover { background: #15803d !important; }
+
+/* Detail panel — meta rijen (aanbestedende dienst / bedrijf) */
+.tsv-detail-meta-rij {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #4b5563;
+    margin: 4px 0 0;
+}
+.tsv-detail-meta-rij svg { flex-shrink: 0; color: #9ca3af; }
+.tsv-detail-meta-rij--bedrijf { color: #7c3aed; }
+.tsv-detail-meta-rij--bedrijf svg { color: #7c3aed; }
+
+/* Detail panel — status dropdown */
+.tsv-detail-status-rij {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0 0;
+    padding: 10px 0;
+    border-top: 1px solid var(--color-border-tertiary, #e5e7eb);
+    border-bottom: 1px solid var(--color-border-tertiary, #e5e7eb);
+}
+.tsv-detail-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    white-space: nowrap;
+    min-width: 46px;
+}
+.tsv-detail-status-select {
+    flex: 1;
+    font-size: 13px;
+    font-family: inherit;
+    color: #1e1b4b;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 5px 8px;
+    background: #fff;
+    cursor: pointer;
+    appearance: auto;
+}
+.tsv-detail-status-select:focus {
+    outline: 2px solid #7c3aed;
+    outline-offset: 1px;
+    border-color: #7c3aed;
+}
+
+.ts-form-veld--full { grid-column: 1 / -1; }

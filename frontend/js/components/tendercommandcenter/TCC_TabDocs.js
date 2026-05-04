@@ -69,12 +69,19 @@ function _renderAanbestedingSection(docs) {
             <span class="tcc-docs-sectie-count">(${docs.length})</span>
         </div>
         ${listHtml}
-        <input type="file" id="tcc-docs-file-input" multiple
-            accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.txt,.csv"
-            style="display:none;" />
-        <button class="tcc-btn tcc-btn--secondary tcc-docs-upload-btn" data-action="docs-upload-trigger">
-            ${tccIcon('upload', 14, '#7c3aed')} Document uploaden
-        </button>
+        <div class="doc-dropzone" id="doc-dropzone">
+            <div class="doc-dropzone-inner">
+                ${tccIcon('upload', 24, '#7c3aed')}
+                <div class="doc-dropzone-tekst">
+                    <span class="doc-dropzone-hoofd">Sleep bestanden hierheen</span>
+                    <span class="doc-dropzone-sub">of <button class="doc-dropzone-knop" id="doc-upload-knop">klik om te uploaden</button></span>
+                </div>
+                <div class="doc-dropzone-hint">PDF, Word, Excel — max 25 MB per bestand</div>
+            </div>
+            <input type="file" id="doc-file-input" multiple
+                accept=".pdf,.doc,.docx,.xlsx,.xls,.pptx,.ppt,.txt,.csv"
+                style="display:none">
+        </div>
     </div>`;
 }
 
@@ -195,16 +202,48 @@ function renderDocRow(doc) { return _renderDocCard(doc); }
 // HANDLERS — Upload
 // ============================================
 
-async function handleDocUpload() {
-    const input = tccState.overlay?.querySelector('#tcc-docs-file-input');
-    if (!input) return;
-    input.onchange = async (e) => {
+function _bindDocsDropzone() {
+    const zone  = tccState.overlay?.querySelector('#doc-dropzone');
+    const input = tccState.overlay?.querySelector('#doc-file-input');
+    const knop  = tccState.overlay?.querySelector('#doc-upload-knop');
+
+    if (!zone || !input) return;
+    if (zone.dataset.bound) return;   // voorkom dubbel binden
+    zone.dataset.bound = '1';
+
+    // Klik op knop → file picker (zonder zone-click te triggeren)
+    knop?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        input.click();
+    });
+
+    // Klik op zone zelf → file picker
+    zone.addEventListener('click', () => input.click());
+
+    // File input change
+    input.addEventListener('change', async (e) => {
         const files = Array.from(e.target.files || []);
         if (!files.length) return;
         for (const file of files) await _uploadSingleDoc(file);
         input.value = '';
-    };
-    input.click();
+    });
+
+    // Drag events
+    zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('doc-dropzone--actief');
+    });
+    zone.addEventListener('dragleave', (e) => {
+        if (!zone.contains(e.relatedTarget)) {
+            zone.classList.remove('doc-dropzone--actief');
+        }
+    });
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('doc-dropzone--actief');
+        const files = Array.from(e.dataTransfer.files || []);
+        files.forEach(f => _uploadSingleDoc(f));
+    });
 }
 
 async function _uploadSingleDoc(file) {
@@ -472,10 +511,56 @@ async function tccApiCallRaw(endpoint, options = {}) {
 .tcc-docs-status--busy    { background: #faf5ff; color: #7c3aed; }
 .tcc-docs-status--pending { background: #f8fafc; color: #94a3b8; }
 
-/* ── Upload knop ── */
-.tcc-docs-upload-btn {
-    width: 100%; justify-content: center;
-    border-style: dashed;
+/* ── Dropzone ── */
+.doc-dropzone {
+    border: 2px dashed var(--color-border-secondary, #e2e8f0);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    background: var(--color-background-primary, #fafaff);
+}
+.doc-dropzone:hover,
+.doc-dropzone--actief {
+    border-color: #7c3aed;
+    background: #f5f3ff;
+}
+.doc-dropzone-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    pointer-events: none;
+}
+.doc-dropzone-knop {
+    pointer-events: auto;
+}
+.doc-dropzone-tekst { line-height: 1.5; }
+.doc-dropzone-hoofd {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-primary, #1e293b);
+}
+.doc-dropzone-sub {
+    display: block;
+    font-size: 12px;
+    color: var(--color-text-secondary, #64748b);
+}
+.doc-dropzone-knop {
+    background: none;
+    border: none;
+    color: #7c3aed;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+.doc-dropzone-hint {
+    font-size: 11px;
+    color: var(--color-text-secondary, #94a3b8);
+    margin-top: 2px;
 }
 
 /* ── Spinner ── */

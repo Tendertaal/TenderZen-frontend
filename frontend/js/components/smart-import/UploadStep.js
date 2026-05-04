@@ -22,7 +22,7 @@
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024;  // 25 MB
 const MAX_FILES = 10;
-const VALID_EXTENSIONS = /\.(pdf|docx|zip)$/i;
+
 const VALID_MIME_TYPES = [
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -157,6 +157,11 @@ export class UploadStep {
 
     // ── File handling ──
 
+    // Windows 8.3 korte bestandsnamen detecteren: bv. BIJLAG~1.PDF
+    _is83Naam(naam) {
+        return /^[A-Z0-9_]{1,8}~\d+\.[A-Z0-9]{1,3}$/i.test(naam);
+    }
+
     _handleFiles(fileList, container) {
         const files = this.state.uploadedFiles;
 
@@ -166,8 +171,11 @@ export class UploadStep {
                 break;
             }
 
-            if (!VALID_MIME_TYPES.includes(file.type) && !VALID_EXTENSIONS.test(file.name)) {
-                alert(`Ongeldig bestandstype: ${file.name}`);
+            // Alleen extensie checken — bestandsnaam mag spaties, ~, accenten etc. bevatten
+            const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+            const toegestaneExtensies = ['.pdf', '.docx', '.zip'];
+            if (!toegestaneExtensies.includes(ext) && !VALID_MIME_TYPES.includes(file.type)) {
+                alert(`Ongeldig bestandstype: ${file.name}\nAlleen PDF, DOCX en ZIP zijn toegestaan.`);
                 continue;
             }
 
@@ -203,6 +211,28 @@ export class UploadStep {
             this._attachRemoveListeners(container);
         }
 
+        // 8.3 waarschuwing tonen/verbergen
+        const heeft83 = files.some(f => this._is83Naam(f.name));
+        let waarschuwing = container.querySelector('#si83Warning');
+        if (heeft83 && !waarschuwing) {
+            fileListEl?.insertAdjacentHTML('afterend', `
+                <div id="si83Warning" style="
+                    display:flex;gap:8px;align-items:flex-start;
+                    background:#fefce8;border:1px solid #fde047;
+                    border-radius:8px;padding:10px 14px;margin-top:8px;
+                    font-size:12px;color:#713f12;line-height:1.5">
+                    <span style="flex-shrink:0;font-size:15px">⚠️</span>
+                    <span>
+                        <strong>Verkorte Windows-bestandsnamen herkend</strong> (bijv. <code>BIJLAG~1.PDF</code>).<br>
+                        Dit zijn automatische afkortingen van Windows voor lange bestandsnamen.
+                        De bestanden worden <strong>correct verwerkt</strong> — alleen de weergavenaam is ingekort.<br>
+                        <em>Tip: sleep de bestanden direct vanuit de map, niet vanuit een ZIP of netwerk-share.</em>
+                    </span>
+                </div>`);
+        } else if (!heeft83 && waarschuwing) {
+            waarschuwing.remove();
+        }
+
         // Update summary
         let summary = container.querySelector('#siUploadSummary');
         if (files.length > 0) {
@@ -231,23 +261,41 @@ export class UploadStep {
                 this._updateUI(container);
             });
         });
+
+        container.querySelectorAll('.si-bestand-naam-input').forEach(input => {
+            input.addEventListener('input', () => {
+                const idx = parseInt(input.dataset.index);
+                const file = this.state.uploadedFiles[idx];
+                if (file) file.displayName = input.value.trim() || file.name;
+            });
+            // Prevent click on input from triggering dropzone
+            input.addEventListener('click', (e) => e.stopPropagation());
+        });
     }
 
     // ── Rendering helpers ──
 
     _renderFileList(files) {
-        return files.map((file, i) => `
+        return files.map((file, i) => {
+            const is83 = this._is83Naam(file.name);
+            const displayVal = this._esc(file.displayName || file.name);
+            return `
             <div class="si-file-item">
                 <span class="si-file-icon">${this._fileIcon(file.name)}</span>
                 <div class="si-file-info">
-                    <div class="si-file-name">${this._esc(file.name)}</div>
-                    <div class="si-file-size">${this._formatBytes(file.size)}</div>
+                    <div class="si-file-name">
+                        <input type="text" class="si-bestand-naam-input" data-index="${i}"
+                               value="${displayVal}"
+                               title="${is83 ? 'Windows verkorte bestandsnaam — pas de naam aan indien gewenst' : 'Pas de bestandsnaam aan indien gewenst'}"
+                               style="${is83 ? 'border-color:#d97706;color:#92400e;' : ''}">
+                    </div>
+                    <div class="si-file-size">${this._formatBytes(file.size)}${is83 ? ' <span style="color:#d97706;font-size:11px;">⚠ korte naam</span>' : ''}</div>
                 </div>
                 <button class="si-file-remove" data-index="${i}" title="Verwijderen">
                     ${_getIcon('close', { size: 16, color: '#dc2626' })}
                 </button>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
 
     // ── Utilities ──

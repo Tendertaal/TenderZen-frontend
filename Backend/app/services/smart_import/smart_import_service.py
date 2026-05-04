@@ -1,3 +1,4 @@
+import os
 import unicodedata
 # app/services/smart_import/smart_import_service.py
 """
@@ -46,6 +47,7 @@ import time
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
+from fastapi import HTTPException
 from supabase import Client
 from json_repair import repair_json
 
@@ -86,19 +88,23 @@ class SmartImportService:
     def safe_filename(filename: str) -> str:
         """
         Normalize and sanitize filenames for safe storage in Supabase.
-        - Removes/replace unsafe characters
-        - Normalizes unicode
+        - Strips unicode accents/diacritics
+        - Removes/replaces unsafe characters (incl. ~, spaces, quotes)
         - Prevents path traversal
         """
-        # Normalize unicode
+        # Normalize unicode: decompose accented chars, then drop non-ASCII
         filename = unicodedata.normalize('NFKD', filename)
-        # Remove path separators
-        filename = filename.replace('..', '').replace('/', '_').replace('\\', '_')
-        # Remove unsafe characters (allow alphanum, dash, underscore, dot)
-        filename = re.sub(r'[^A-Za-z0-9._-]', '_', filename)
-        # Prevent empty filename
+        filename = filename.encode('ascii', 'ignore').decode('ascii')
+        # Bewaar de extensie zodat die niet verloren gaat
+        root, ext = os.path.splitext(filename)
+        # Remove path separators and prevent traversal
+        root = root.replace('..', '').replace('/', '_').replace('\\', '_')
+        # Vervang alle tekens buiten [A-Za-z0-9._-] door underscore (incl. ~, spaties)
+        root = re.sub(r'[^A-Za-z0-9._-]', '_', root)
+        # Samenvoegen en lege gevallen afvangen
+        filename = root + ext if root else f'file_{int(time.time())}' + ext
         if not filename or filename.startswith('.'):
-            filename = f'file_{int(time.time())}'
+            filename = f'file_{int(time.time())}{ext}'
         return filename
     
     def __init__(self, db: Client):
@@ -635,14 +641,26 @@ EXTRAHEER (geef ALLEEN JSON terug):
     "warnings": ["lijst van waarschuwingen"]
 }}"""
 
+        # Dynamische max_tokens voor supplement analyse
+        aantal_segmenten = max(1, len(document_content) // 10000)
+        max_tokens = min(8192, 4000 + (aantal_segmenten * 1000))
+        logger.info(f"🔢 supplement max_tokens={max_tokens} (segmenten={aantal_segmenten})")
+
         result = await self.claude_service.execute_prompt_with_retry(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             response_format="json",
-            max_tokens=8192,
+            max_tokens=max_tokens,
             temperature=0.2,
             log_usage=False,  # Logging gebeurt in analyze_supplement() met bureau_id/tender_id context
         )
+
+        if result.get('truncated'):
+            tekst = result.get('content', '')
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI response afgekapt door max_tokens limiet. Ontvangen: {len(tekst)} tekens. Probeer minder documenten te uploaden."
+            )
 
         if result.get('truncated'):
             raise ValueError(result.get('error', 'AI response afgekapt door token limiet'))
@@ -726,7 +744,7 @@ EXTRAHEER (geef ALLEEN JSON terug):
         options = options or {}
         
         # v3.5: Model uit options of parameter
-        selected_model = model or options.get('model', 'haiku')
+        selected_model = model or options.get('model', 'claude-sonnet-4-6')
         logger.info(f"🤖 Analysis will use model: {selected_model}")
         
         try:
@@ -897,8 +915,10 @@ EXTRAHEER (geef ALLEEN JSON terug):
         if len(document_content) > max_chars:
             document_content = document_content[:max_chars] + "\n\n[Document afgekapt...]"
         
-        system_prompt = """Je bent een expert in het analyseren van Nederlandse aanbestedingsdocumenten. 
+        system_prompt = """Je bent een expert in het analyseren van Nederlandse aanbestedingsdocumenten.
 Je taak is om alle relevante informatie te extraheren en terug te geven in een gestructureerd JSON formaat.
+Wees beknopt. Geef alleen de gevraagde JSON terug, geen uitleg.
+Maximum 1 zin per source-veld.
 
 REGELS:
 1. Gebruik ALLEEN informatie die EXPLICIET in de documenten staat
@@ -955,20 +975,32 @@ EXTRAHEER (geef ALLEEN JSON terug):
     "warnings": ["lijst van waarschuwingen over ontbrekende of onzekere data"]
 }}"""
 
+        # Dynamische max_tokens: basis 4000 + 2000 per ~10k tekens document inhoud
+        aantal_segmenten = max(1, len(document_content) // 10000)
+        if 'sonnet' in model or 'opus' in model:
+            max_tokens = min(16000, 4000 + (aantal_segmenten * 2000))
+        else:
+            max_tokens = min(8192, 4000 + (aantal_segmenten * 1000))
+        logger.info(f"🔢 max_tokens={max_tokens} (model={model}, segmenten={aantal_segmenten})")
+
         # Gebruik bestaande ClaudeAPIService met retry
         # v3.5: Model parameter toegevoegd
         result = await self.claude_service.execute_prompt_with_retry(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             response_format="json",
-            max_tokens=16000 if 'sonnet' in model or 'opus' in model else 8192,
+            max_tokens=max_tokens,
             temperature=0.2,
             model=model,  # v3.5: Gekozen model
             log_usage=False,  # Logging gebeurt in analyze() met bureau_id/tender_id context
         )
 
         if result.get('truncated'):
-            raise ValueError(result.get('error', 'AI response afgekapt door token limiet'))
+            tekst = result.get('content', '')
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI response afgekapt door max_tokens limiet. Ontvangen: {len(tekst)} tekens. Probeer minder documenten te uploaden."
+            )
 
         if result['success']:
             content = result['content']
@@ -1168,12 +1200,19 @@ EXTRAHEER (geef ALLEEN JSON terug):
                 files = import_record.get('uploaded_files', [])
                 for file_info in files:
                     try:
+                        # storage_path opgeslagen als "smart-imports/{pad}" — strip bucket prefix
+                        raw_path = file_info['storage_path']
+                        clean_path = raw_path[len('smart-imports/'):] if raw_path.startswith('smart-imports/') else raw_path
+
                         self.db.table('tender_documents').insert({
                             'tender_id': tender['id'],
-                            'naam': file_info['name'],
-                            'storage_path': file_info['storage_path'],
-                            'type': file_info.get('detected_type', 'overig'),
-                            'size': file_info.get('size', 0),
+                            'tenderbureau_id': import_record.get('tenderbureau_id'),
+                            'file_name': file_info['name'],
+                            'original_file_name': file_info['name'],
+                            'file_size': file_info.get('size', 0),
+                            'file_type': file_info.get('mime_type', 'application/octet-stream'),
+                            'document_type': file_info.get('detected_type', 'aanbesteding'),
+                            'storage_path': f"smart-imports/{clean_path}",
                             'uploaded_by': created_by
                         }).execute()
                         documents_linked += 1

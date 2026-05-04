@@ -45,18 +45,48 @@ class BedrijvenService {
 
             console.log('🔍 Loading bedrijven...', { tenderbureauId, loadAll });
 
-            let query = supabase
-                .from('bedrijven')
-                .select('*, tenderbureau:tenderbureaus(id, bureau_naam)')
-                .eq('is_actief', true)
-                .order('bedrijfsnaam');
+            let data, error;
 
-            // Filter op tenderbureau tenzij loadAll = true
             if (!loadAll && tenderbureauId) {
-                query = query.eq('tenderbureau_id', tenderbureauId);
-            }
+                // Stap 1: gekoppelde bedrijf IDs ophalen via koppeltabel
+                const { data: relaties, error: relErr } = await supabase
+                    .from('bureau_bedrijf_relaties')
+                    .select('bedrijf_id')
+                    .eq('tenderbureau_id', tenderbureauId)
+                    .eq('status', 'actief');
 
-            const { data, error } = await query;
+                if (relErr) throw relErr;
+
+                const bedrijfIds = (relaties || []).map(r => r.bedrijf_id);
+
+                if (bedrijfIds.length === 0) {
+                    this.bedrijven = [];
+                    this.loaded = true;
+                    console.log('✅ 0 bedrijven gevonden voor dit bureau (nog geen koppelingen)');
+                    return this.bedrijven;
+                }
+
+                // Stap 2: bedrijven ophalen via IDs
+                const res = await supabase
+                    .from('bedrijven')
+                    .select('*')
+                    .in('id', bedrijfIds)
+                    .eq('is_actief', true)
+                    .order('bedrijfsnaam');
+
+                data = res.data;
+                error = res.error;
+            } else {
+                // Super-admin: alle bedrijven zonder bureaufilter
+                const res = await supabase
+                    .from('bedrijven')
+                    .select('*')
+                    .eq('is_actief', true)
+                    .order('bedrijfsnaam');
+
+                data = res.data;
+                error = res.error;
+            }
 
             if (error) throw error;
 
@@ -117,7 +147,7 @@ class BedrijvenService {
         try {
             const { data, error } = await supabase
                 .from('bedrijven')
-                .select('*, tenderbureau:tenderbureaus(id, bureau_naam)')
+                .select('*')
                 .eq('id', id)
                 .single();
 
@@ -135,6 +165,38 @@ class BedrijvenService {
      */
     getAllBedrijven() {
         return this.bedrijven;
+    }
+
+    /**
+     * Haalt alle bedrijven op voor super-admin via RPC (server-side paginering + filters).
+     * @param {Object} params
+     * @returns {Promise<{bedrijven: Array, totaal: number, pagina: number, per_pagina: number}>}
+     */
+    async getAlleBedrijvenSuperAdmin({
+        q = '',
+        branche = '',
+        nietGekoppeld = false,
+        nietVerrijkt = false,
+        limit = 50,
+        offset = 0
+    } = {}) {
+        const supabaseClient = window.supabaseClient || window.supabase;
+        const { data, error } = await supabaseClient.rpc('get_bedrijven_super_admin', {
+            zoekterm:              q || null,
+            branche_filter:        branche || null,
+            alleen_niet_gekoppeld: nietGekoppeld,
+            alleen_niet_verrijkt:  nietVerrijkt,
+            rij_limit:             limit,
+            rij_offset:            offset
+        });
+
+        if (error) throw new Error(error.message);
+
+        const rijen = data || [];
+        const totaal = rijen.length > 0 ? Number(rijen[0].totaal_count) : 0;
+        const pagina = Math.floor(offset / limit) + 1;
+
+        return { bedrijven: rijen, totaal, pagina, per_pagina: limit };
     }
 
     // ============================================
@@ -477,30 +539,27 @@ class BedrijvenService {
                 tenderbureauId = await this._getCurrentTenderbureauId(user.id);
             }
 
-            // Add tenderbureau_id to bedrijf data
-            const dataWithTenderbureau = {
-                ...bedrijfData,
-                tenderbureau_id: tenderbureauId,
-                created_by: user.id
-            };
+            // Bedrijf data zonder tenderbureau_id (nieuwe architectuur via koppeltabel)
+            const cleanBedrijfData = { ...bedrijfData, created_by: user.id };
+            delete cleanBedrijfData.tenderbureau_id;
 
             // Sanitize: lege strings → null (voorkomt unique constraint conflicts)
-            for (const key of Object.keys(dataWithTenderbureau)) {
-                if (dataWithTenderbureau[key] === '') {
-                    dataWithTenderbureau[key] = null;
+            for (const key of Object.keys(cleanBedrijfData)) {
+                if (cleanBedrijfData[key] === '') {
+                    cleanBedrijfData[key] = null;
                 }
             }
 
-            console.log('📝 Creating bedrijf for tenderbureau:', tenderbureauId);
+            console.log('📝 Creating bedrijf voor tenderbureau:', tenderbureauId);
 
+            // Stap 1: bedrijf aanmaken zonder tenderbureau_id
             const { data, error } = await supabase
                 .from('bedrijven')
-                .insert([dataWithTenderbureau])
-                .select('*, tenderbureau:tenderbureaus(id, bureau_naam)')
+                .insert([cleanBedrijfData])
+                .select('*')
                 .single();
 
             if (error) {
-                // Handle database unique constraint errors
                 if (error.code === '23505') {
                     if (error.message.includes('kvk')) {
                         throw new Error('KvK nummer bestaat al binnen dit bureau');
@@ -511,6 +570,23 @@ class BedrijvenService {
                     throw new Error('Dit bedrijf bestaat al');
                 }
                 throw error;
+            }
+
+            // Stap 2: koppeling aanmaken in bureau_bedrijf_relaties
+            if (tenderbureauId) {
+                const { error: relError } = await supabase
+                    .from('bureau_bedrijf_relaties')
+                    .insert({
+                        bedrijf_id: data.id,
+                        tenderbureau_id: tenderbureauId,
+                        status: 'actief',
+                        gekoppeld_door: user.id
+                    });
+
+                if (relError) {
+                    console.error('⚠️ Bedrijf aangemaakt maar koppeling mislukt:', relError);
+                    // Niet gooien — bedrijf is al aangemaakt, koppeling kan later hersteld worden
+                }
             }
 
             // Add to cache
@@ -578,7 +654,7 @@ class BedrijvenService {
                 .from('bedrijven')
                 .update(cleanUpdates)
                 .eq('id', id)
-                .select('*, tenderbureau:tenderbureaus(id, bureau_naam)')
+                .select('*')
                 .single();
 
             if (error) throw error;

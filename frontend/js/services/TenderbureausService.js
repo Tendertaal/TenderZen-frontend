@@ -67,12 +67,12 @@ class TenderbureausService {
                 .select('*', { count: 'exact', head: true })
                 .eq('tenderbureau_id', bureauId);
 
-            // Count bedrijven
+            // Count bedrijven via koppeltabel (nieuwe architectuur)
             const { count: bedrijvenCount } = await supabase
-                .from('bedrijven')
+                .from('bureau_bedrijf_relaties')
                 .select('*', { count: 'exact', head: true })
                 .eq('tenderbureau_id', bureauId)
-                .eq('is_actief', true);
+                .eq('status', 'actief');
 
             return {
                 users_count: usersCount || 0,

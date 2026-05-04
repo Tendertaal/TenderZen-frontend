@@ -35,6 +35,7 @@ import { getSupabase } from './config.js';
 
 // Import LogoutConfirmModal
 import { confirmLogout } from './components/LogoutConfirmModal.js';
+import { showToast } from './utils/toast.js';
 
 // Import BureauAccessService
 import { bureauAccessService } from './services/BureauAccessService.js';
@@ -113,6 +114,7 @@ export class App {
 
         // Make app globally available
         window.app = this;
+        window.apiService = apiService;
     }
 
     /**
@@ -235,7 +237,8 @@ export class App {
             // 10. Notities paneel initialiseren
             if (typeof NotitiesPanel !== 'undefined') {
                 window.notitiesPanel = new NotitiesPanel();
-                window.notitiesPanel.init(document.body);
+                await window.notitiesPanel.init(document.body);
+                window.notitiesPanel.restoreLastTender();
             }
 
             console.log('✅ TenderPlanner App succesvol geladen!');
@@ -292,6 +295,7 @@ export class App {
         console.log('🔄 Bureau gewisseld naar:', newBureau?.bureau_naam || 'Alle bureau\'s');
 
         // Notities paneel leegmaken bij bureau wisselen
+        localStorage.removeItem('tz_last_tender');
         window.notitiesPanel?.clear();
 
         this.currentBureau = newBureau;
@@ -308,6 +312,9 @@ export class App {
             bedrijvenService.clearCache();
             teamService.clearCache();
             window.planningService?.invalidateCache?.();
+            // Reset bureau-gebonden singleton views zodat ze bij herladen de nieuwe bureau-context pakken
+            this._tendersignaleringView = null;
+            this._bedrijfsProfielView   = null;
 
             const bureauId = newBureau?.bureau_id || null;
             await bedrijvenService.loadBedrijven(
@@ -347,6 +354,22 @@ export class App {
 
         if (this.currentViewType === 'gantt' && this.ganttView) {
             this.ganttView.refresh();
+            return;
+        }
+
+        // Non-module singleton views die bureau-context nodig hebben: opnieuw mounten
+        if (this.currentView === 'tendersignalering') {
+            // Instantie is al op null gezet in handleBureauChange; nieuwe aanmaken + mounten
+            this._tendersignaleringView = new window.TendersignaleringView();
+            this.contentContainer.innerHTML = '';
+            this._tendersignaleringView.mount(this.contentContainer);
+            return;
+        }
+
+        if (this.currentView === 'bedrijfsprofiel') {
+            // BedrijfsProfielView is per bedrijf — navigeer terug naar bedrijvenlijst
+            this._bedrijfsProfielView = null;
+            this.showView('bedrijven');
             return;
         }
 
@@ -659,6 +682,28 @@ export class App {
                         this.showView('ai-usage');
                     }
                     break;
+                case 'tendermatch':
+                    // Geïntegreerd in Tendersignalering
+                    this.showView('tendersignalering');
+                    break;
+                case 'matchpool':
+                    if (this.isSuperAdmin) {
+                        this.showView('matchpool');
+                    }
+                    break;
+                case 'verrijking':
+                    if (this.isSuperAdmin) {
+                        this.showView('verrijking');
+                    }
+                    break;
+                case 'tendersignalering':
+                    if (this.isSuperAdmin) {
+                        this.showView('tendersignalering');
+                    }
+                    break;
+                case 'offerte-overzicht':
+                    this.showView('offerte-overzicht');
+                    break;
                 case 'rapportages':
                 case 'exporteren':
                 case 'instellingen':
@@ -850,6 +895,10 @@ export class App {
             this.views['ai-usage'] = new AIUsageView();
         }
 
+        if (window.TendermatchView) {
+            this.views['tendermatch'] = new window.TendermatchView();
+        }
+
         // Initialize AgendaView
         this.agendaView = new AgendaView();
         this.agendaView.onOpenPlanningModal = (tenderId, openType) => {
@@ -932,6 +981,17 @@ export class App {
         this.views.bedrijven.onEditBedrijf = (bedrijf, viewMode) => {
             console.log('🔧 onEditBedrijf callback triggered', { bedrijf: bedrijf?.bedrijfsnaam });
             this.bedrijfModal.open(bedrijf, viewMode);
+        };
+
+        this.views.bedrijven.onOpenProfiel = (bedrijfId) => {
+            this.showView(`bedrijfsprofiel:${bedrijfId}`);
+            if (this.sidebar) this.sidebar.setActive('bedrijven');
+        };
+
+        this.views.bedrijven.onOpenSignalering = (_bedrijfId) => {
+            // Bureau-breed dashboard — bedrijfId niet nodig als route-param
+            this.showView('tendersignalering');
+            if (this.sidebar) this.sidebar.setActive('tendersignalering');
         };
 
         this.views.bedrijven.onDeleteBedrijf = async (bedrijfId) => {
@@ -1161,6 +1221,11 @@ export class App {
      * Show a specific view
      */
     async showView(viewName) {
+        // Tendermatch is geïntegreerd in Tendersignalering
+        if (viewName === 'tendermatch') {
+            this.showView('tendersignalering');
+            return;
+        }
         this.closeAllModals();
         console.log(`👁️ Showing view: ${viewName}`);
 
@@ -1194,6 +1259,31 @@ export class App {
 
         if (this.views[this.currentView]) {
             this.views[this.currentView].unmount();
+        }
+
+        // Unmount matchpool view als die actief was
+        if (this._matchpoolView && this.currentView === 'matchpool') {
+            this._matchpoolView.unmount();
+        }
+
+        // Unmount verrijking view als die actief was
+        if (this._verrijkingView && this.currentView === 'verrijking') {
+            this._verrijkingView.unmount();
+        }
+
+        // Unmount offerte calculator view als die actief was
+        if (this._offerteCalculatorView && typeof this.currentView === 'string' && this.currentView.startsWith('offerte-calculator')) {
+            this._offerteCalculatorView = null;
+        }
+
+        // Unmount bedrijfsprofiel view als die actief was
+        if (this._bedrijfsProfielView && this.currentView === 'bedrijfsprofiel') {
+            this._bedrijfsProfielView.unmount();
+        }
+
+        // Unmount tendersignalering view als die actief was
+        if (this._tendersignaleringView && this.currentView === 'tendersignalering') {
+            this._tendersignaleringView.unmount();
         }
 
         this.currentView = viewName;
@@ -1235,6 +1325,7 @@ export class App {
             }
             else if (viewName === 'bedrijven') {
                 this.header.setContext('bedrijven', { count: 0 });
+                // Altijd bureau-gefilterde view — super-admin heeft eigen Matchpool pagina
                 const bureauId = this.currentBureau?.bureau_id || null;
                 await bedrijvenService.loadBedrijven(
                     bureauId ? { tenderbureauId: bureauId } : { loadAll: true }
@@ -1265,6 +1356,52 @@ export class App {
                 this.header.setActiveTab(null);
             }
 
+        } else if (viewName === 'matchpool') {
+            // MatchpoolView is een non-module global — niet in this.views
+            this.header.setContext('profiel', { title: 'Matchpool' });
+            if (!this._matchpoolView) {
+                this._matchpoolView = new window.MatchpoolView();
+            }
+            this.contentContainer.innerHTML = '';
+            this._matchpoolView.mount(this.contentContainer);
+        } else if (viewName === 'verrijking') {
+            // VerrijkingView is een non-module global — niet in this.views
+            this.header.setContext('profiel', { title: 'Website verrijking' });
+            if (!this._verrijkingView) {
+                this._verrijkingView = new window.VerrijkingView();
+            }
+            this.contentContainer.innerHTML = '';
+            this._verrijkingView.mount(this.contentContainer);
+        } else if (viewName === 'tendersignalering') {
+            // TendersignaleringView is een non-module global — bureau-breed dashboard
+            this.header.setContext('profiel', { title: 'Tendersignalering' });
+            if (!this._tendersignaleringView) {
+                this._tendersignaleringView = new window.TendersignaleringView();
+            }
+            this.contentContainer.innerHTML = '';
+            // bureauId wordt door de view zelf opgehaald via window.app.currentBureau
+            this._tendersignaleringView.mount(this.contentContainer);
+        } else if (viewName === 'offerte-overzicht') {
+            this.header.setContext('profiel', { title: 'Offertes' });
+            if (this.sidebar) this.sidebar.setActive('offerte-overzicht');
+            this._toonOfferteOverzicht();
+        } else if (typeof viewName === 'string' && viewName.startsWith('offerte-calculator:')) {
+            this.header.setContext('profiel', { title: 'Offerte Calculator' });
+            const tenderId = viewName.split(':')[1] || null;
+            if (!this._offerteCalculatorView) {
+                this._offerteCalculatorView = new window.OfferteCalculatorView();
+            }
+            this.contentContainer.innerHTML = '';
+            this._offerteCalculatorView.mount(this.contentContainer, { tenderId });
+        } else if (viewName === 'bedrijfsprofiel' || (typeof viewName === 'string' && viewName.startsWith('bedrijfsprofiel:'))) {
+            // BedrijfsProfielView is een non-module global — niet in this.views
+            this.header.setContext('profiel', { title: 'Bedrijfsprofiel' });
+            const bedrijfId = viewName.includes(':') ? viewName.split(':')[1] : null;
+            if (!this._bedrijfsProfielView) {
+                this._bedrijfsProfielView = new window.BedrijfsProfielView();
+            }
+            this.contentContainer.innerHTML = '';
+            this._bedrijfsProfielView.mount(this.contentContainer, { bedrijfId });
         } else {
             console.error(`View not found: ${viewName}`);
         }
@@ -1567,6 +1704,14 @@ export class App {
         }
     }
 
+    /**
+     * Navigeer naar een view — kan worden aangeroepen vanuit sub-views via window.app.navigeerNaar()
+     * @param {string} view  Viewnaam, bijv. 'bedrijven', 'bedrijfsprofiel:uuid', 'tendersignalering:uuid'
+     */
+    navigeerNaar(view) {
+        this.showView(view);
+    }
+
     async logout() {
         const confirmed = await confirmLogout();
 
@@ -1602,6 +1747,415 @@ export class App {
         const loading = document.querySelector('.loading-screen');
         if (loading) loading.style.display = 'none';
         document.getElementById('app')?.classList.add('loaded');
+    }
+
+    /**
+     * Toon overzicht van alle offerte-calculaties voor het actieve bureau.
+     * Rendert inline — geen aparte view class nodig.
+     */
+    async _toonOfferteOverzicht() {
+        const container = this.contentContainer;
+        if (!container) return;
+
+        // Helper: icon ophalen
+        const icon = (name, size = 16) =>
+            (window.Icons && typeof window.Icons[name] === 'function')
+                ? window.Icons[name]({ size })
+                : '';
+
+        // Helper: euro formatteren
+        const euro = val => val
+            ? new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val)
+            : '—';
+
+        // Helper: datum formatteren (lang formaat voor aparte kolom)
+        const datum = iso => {
+            if (!iso) return '—';
+            try {
+                const [y, m, d] = String(iso).split('-').map(Number);
+                return new Date(y, m - 1, d).toLocaleDateString('nl-NL', { day: '2-digit', month: 'short', year: 'numeric' });
+            } catch { return iso; }
+        };
+
+        // Helper: datum als DD-MM-YYYY voor meta-rijen
+        const formatDatum = str => {
+            if (!str) return '';
+            const parts = String(str).split('T')[0].split('-');
+            if (parts.length !== 3) return str;
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        };
+
+        // Helper: dagen tot deadline + gekleurde badge
+        const dagenBadge = datumStr => {
+            if (!datumStr) return '';
+            const [y, m, d] = datumStr.split('T')[0].split('-').map(Number);
+            const deadline = new Date(y, m - 1, d);
+            const vandaag = new Date();
+            vandaag.setHours(0, 0, 0, 0);
+            const diff = Math.ceil((deadline - vandaag) / (1000 * 60 * 60 * 24));
+            if (diff > 14)       return `<span class="oov-dagen-badge oov-dagen-groen">nog ${diff} dagen</span>`;
+            if (diff >= 1)       return `<span class="oov-dagen-badge oov-dagen-oranje">nog ${diff} dagen</span>`;
+            if (diff === 0)      return `<span class="oov-dagen-badge oov-dagen-rood">vandaag</span>`;
+            return `<span class="oov-dagen-badge oov-dagen-grijs">verlopen</span>`;
+        };
+
+        function offerteStatusBadge(status) {
+            const kleuren = {
+                concept:      { bg: '#fff7ed', text: '#c2410c', border: '#fed7aa', label: 'Concept' },
+                verzonden:    { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd', label: 'Verzonden' },
+                geaccepteerd: { bg: '#d1fae5', text: '#065f46', border: '#6ee7b7', label: 'Geaccepteerd' },
+                afgewezen:    { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5', label: 'Afgewezen' },
+            };
+            const k = kleuren[status] || kleuren.concept;
+            return `<span style="background:${k.bg};color:${k.text};border:0.5px solid ${k.border};font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500">${k.label}</span>`;
+        }
+
+        const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        // Laadscherm
+        container.innerHTML = `
+            <div class="oov-root">
+                <div class="oov-header">
+                    <div class="oov-header-info">
+                        <h1 class="oov-titel">${icon('fileText', 18)} Offerte Calculator</h1>
+                        <p class="oov-sub">Offerteberekeningen voor het actieve bureau</p>
+                    </div>
+                    <button class="oov-btn oov-btn--primary" id="oov-nieuw-btn">
+                        ${icon('plus', 14)} Nieuwe offerte
+                    </button>
+                </div>
+                <div class="oov-body" id="oov-body">
+                    <div class="oov-laden">Laden…</div>
+                </div>
+            </div>`;
+
+        // Stijlen (inline, één keer)
+        if (!document.getElementById('oov-styles')) {
+            const style = document.createElement('style');
+            style.id = 'oov-styles';
+            style.textContent = `
+                .oov-root { display:flex;flex-direction:column;height:100%;background:#f5f3ff;font-family:'Inter','Segoe UI',sans-serif; }
+                .oov-header { display:flex;align-items:center;gap:16px;padding:18px 28px 14px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0; }
+                .oov-header-info { flex:1; }
+                .oov-titel { font-size:18px;font-weight:700;color:#1e1b4b;margin:0;display:flex;align-items:center;gap:8px; }
+                .oov-sub { font-size:12px;color:#6b7280;margin:2px 0 0; }
+                .oov-btn { display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:background 0.15s; }
+                .oov-btn--primary { background:#7c3aed;color:#fff;border-color:#7c3aed; }
+                .oov-btn--primary:hover { background:#6d28d9; }
+                .oov-btn--ghost { background:none;color:#7c3aed;border-color:#ddd6fe;font-size:12px;padding:5px 10px; }
+                .oov-btn--ghost:hover { background:#f5f3ff; }
+                .oov-body { flex:1;overflow-y:auto;padding:20px 28px; }
+                .oov-laden { display:flex;align-items:center;justify-content:center;height:120px;font-size:14px;color:#9ca3af; }
+                .oov-leeg { display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:280px;color:#9ca3af;text-align:center; }
+                .oov-leeg-icon { opacity:0.3; }
+                .oov-leeg-titel { font-size:15px;font-weight:600;color:#374151; }
+                .oov-leeg-sub { font-size:13px; }
+                .oov-tabel { width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06); }
+                .oov-tabel thead tr { background:#f9fafb;border-bottom:1px solid #e5e7eb; }
+                .oov-tabel th { text-align:left;padding:10px 14px;font-size:11px;font-weight:600;color:#6b7280;white-space:nowrap; }
+                .oov-tabel td { padding:12px 14px;font-size:13px;color:#374151;border-bottom:1px solid #f3f4f6; }
+                .oov-tabel tbody tr:last-child td { border-bottom:none; }
+                .oov-tabel tbody tr:hover { background:#fafafa; }
+                .oov-tabel-naam { font-size:1.1rem;font-weight:600;color:#1e1b4b;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+                .oov-badge { font-size:11px;font-weight:600;padding:3px 8px;border-radius:12px;background:#f3f4f6;color:#374151;white-space:nowrap; }
+                .oov-badge--blauw { background:#dbeafe;color:#1d4ed8; }
+                .oov-badge--groen { background:#dcfce7;color:#15803d; }
+                .oov-badge--rood { background:#fee2e2;color:#b91c1c; }
+                .oov-bedrag { font-weight:600;color:#1e1b4b;white-space:nowrap; }
+                .oov-netto { font-weight:700;color:#16a34a;white-space:nowrap; }
+                .oov-tender-link { background:none;color:#6366f1;border:0.5px solid #c7d2fe;font-size:11px;padding:3px 8px;border-radius:5px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;transition:background 0.15s; }
+                .oov-tender-link:hover { background:#eef2ff;border-color:#818cf8; }
+                .oov-col-klikbaar { cursor:pointer; }
+                .oov-col-klikbaar:hover { background:#faf5ff !important; }
+                .oov-dagen-badge { display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px;margin-left:6px;white-space:nowrap; }
+                .oov-dagen-groen { background:#dcfce7;color:#15803d; }
+                .oov-dagen-oranje { background:#ffedd5;color:#c2410c; }
+                .oov-dagen-rood { background:#fee2e2;color:#b91c1c; }
+                .oov-dagen-grijs { background:#f3f4f6;color:#6b7280; }
+                .oov-btn-notitie { width:32px;height:32px;border-radius:6px;border:0.5px solid #e0e7ff;background:#f5f3ff;color:#6366f1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s; }
+                .oov-btn-notitie:hover { background:#e0e7ff; }
+                .oov-geen-tender { font-size:13px;color:#d1d5db; }
+                .oov-btn-verwijder { width:32px;height:32px;border-radius:6px;border:0.5px solid #fca5a5;background:#fff5f5;color:#dc2626;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s; }
+                .oov-btn-verwijder:hover { background:#fee2e2; }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Event: Nieuwe offerte
+        container.querySelector('#oov-nieuw-btn')?.addEventListener('click', () => {
+            this._offerteNieuwDialog();
+        });
+
+        // Data laden
+        try {
+            const supabase = window.getSupabase ? window.getSupabase() : null;
+            const { data: { session } } = supabase
+                ? await supabase.auth.getSession()
+                : { data: { session: null } };
+            const token = session?.access_token || '';
+            const baseUrl = window.API_CONFIG?.BASE_URL || window.CONFIG?.api || '';
+
+            const bureauId = this.currentBureau?.bureau_id || '';
+            const url = bureauId
+                ? `/api/v1/offerte-calculator?bureau_id=${encodeURIComponent(bureauId)}`
+                : `/api/v1/offerte-calculator`;
+
+            const resp = await fetch(`${baseUrl}${url}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+            });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const { calculaties } = await resp.json();
+
+            const body = container.querySelector('#oov-body');
+            if (!body) return;
+
+            if (!calculaties.length) {
+                body.innerHTML = `
+                    <div class="oov-leeg">
+                        <div class="oov-leeg-icon">${icon('fileText', 40)}</div>
+                        <div class="oov-leeg-titel">Geen offertes gevonden</div>
+                        <div class="oov-leeg-sub">Klik op "+ Nieuwe offerte" om een berekening te starten,<br>of open de Offerte Calculator vanuit een tender (TCC).</div>
+                    </div>`;
+                return;
+            }
+
+            const rijen = calculaties.map(c => {
+                const naam       = c.aanbesteding || c.inschrijvende_partij || 'Nieuwe offerte';
+                const dienst     = c.aanbestedende_dienst || '';
+                const bureauNaam = c.bureau_naam || window.app?.currentBureau?.bureau_naam || '';
+                const d          = datum(c.deadline || c.created_at);
+                const bedrag     = euro(c.factuur_tenderschrijven || c.bedrag_berekend);
+                const netto      = c.factuur_totaal ? euro(c.factuur_totaal) : '—';
+                const badge      = offerteStatusBadge(c.status || 'concept');
+
+                return `
+                <tr>
+                    <td class="oov-col-klikbaar" data-offerte-id="${esc(c.id)}" data-tender-id="${esc(c.tender_id || '')}">
+                        <div class="oov-tabel-naam">${esc(naam)}</div>
+                        <div class="tcb-info" style="margin-top:4px;">
+                            ${dienst ? `
+                                <div class="tcb-info-line tcb-info-line--opdrachtgever">
+                                    ${icon('building', 14)}
+                                    <span>${esc(dienst)}</span>
+                                </div>
+                            ` : ''}
+                            ${c.deadline ? `
+                                <div class="tcb-info-line">
+                                    ${icon('calendar', 14)}
+                                    <span>Deadline: <strong>${formatDatum(c.deadline)}</strong></span>
+                                </div>
+                            ` : ''}
+                            ${bureauNaam ? `
+                                <div class="tcb-info-line tcb-info-line--bureau">
+                                    ${icon('crown', 14)}
+                                    <span>Bureau: <strong>${esc(bureauNaam)}</strong></span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </td>
+                    <td>${badge}</td>
+                    <td class="oov-bedrag">${bedrag}</td>
+                    <td class="oov-netto">${netto}</td>
+                    <td>${d}${c.deadline ? dagenBadge(c.deadline) : ''}</td>
+                    <td>${c.tender_id
+                        ? `<button class="oov-btn oov-tender-link" data-open-tender="${esc(c.tender_id)}" title="Open tender in TCC">
+                               ${icon('externalLink', 11)} Tender Command Center
+                           </button>`
+                        : `<span class="oov-geen-tender">—</span>`}
+                    </td>
+                    <td style="display:flex;align-items:center;gap:6px;">
+                        <button class="oov-btn-notitie" data-notitie-tender-id="${esc(c.tender_id || '')}" data-notitie-naam="${esc(naam)}" title="Notities openen">
+                            ${icon('messageSquare', 14)}
+                        </button>
+                        <button class="oov-btn-verwijder" data-verwijder-id="${esc(c.id)}" data-verwijder-naam="${esc(naam)}" title="Verwijderen">
+                            ${window.Icons?.trash({ size: 14 }) || '🗑'}
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            body.innerHTML = `
+                <table class="oov-tabel">
+                    <thead>
+                        <tr>
+                            <th>Aanbesteding</th>
+                            <th>Status</th>
+                            <th>Tenderschrijven</th>
+                            <th>Totale factuur</th>
+                            <th>Datum / deadline</th>
+                            <th>Tender</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>${rijen}</tbody>
+                </table>`;
+
+            // "Openen" knoppen
+            body.querySelectorAll('[data-offerte-id]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const offerteId = btn.dataset.offerteId;
+                    const tenderId  = btn.dataset.tenderId;
+                    if (!this._offerteCalculatorView) {
+                        this._offerteCalculatorView = new window.OfferteCalculatorView();
+                    }
+                    this.currentView = `offerte-calculator:${tenderId}`;
+                    this.header.setContext('profiel', { title: 'Offerte Calculator' });
+                    this.contentContainer.innerHTML = '';
+                    this._offerteCalculatorView.mount(this.contentContainer, { tenderId: tenderId || null, offerteId });
+                });
+            });
+
+            // "Tender" knoppen → open TCC overlay
+            body.querySelectorAll('[data-open-tender]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const tenderId = btn.dataset.openTender;
+                    if (tenderId && typeof openCommandCenter === 'function') {
+                        openCommandCenter(tenderId);
+                    }
+                });
+            });
+
+            // "Verwijder" knoppen
+            body.querySelectorAll('[data-verwijder-id]').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const offerteId = btn.dataset.verwijderId;
+                    const naam      = btn.dataset.verwijderNaam || 'deze offerte';
+                    if (!confirm(`Offerte "${naam}" definitief verwijderen?`)) return;
+                    try {
+                        const { data: { session } } = await window.supabaseClient.auth.getSession();
+                        const token   = session?.access_token || '';
+                        const baseUrl = window.API_CONFIG?.BASE_URL || '';
+                        const res = await fetch(`${baseUrl}/api/v1/offerte-calculator/${offerteId}`, {
+                            method: 'DELETE',
+                            headers: { Authorization: `Bearer ${token}` },
+                        });
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        this.showView('offerte-overzicht');
+                    } catch (err) {
+                        alert('Verwijderen mislukt: ' + err.message);
+                    }
+                });
+            });
+
+            // "Notitie" knoppen → koppel notities-paneel aan de bijbehorende tender
+            body.querySelectorAll('[data-notitie-tender-id]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const tenderId = btn.dataset.notitieTenderId;
+                    const naam     = btn.dataset.notitieNaam || 'Offerte';
+                    if (!tenderId) {
+                        showToast('Geen gekoppelde tender voor notities', 'info');
+                        return;
+                    }
+                    if (window.notitiesPanel) {
+                        window.notitiesPanel.setTender(tenderId, naam);
+                    }
+                });
+            });
+
+        } catch (e) {
+            const body = container.querySelector('#oov-body');
+            if (body) body.innerHTML = `<div class="oov-laden" style="color:#dc2626;">Laden mislukt: ${e.message}</div>`;
+        }
+    }
+
+    /**
+     * Dialoogvenster voor nieuwe offerte — kies tender of maak blanco aan.
+     */
+    _offerteNieuwDialog() {
+        const icon = (name, size = 14) =>
+            (window.Icons && typeof window.Icons[name] === 'function')
+                ? window.Icons[name]({ size })
+                : '';
+
+        // Bouw opties: actieve tenders (geen archief)
+        const activeTenders = (this.tenders || []).filter(t => t.fase !== 'archief');
+        const tenderOpties = activeTenders
+            .map(t => `<option value="${t.id}">${
+                t.naam || 'Tender'
+            }${t.aanbestedende_dienst ? ' — ' + t.aanbestedende_dienst : ''}</option>`)
+            .join('');
+
+        const modal = document.createElement('div');
+        modal.className = 'oov-modal-overlay';
+        modal.id = 'oov-nieuw-modal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9000;display:flex;align-items:center;justify-content:center;';
+        modal.innerHTML = `
+            <div style="background:#fff;border-radius:12px;padding:24px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+                <h3 style="font-size:15px;font-weight:700;color:#1e1b4b;margin:0 0 6px;display:flex;align-items:center;gap:8px;">
+                    ${icon('fileText', 16)} Nieuwe offerte aanmaken
+                </h3>
+                <p style="font-size:13px;color:#6b7280;margin:0 0 18px;">
+                    Koppel de offerte aan een bestaande tender.
+                </p>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;">
+                    <label style="font-size:12px;font-weight:600;color:#374151;">Koppelen aan tender</label>
+                    <select id="oov-nieuw-tender" style="font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:inherit;">
+                        <option value="">— Selecteer een tender —</option>
+                        ${tenderOpties}
+                    </select>
+                    <span id="oov-nieuw-fout" style="font-size:12px;color:#dc2626;display:none;">
+                        ${icon('alertCircle', 12)} Selecteer een tender of maak eerst een nieuwe aan.
+                    </span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <button id="oov-nieuw-tender-btn" style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid #ddd6fe;border-radius:8px;font-size:13px;cursor:pointer;background:#f5f3ff;color:#7c3aed;font-family:inherit;">
+                        ${icon('plus', 13)} Nieuwe tender aanmaken
+                    </button>
+                    <div style="display:flex;gap:10px;">
+                        <button id="oov-nieuw-annuleer" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;cursor:pointer;background:#fff;color:#374151;font-family:inherit;">
+                            Annuleren
+                        </button>
+                        <button id="oov-nieuw-bevestig" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:#7c3aed;color:#fff;font-family:inherit;">
+                            ${icon('barChart', 14)} Calculator openen
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+
+        document.body.appendChild(modal);
+
+        const sluit = () => modal.remove();
+        modal.querySelector('#oov-nieuw-annuleer').addEventListener('click', sluit);
+        modal.addEventListener('click', e => { if (e.target === modal) sluit(); });
+
+        // "Calculator openen" — vereist een geselecteerde tender
+        modal.querySelector('#oov-nieuw-bevestig').addEventListener('click', () => {
+            const tenderId = modal.querySelector('#oov-nieuw-tender').value;
+            if (!tenderId) {
+                modal.querySelector('#oov-nieuw-fout').style.display = 'flex';
+                modal.querySelector('#oov-nieuw-fout').style.gap = '4px';
+                modal.querySelector('#oov-nieuw-fout').style.alignItems = 'center';
+                return;
+            }
+            sluit();
+            this._offerteCalculatorView = null; // verse instantie per tender
+            this.showView(`offerte-calculator:${tenderId}`);
+        });
+
+        // "Nieuwe tender aanmaken" — sluit modal, open Smart Import wizard, navigeer daarna naar calculator
+        modal.querySelector('#oov-nieuw-tender-btn').addEventListener('click', () => {
+            sluit();
+
+            // Sla de huidige onComplete op en vervang tijdelijk
+            const origOnComplete = this.smartImportWizard.onComplete;
+            this.smartImportWizard.onComplete = (tender) => {
+                // Herstel onComplete direct
+                this.smartImportWizard.onComplete = origOnComplete;
+                this.loadData();
+                if (tender?.id) {
+                    this._offerteCalculatorView = null;
+                    this.showView(`offerte-calculator:${tender.id}`);
+                }
+            };
+
+            this.smartImportWizard.open();
+        });
     }
 
     showError(message) {

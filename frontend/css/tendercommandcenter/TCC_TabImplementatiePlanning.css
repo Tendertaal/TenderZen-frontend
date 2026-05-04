@@ -1,0 +1,1156 @@
+/* ================================================================
+   TCC_TabImplementatiePlanning.css
+   Project Implementatieplanning tab voor TenderZen TCC
+   ================================================================ */
+
+/* ── Tab container ────────────────────────────────────────────── */
+
+.ip-wrap {
+    position: relative;   /* .ip-modal-overlay met inset:0 is relatief aan .ip-wrap */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    font-size: 13px;
+    color: #1e293b;
+}
+
+/* ── AI banner ────────────────────────────────────────────────── */
+
+.ip-ai-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f5f3ff;
+    border-bottom: 1px solid #c4b5fd;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: #5b21b6;
+    flex-shrink: 0;
+}
+
+.ip-ai-banner-icon { opacity: 0.8; }
+
+.ip-ai-banner-text { flex: 1; }
+
+.ip-ai-banner-datum {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────── */
+
+.ip-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fff;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.ip-toolbar-meta {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.ip-toolbar-project {
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ip-toolbar-periode {
+    font-size: 11px;
+    color: #64748b;
+}
+
+.ip-toolbar-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+
+.ip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-family: inherit;
+    line-height: 1;
+    transition: background 0.12s, border-color 0.12s;
+    white-space: nowrap;
+}
+
+.ip-btn--primary {
+    background: #7c3aed;
+    color: #fff;
+    border-color: #7c3aed;
+}
+.ip-btn--primary:hover { background: #6d28d9; border-color: #6d28d9; }
+.ip-btn--primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ip-btn--secondary {
+    background: #f8fafc;
+    color: #374151;
+    border-color: #d1d5db;
+}
+.ip-btn--secondary:hover { background: #f1f5f9; }
+.ip-btn--secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.ip-btn--ghost {
+    background: transparent;
+    color: #64748b;
+    border-color: transparent;
+    padding: 5px 7px;
+}
+.ip-btn--ghost:hover { background: #f1f5f9; color: #374151; }
+
+.ip-btn--danger {
+    background: #fee2e2;
+    color: #dc2626;
+    border-color: #fca5a5;
+}
+.ip-btn--danger:hover { background: #fecaca; }
+
+/* ── Lege staat ───────────────────────────────────────────────── */
+
+.ip-leeg {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 32px;
+    text-align: center;
+}
+
+.ip-leeg-icon {
+    opacity: 0.25;
+    margin-bottom: 4px;
+}
+
+.ip-leeg h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.ip-leeg p {
+    font-size: 13px;
+    color: #64748b;
+    max-width: 320px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.ip-leeg-acties {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 4px;
+}
+
+/* ── Loading ──────────────────────────────────────────────────── */
+
+.ip-loading {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+/* ── Gantt container ──────────────────────────────────────────── */
+
+.ip-gantt-wrap {
+    /* CSS-variabelen voor kolombreedtes — JS overschrijft deze via setProperty() */
+    --ip-col-nr:      48px;
+    --ip-col-taak:    280px;
+    --ip-col-verantw: 180px;
+    --ip-col-status:  90px;
+    --ip-col-datum:   115px;
+
+    overflow-y: auto;
+    overflow-x: auto;   /* auto zodat ingeklapte kolommen niet overlopen */
+    background: #f8fafc;
+    min-height: 0;
+}
+
+/* ── Sectie header ────────────────────────────────────────────── */
+
+.ip-sectie-header {
+    display: flex;
+    align-items: center;
+    padding: 7px 16px 7px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #374151;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.ip-sectie-naam {
+    flex: 1;
+}
+
+.ip-sectie-acties {
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transition: opacity 0.12s;
+}
+
+.ip-sectie-header:hover .ip-sectie-acties { opacity: 1; }
+
+/* ── Taak rij ─────────────────────────────────────────────────── */
+
+.ip-taak-rij {
+    display: grid;
+    grid-template-columns: var(--ip-col-nr, 48px) var(--ip-col-taak, 280px) var(--ip-col-verantw, 180px) var(--ip-col-status, 90px) var(--ip-col-datum, 115px);
+    align-items: center;
+    padding: 0;
+    border-bottom: 1px solid #f1f5f9;
+    min-height: 36px;
+    transition: background 0.1s;
+    cursor: pointer;
+}
+
+.ip-taak-rij:hover {
+    background: #f1f5f9;
+}
+
+.ip-taak-cel {
+    padding: 6px 10px;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ip-taak-cel--nr {
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 500;
+    padding-left: 16px;
+}
+
+.ip-taak-cel--naam {
+    font-weight: 500;
+    color: #0f172a;
+}
+
+.ip-taak-cel--verantw {
+    color: #475569;
+    font-size: 11px;
+}
+
+.ip-taak-cel--status { text-align: center; }
+
+.ip-taak-cel--gantt {
+    position: relative;
+    min-width: var(--ip-gantt-kolom-breedte, 600px);
+}
+
+.ip-taak-cel--acties {
+    display: flex;
+    gap: 2px;
+    justify-content: flex-end;
+    padding-right: 10px;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+
+.ip-taak-rij:hover .ip-taak-cel--acties { opacity: 1; }
+
+/* ── Gantt canvas rij ─────────────────────────────────────────── */
+
+.ip-gantt-rij-wrap {
+    background: #fff;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Combined info+gantt row using CSS grid */
+.ip-gantt-row {
+    display: grid;
+    grid-template-columns: var(--ip-col-nr, 48px) var(--ip-col-taak, 280px) var(--ip-col-verantw, 180px) var(--ip-col-status, 90px) var(--ip-col-datum, 115px) 1fr;
+    align-items: center;
+    min-height: 36px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.ip-gantt-row:hover { background: #f8fafc; }
+
+/* ── Gantt bar container ──────────────────────────────────────── */
+
+.ip-gantt-bar-container {
+    position: relative;
+    height: 20px;
+    margin: 0 8px;
+}
+
+.ip-gantt-bar {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    border-radius: 3px;
+    min-width: 4px;
+    opacity: 0.85;
+    transition: opacity 0.12s;
+}
+
+.ip-gantt-row:hover .ip-gantt-bar { opacity: 1; }
+
+/* Vandaag-lijn */
+.ip-vandaag-lijn {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #ef4444;
+    opacity: 0.6;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* ── Gantt header (week labels) ───────────────────────────────── */
+
+.ip-gantt-header-row {
+    display: grid;
+    grid-template-columns: var(--ip-col-nr, 48px) var(--ip-col-taak, 280px) var(--ip-col-verantw, 180px) var(--ip-col-status, 90px) var(--ip-col-datum, 115px) 1fr;
+    background: #f1f5f9;
+    border-bottom: 2px solid #e2e8f0;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    min-height: 28px;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+}
+
+.ip-gantt-header-info {
+    grid-column: 1 / 6;
+    display: grid;
+    grid-template-columns: var(--ip-col-nr, 48px) var(--ip-col-taak, 280px) var(--ip-col-verantw, 180px) var(--ip-col-status, 90px) var(--ip-col-datum, 115px);
+}
+
+.ip-gantt-header-cel {
+    padding: 4px 10px;
+}
+
+.ip-gantt-header-gantt {
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.ip-gantt-header-maand {
+    font-size: 10px;
+    font-weight: 600;
+    color: #4f46e5;
+    white-space: nowrap;
+}
+
+/* ── Status badges ────────────────────────────────────────────── */
+
+.ip-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ip-status-badge--open         { background: #fef3c7; color: #92400e; }
+.ip-status-badge--in_uitvoering{ background: #dbeafe; color: #1d4ed8; }
+.ip-status-badge--afgerond     { background: #dcfce7; color: #166534; }
+
+/* ── Kolom headers ────────────────────────────────────────────── */
+
+.ip-col-header {
+    display: grid;
+    grid-template-columns: var(--ip-col-nr, 48px) var(--ip-col-taak, 280px) var(--ip-col-verantw, 180px) var(--ip-col-status, 90px) var(--ip-col-datum, 115px) 1fr;
+    background: #f8fafc;
+    border-bottom: 1.5px solid #e2e8f0;
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+}
+
+/* .ip-col-header-cel behouden voor backwards-compat; nieuw: .ip-th */
+.ip-col-header-cel {
+    padding: 6px 10px;
+    border-right: 1px solid #f1f5f9;
+}
+
+/* ── Kolom header cel met resize handle ──────────────────────────── */
+
+.ip-th {
+    position: relative;
+    padding: 6px 16px 6px 10px; /* extra rechts voor handle */
+    border-right: 1px solid #f1f5f9;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.ip-th--center {
+    justify-content: center;
+}
+
+.ip-col-resize-handle {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 2;
+    transition: background 0.1s;
+}
+
+.ip-col-resize-handle:hover,
+.ip-col-resize-handle.actief {
+    background: rgba(79, 70, 229, 0.25);
+}
+
+/* ── Gantt header cel — bevat nu de tijdlijn ─────────────────────── */
+
+.ip-col-header-gantt {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 28px;
+    min-width: var(--ip-gantt-kolom-breedte, 600px);
+}
+
+/* ── Gantt tijdlijn ─────────────────────────────────────────────── */
+
+.ip-gantt-timeline {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.ip-tl-groepen {
+    position: relative;
+    height: 13px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+    overflow: hidden;
+}
+
+.ip-tl-ticks {
+    position: relative;
+    flex: 1;
+    min-height: 14px;
+    overflow: hidden;
+}
+
+.ip-tl-item {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 3px;
+    box-sizing: border-box;
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 1px solid rgba(226, 232, 240, 0.7);
+    font-size: 9px;
+}
+
+.ip-tl-groep-item {
+    font-weight: 700;
+    color: #4f46e5;
+    letter-spacing: 0.03em;
+}
+
+.ip-tl-tick-item {
+    font-weight: 500;
+    color: #64748b;
+}
+
+.ip-tl-leeg {
+    font-size: 10px;
+    color: #94a3b8;
+    padding: 0 8px;
+    align-self: center;
+}
+
+/* ── Zoom pills ──────────────────────────────────────────────────── */
+
+.ip-zoom-pills {
+    display: flex;
+    gap: 1px;
+    align-items: center;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    padding: 2px;
+    flex-shrink: 0;
+}
+
+.ip-zoom-pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 5px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.ip-zoom-pill:hover {
+    background: #e2e8f0;
+    color: #374151;
+}
+
+.ip-zoom-pill.actief {
+    background: #fff;
+    color: #4f46e5;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Schaal-control ─────────────────────────────────────────────── */
+
+.ip-schaal-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.ip-schaal-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.ip-schaal-btn:hover {
+    background: #f1f5f9;
+}
+
+.ip-schaal-slider {
+    width: 80px;
+    accent-color: #4f46e5;
+    cursor: pointer;
+}
+
+/* ── Datum cel ───────────────────────────────────────────────────── */
+
+.ip-taak-cel--datum {
+    font-size: 10px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Modal overlay ────────────────────────────────────────────── */
+
+.ip-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 16px;
+}
+
+.ip-modal {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ip-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+.ip-modal-titel {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.ip-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ip-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+/* ── Form fields ──────────────────────────────────────────────── */
+
+.ip-veld {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.ip-veld label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.ip-veld input,
+.ip-veld textarea,
+.ip-veld select {
+    padding: 7px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #0f172a;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.12s, box-shadow 0.12s;
+}
+
+.ip-veld input:focus,
+.ip-veld textarea:focus,
+.ip-veld select:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+}
+
+.ip-veld input[readonly],
+.ip-veld input:disabled {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.ip-veld textarea { resize: vertical; min-height: 64px; }
+
+.ip-veld-rij {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ── Dropzone — gedeelde doc-dropzone klassen worden uit TCC_TabDocs.js geïnjecteerd ── */
+
+/* IP-specifieke override: paarse dashed border ipv grijze */
+.ip-dropzone.doc-dropzone {
+    border-color: #c4b5fd;
+    background: #faf5ff;
+}
+
+.ip-dropzone-naam {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    margin-top: 6px;
+}
+
+/* ── Documenten lijst (meerdere bestanden) ────────────────────── */
+
+.ip-doc-teller {
+    font-size: 11px;
+    font-weight: 600;
+    color: #7c3aed;
+    margin-bottom: 4px;
+}
+
+.ip-doc-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #f5f3ff;
+    border: 1px solid #e9d5ff;
+    margin-bottom: 3px;
+    font-size: 12px;
+}
+
+.ip-doc-item-naam {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #374151;
+}
+
+.ip-doc-item-verwijder {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.1s;
+}
+.ip-doc-item-verwijder:hover { opacity: 1; }
+
+/* ── Loading spinner (hergebruik TCC) ─────────────────────────── */
+
+.ip-spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(124,58,237,0.2);
+    border-top-color: #7c3aed;
+    border-radius: 50%;
+    animation: ip-spin 0.7s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes ip-spin { to { transform: rotate(360deg); } }
+
+/* ── Tabel met geen data label ────────────────────────────────── */
+
+.ip-sectie-leeg {
+    padding: 8px 16px 8px 68px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+/* ── Totaaltelling footer ─────────────────────────────────────── */
+
+.ip-footer-tel {
+    border-top: 1px solid #e2e8f0;
+    padding: 6px 16px;
+    font-size: 11px;
+    color: #94a3b8;
+    background: #f8fafc;
+    flex-shrink: 0;
+    display: flex;
+    gap: 16px;
+}
+
+/* ── Chat paneel layout ───────────────────────────────────────── */
+
+.ip-main-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.ip-main-layout.chat-open {
+    grid-template-columns: 1fr 300px;
+}
+
+.ip-main-layout .ip-gantt-wrap {
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #f8fafc;
+}
+
+/* ── Chat paneel ──────────────────────────────────────────────── */
+
+.ip-chat-paneel {
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid #e2e8f0;
+    background: #fff;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.ip-chat-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-shrink: 0;
+}
+
+.ip-chat-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: #7c3aed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.ip-chat-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ip-chat-model-select {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #64748b;
+    cursor: pointer;
+}
+
+.ip-chat-close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.ip-chat-close-btn:hover { background: #f1f5f9; color: #374151; }
+
+.ip-chat-msgs {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 120px;
+}
+
+.ip-msg {
+    max-width: 92%;
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 8px 10px;
+    border-radius: 10px;
+}
+
+.ip-msg-user {
+    background: #4f46e5;
+    color: #fff;
+    align-self: flex-end;
+    border-radius: 12px 12px 3px 12px;
+}
+
+.ip-msg-ai {
+    background: #f8fafc;
+    color: #0f172a;
+    align-self: flex-start;
+    border-radius: 12px 12px 12px 3px;
+    border: 1px solid #e2e8f0;
+}
+
+.ip-msg-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #7c3aed;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.ip-wijziging-chip {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: #dcfce7;
+    color: #166534;
+    margin-top: 5px;
+    font-weight: 600;
+}
+
+.ip-wijziging-chip.fout {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.ip-chat-suggestions {
+    padding: 0 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.ip-sug {
+    font-size: 11px;
+    padding: 5px 9px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.4;
+    transition: background 0.1s;
+}
+.ip-sug:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #c4b5fd;
+}
+
+.ip-chat-input-wrap {
+    border-top: 1px solid #e2e8f0;
+    padding: 8px 10px;
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    flex-shrink: 0;
+    background: #fff;
+}
+
+.ip-chat-textarea {
+    flex: 1;
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #0f172a;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.4;
+    outline: none;
+    transition: border-color 0.12s, box-shadow 0.12s;
+}
+.ip-chat-textarea:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
+}
+
+.ip-chat-send {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: #4f46e5;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.1s;
+}
+.ip-chat-send:hover { background: #4338ca; }
+
+/* ── Fullscreen mode ──────────────────────────────────────────── */
+
+/*
+ * .ip-wrap.ip-fullscreen wordt door JS tijdelijk naar <body> verplaatst,
+ * zodat hij NIET meer genest zit in een ancestor met eigen stacking context.
+ * De z-index werkt dan direct t.o.v. <body> — 10000 > 9999 is gegarandeerd.
+ */
+.ip-wrap.ip-fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;       /* hoger dan backdrop (9999) */
+    background: #fff;
+    border-radius: 0;
+    pointer-events: auto; /* zekerheid: alle muisinteracties passeren */
+}
+
+/* Dim-laag achter de fullscreen planning */
+.ip-fullscreen-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;        /* lager dan .ip-wrap.ip-fullscreen */
+    background: rgba(15, 23, 42, 0.6);
+    animation: ip-fade-in 0.15s ease;
+    pointer-events: auto; /* click om te sluiten werkt */
+}
+
+@keyframes ip-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* Fullscreen-knop — ghostknop met iets meer padding voor klikbaarheid */
+.ip-btn--fullscreen {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    padding: 5px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: background 0.1s, color 0.1s;
+}
+.ip-btn--fullscreen:hover {
+    background: #f1f5f9;
+    color: #374151;
+    border-color: #cbd5e1;
+}
+
+/* In fullscreen: gantt-wrap kan de volledige resterende hoogte innemen */
+.ip-wrap.ip-fullscreen .ip-gantt-wrap {
+    flex: 1;
+}
+
+/* ── Chat modus-balk ──────────────────────────────────────────── */
+
+.ip-chat-modus-bar {
+    display: flex;
+    gap: 4px;
+    padding: 6px 10px 0;
+    flex-shrink: 0;
+}
+
+.ip-modus-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.ip-modus-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-color: #cbd5e1;
+}
+
+.ip-modus-btn.actief-aanpas {
+    background: #ede9fe;
+    color: #5b21b6;
+    border-color: #c4b5fd;
+    font-weight: 600;
+}
+
+.ip-modus-btn.actief-vraag {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+    font-weight: 600;
+}
+
+/* ── Chat hint tekst ──────────────────────────────────────────── */
+
+.ip-chat-hint {
+    font-size: 10px;
+    color: #94a3b8;
+    padding: 4px 12px 0;
+    flex-shrink: 0;
+    font-style: italic;
+}
+
+/* ── Vraag-antwoord chip ──────────────────────────────────────── */
+
+.ip-chip-vraag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    margin-top: 5px;
+    font-weight: 600;
+}

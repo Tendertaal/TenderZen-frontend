@@ -121,7 +121,9 @@ body.siw-open { overflow: hidden; }
 .si-file-item:hover { border-color:#cbd5e1; box-shadow:0 2px 6px rgba(0,0,0,0.04); }
 .si-file-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:#fef2f2; font-size:22px; flex-shrink:0; }
 .si-file-info { flex:1; min-width:0; }
-.si-file-name { font-size:14px; font-weight:600; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.si-file-name { font-size:14px; font-weight:600; color:#1e293b; }
+.si-bestand-naam-input { width:100%; font-size:13px; font-weight:600; color:#1e293b; border:1px solid #e2e8f0; border-radius:6px; padding:3px 8px; background:#f8fafc; outline:none; transition:border-color 0.15s; box-sizing:border-box; }
+.si-bestand-naam-input:focus { border-color:#818cf8; background:white; }
 .si-file-size { font-size:12px; color:#94a3b8; margin-top:2px; }
 .si-file-remove { width:32px; height:32px; border-radius:8px; border:1px solid #e2e8f0; background:white; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px; color:#94a3b8; transition:all 0.15s; }
 .si-file-remove:hover { background:#fef2f2; border-color:#fecaca; color:#dc2626; }
@@ -214,6 +216,11 @@ body.siw-open { overflow: hidden; }
     font-size: 14px;
     color: #475569;
 }
+.si-model-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.si-model-optie { cursor: pointer; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; transition: border-color 0.15s, box-shadow 0.15s; }
+.si-model-optie:hover { border-color: #a5b4fc; }
+.si-model-optie--actief { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.12); background: #fafafe; }
+@media (max-width:700px) { .si-model-grid { grid-template-columns: repeat(2, 1fr); } }
 
 @media (max-width:700px) {
     .siw-modal { width:100vw; height:100vh; border-radius:0; max-width:100vw; }

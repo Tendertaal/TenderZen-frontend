@@ -1,0 +1,1063 @@
+/* =====================================================
+   OfferteCalculatorView.css — TenderZen
+   Twee-kolom layout: links formulier, rechts sticky resultaten
+   ===================================================== */
+
+.ocv-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #f5f3ff;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    overflow: hidden;
+}
+
+/* ─── Header ─────────────────────────────────────────── */
+
+.ocv-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 24px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+}
+
+.ocv-terug-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid #ddd6fe;
+    color: #7c3aed;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.ocv-terug-btn:hover { background: #f5f3ff; }
+
+.ocv-header-midden { flex: 1; }
+.ocv-header-titel {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ocv-header-sub {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 2px 0 0;
+}
+
+.ocv-header-acties {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ─── Model select ───────────────────────────────────── */
+
+.ocv-model-select {
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+.ocv-model-select:focus { outline: none; border-color: #7c3aed; }
+
+/* ─── Status badge ────────────────────────────────────── */
+
+.ocv-status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: #f3f4f6;
+    color: #374151;
+}
+.ocv-badge--blauw { background: #dbeafe; color: #1d4ed8; }
+.ocv-badge--groen { background: #dcfce7; color: #15803d; }
+.ocv-badge--rood  { background: #fee2e2; color: #b91c1c; }
+
+/* ─── Knoppen ─────────────────────────────────────────── */
+
+.ocv-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, opacity 0.15s;
+}
+.ocv-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.ocv-btn--primary   { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+.ocv-btn--primary:hover { background: #6d28d9; }
+
+.ocv-btn--secondary { background: #fff; color: #374151; border-color: #d1d5db; }
+.ocv-btn--secondary:hover { background: #f9fafb; }
+
+.ocv-btn--ghost { background: none; color: #7c3aed; border-color: #ddd6fe; }
+.ocv-btn--ghost:hover { background: #f5f3ff; }
+
+/* ─── Twee-kolom body ─────────────────────────────────── */
+
+.ocv-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+}
+
+.ocv-linker {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.ocv-rechter {
+    width: 300px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding: 20px 20px;
+    border-left: 1px solid #e5e7eb;
+    background: #fff;
+}
+
+/* ─── AI Banner ───────────────────────────────────────── */
+
+.ocv-ai-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f5f3ff;
+    border: 1px solid #c4b5fd;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #4c1d95;
+    line-height: 1.5;
+}
+.ocv-ai-banner svg { flex-shrink: 0; margin-top: 2px; }
+.ocv-ai-banner em { display: block; margin-top: 4px; color: #7c3aed; font-style: italic; }
+
+/* ─── Secties ─────────────────────────────────────────── */
+
+.ocv-sectie {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 18px 20px;
+}
+
+.ocv-sectie-titel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e1b4b;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.ocv-sectie-sub {
+    font-size: 11px;
+    font-weight: 400;
+    color: #9ca3af;
+    margin-left: 6px;
+}
+.ocv-res-hint {
+    font-size: 11px;
+    color: #9ca3af;
+    margin: 2px 0 6px;
+}
+.ocv-sectie-hint {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: -8px 0 12px;
+}
+
+/* ─── Formulier velden ────────────────────────────────── */
+
+.ocv-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.ocv-veld { display: flex; flex-direction: column; gap: 4px; }
+.ocv-veld--full { grid-column: 1 / -1; }
+.ocv-veld label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+}
+.ocv-veld input, .ocv-veld select, .ocv-veld textarea {
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: #111827;
+    background: #fff;
+    transition: border-color 0.15s;
+}
+.ocv-veld input:focus, .ocv-veld select:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 2px #ddd6fe;
+}
+
+/* ─── Projectgegevens — gedeeld 3-kolom grid ─────────── */
+
+.ocv-pg-grid {
+    display: grid;
+    grid-template-columns: 1fr 140px 160px;
+    gap: 12px;
+}
+.ocv-pg-full  { grid-column: 1 / -1; }
+.ocv-pg-span2 { grid-column: span 2; }
+
+/* ─── Variabelen grid ─────────────────────────────────── */
+
+.ocv-variabelen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.ocv-var-groep-titel {
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 0 0 10px;
+}
+
+.ocv-var-veld {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.ocv-var-veld label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.ocv-var-hint { font-size: 10px; color: #9ca3af; }
+
+.ocv-var-input, .ocv-var-select {
+    font-size: 14px;
+    font-family: inherit;
+    font-weight: 600;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: #1e1b4b;
+    background: #fafafa;
+    width: 100%;
+    box-sizing: border-box;
+}
+.ocv-var-input:focus, .ocv-var-select:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 2px #ddd6fe;
+}
+
+/* Toggle switch */
+.ocv-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #374151;
+}
+.ocv-toggle input { display: none; }
+.ocv-toggle-slider {
+    width: 36px;
+    height: 20px;
+    background: #d1d5db;
+    border-radius: 10px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+.ocv-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: left 0.2s;
+}
+.ocv-toggle input:checked ~ .ocv-toggle-slider { background: #7c3aed; }
+.ocv-toggle input:checked ~ .ocv-toggle-slider::after { left: 18px; }
+
+/* ─── Urentabel ───────────────────────────────────────── */
+
+.ocv-tabel-wrap { overflow-x: auto; }
+.ocv-tabel {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+.ocv-tabel th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+}
+.ocv-tabel-num { text-align: right !important; }
+.ocv-tabel-rij td { padding: 6px 10px; border-bottom: 1px solid #f3f4f6; }
+.ocv-tabel-rij--nul  td { color: #d1d5db; }
+.ocv-tabel-rij--actief td { color: #111827; }
+.ocv-tabel-uren { font-weight: 600; color: #7c3aed !important; }
+
+.oc-uren-indicatie-input {
+    width: 60px;
+    font-size: 12px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 0.5px solid var(--color-border-secondary, #e5e7eb);
+    background: var(--color-background-primary, #ffffff);
+    color: var(--color-text-primary, #111827);
+    text-align: center;
+}
+.oc-uren-indicatie-input:focus {
+    outline: none;
+    border-color: #4f46e5;
+}
+
+/* Component blokken — rechter panel factuurbedragen */
+.oc-component-blok {
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+}
+.oc-component-blok:last-of-type { border-bottom: none; }
+.oc-component-titel {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-secondary);
+    margin-bottom: 8px;
+}
+.oc-component-rij {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+.oc-comp-label { color: var(--color-text-secondary); }
+.oc-comp-berekend .oc-comp-waarde {
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+.oc-comp-sub { opacity: 0.8; }
+.oc-tekst-input {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: var(--border-radius-md);
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    width: 120px;
+    text-align: right;
+}
+.oc-select-input {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: var(--border-radius-md);
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    width: 140px;
+}
+.oc-pct-input {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: var(--border-radius-md);
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    width: 70px;
+    text-align: center;
+}
+
+/* Totaalrij */
+.oc-totaal-rij td {
+    padding: 8px 10px;
+    font-weight: 500;
+    border-top: 2px solid var(--color-border-secondary, #e5e7eb);
+    font-size: 13px;
+}
+.oc-uren-totaal {
+    color: #4f46e5;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: right !important;
+}
+
+/* Verwijderknop */
+.oc-verwijder-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-secondary, #6b7280);
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+.oc-verwijder-btn:hover {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Activiteit toevoegen */
+.oc-activiteit-toevoegen {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    border-top: 0.5px solid var(--color-border-tertiary, #f3f4f6);
+    margin-top: 4px;
+}
+.oc-nieuwe-naam-input {
+    flex: 1;
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: var(--border-radius-md, 6px);
+    border: 0.5px solid var(--color-border-secondary, #e5e7eb);
+    background: var(--color-background-primary, #ffffff);
+    color: var(--color-text-primary, #111827);
+}
+.oc-nieuwe-uren-input {
+    width: 64px;
+    font-size: 12px;
+    padding: 5px 8px;
+    border-radius: var(--border-radius-md, 6px);
+    border: 0.5px solid var(--color-border-secondary, #e5e7eb);
+    background: var(--color-background-primary, #ffffff);
+    color: var(--color-text-primary, #111827);
+    text-align: center;
+}
+.oc-nieuwe-comp-select {
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: var(--border-radius-md, 6px);
+    border: 0.5px solid var(--color-border-secondary, #e5e7eb);
+    background: var(--color-background-primary, #ffffff);
+    color: var(--color-text-primary, #111827);
+}
+.oc-btn-toevoegen {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: var(--border-radius-md, 6px);
+    border: 0.5px solid #4f46e5;
+    background: #ede9fe;
+    color: #4c1d95;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+.oc-btn-toevoegen:hover {
+    background: #ddd6fe;
+}
+
+.ocv-comp-badge {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 6px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    color: #6b7280;
+    font-family: monospace;
+}
+
+/* ─── Factuur velden (verwijderd — verplaatst naar V2 resultaten panel) ─── */
+
+/* ─── Notities ────────────────────────────────────────── */
+
+.ocv-notities {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 13px;
+    font-family: inherit;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: #111827;
+    resize: vertical;
+}
+.ocv-notities:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 2px #ddd6fe; }
+
+/* ─── Resultaten panel V2 ─────────────────────────────── */
+
+.ocv-rechter { flex-shrink: 0; }
+.ocv-rechter--viewer { min-width: 400px; padding: 0; }
+
+.ocv-panel { display: flex; flex-direction: column; gap: 10px; }
+
+/* Component kaarten */
+.ocv-comp-kaart {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.ocv-comp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    background: #f9fafb;
+    border-bottom: 0.5px solid #e5e7eb;
+}
+.ocv-comp-header-links { display: flex; align-items: center; gap: 8px; }
+.ocv-comp-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.ocv-comp-naam { font-size: 12px; font-weight: 500; color: #111827; }
+.ocv-comp-badge-euro { font-size: 12px; font-weight: 600; color: #4f46e5; }
+.ocv-comp-body { padding: 10px 14px; }
+
+.ocv-rij {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+.ocv-rij:last-child { margin-bottom: 0; }
+.ocv-lbl { color: #6b7280; flex: 1; }
+.ocv-waarde { font-weight: 500; color: #111827; }
+.ocv-hint { font-size: 10px; color: #9ca3af; font-style: italic; }
+.ocv-rood { color: #dc2626; }
+.ocv-invoer-wrap { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.ocv-invoer-wrap > span { font-size: 12px; color: #9ca3af; }
+.ocv-sep { height: 0.5px; background: #f3f4f6; margin: 8px 0; }
+
+input.ocv-k, select.ocv-k {
+    width: 80px;
+    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #111827;
+    text-align: right;
+    font-family: inherit;
+}
+input.ocv-k:focus, select.ocv-k:focus { outline: none; border-color: #4f46e5; }
+select.ocv-k { text-align: left; width: auto; min-width: 80px; }
+
+/* Check pills */
+.ocv-check-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 6px;
+    margin-top: 8px;
+    background: #f3f4f6;
+    color: #6b7280;
+}
+.ocv-pill-blauw  { background: #dbeafe; color: #1e40af; }
+.ocv-pill-groen  { background: #d1fae5; color: #065f46; }
+.ocv-pill-oranje { background: #fef3c7; color: #92400e; }
+.ocv-pill-rood   { background: #fee2e2; color: #991b1b; }
+
+/* Factuur totaal kaart */
+.ocv-factuur-totaal-kaart {
+    background: #fff;
+    border: 2px solid #6366f1;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.ocv-ft-header {
+    padding: 9px 14px;
+    background: #eef2ff;
+    border-bottom: 1px solid #c7d2fe;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #4338ca;
+}
+.ocv-ft-body { padding: 10px 14px; }
+.ocv-ft-rij {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 3px 0;
+    color: #6b7280;
+}
+.ocv-ft-totaal {
+    display: flex;
+    justify-content: space-between;
+    font-size: 22px;
+    font-weight: 700;
+    padding: 10px 0 6px;
+    border-top: 1px solid #c7d2fe;
+    margin-top: 6px;
+    color: #4338ca;
+}
+
+/* Kwaliteitschecks kaart */
+.ocv-checks-kaart {
+    background: #fff;
+    border: 0.5px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.ocv-checks-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    background: #f9fafb;
+    border-bottom: 0.5px solid #e5e7eb;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+}
+.ocv-checks-body { padding: 10px 14px; }
+
+/* Kosten per A4 check */
+.ocv-ka-check {
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 0;
+    background: #f3f4f6;
+    color: #6b7280;
+}
+.ocv-check-groen  { background: #d1fae5; color: #065f46; }
+.ocv-check-oranje { background: #fef3c7; color: #92400e; }
+.ocv-check-rood   { background: #fee2e2; color: #991b1b; }
+.ocv-ka-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+.ocv-ka-val { font-size: 18px; font-weight: 600; }
+.ocv-check-berekening { font-size: 11px; opacity: 0.75; margin-top: 3px; }
+.ocv-ka-sub { font-size: 10px; margin-top: 1px; }
+
+/* Ratio check */
+.ocv-ratio-kaart {
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+    text-align: center;
+    background: #f3f4f6;
+    color: #6b7280;
+}
+.ocv-ratio-groen  { background: #d1fae5; color: #065f46; }
+.ocv-ratio-oranje { background: #fef3c7; color: #92400e; }
+.ocv-ratio-rood   { background: #fee2e2; color: #991b1b; }
+.ocv-ratio-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.ocv-ratio-pct { font-size: 28px; font-weight: 600; margin-bottom: 2px; }
+.ocv-ratio-sub { font-size: 11px; margin-bottom: 10px; }
+.ocv-ratio-balk-wrap { background: rgba(0,0,0,0.08); border-radius: 4px; height: 6px; margin-bottom: 6px; }
+.ocv-ratio-groen  .ocv-ratio-balk-fill { background: #10b981; }
+.ocv-ratio-oranje .ocv-ratio-balk-fill { background: #f59e0b; }
+.ocv-ratio-rood   .ocv-ratio-balk-fill { background: #ef4444; }
+.ocv-ratio-balk-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+.ocv-ratio-schaal { display: flex; justify-content: space-between; font-size: 9px; opacity: 0.7; }
+
+/* Extern inhuur blok */
+.ocv-extern-blok {
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 6px 0;
+}
+.ocv-extern-lbl {
+    font-size: 10px;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+}
+.ocv-oranje { color: #d97706; }
+
+/* Netto config toggle rijen */
+.ocv-nc-rij {
+    display: flex;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 0.5px solid #f3f4f6;
+    font-size: 12px;
+    gap: 8px;
+}
+.ocv-nc-rij:last-child { border-bottom: none; }
+.ocv-nc-aftrek { opacity: 0.85; }
+.ocv-nc-lbl { flex: 1; color: #111827; }
+.ocv-nc-bedrag { font-size: 11px; color: #6b7280; min-width: 60px; text-align: right; }
+
+/* Toggle switch */
+.ocv-nc-toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+}
+.ocv-nc-toggle input { opacity: 0; width: 0; height: 0; }
+.ocv-nc-slider {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background: #e5e7eb;
+    cursor: pointer;
+    transition: .2s;
+}
+.ocv-nc-toggle input:checked + .ocv-nc-slider { background: #4f46e5; }
+.ocv-nc-toggle input:disabled + .ocv-nc-slider { opacity: 0.4; cursor: not-allowed; }
+.ocv-nc-slider:before {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 3px;
+    top: 3px;
+    border-radius: 50%;
+    background: #fff;
+    transition: .2s;
+}
+.ocv-nc-toggle input:checked + .ocv-nc-slider:before { transform: translateX(16px); }
+
+/* Netto banner */
+.ocv-netto-banner {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+}
+.ocv-netto-lbl        { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #166534; margin-bottom: 4px; }
+.ocv-netto-val        { font-size: 24px; font-weight: 700; color: #15803d; }
+.ocv-netto-berekening { font-size: 12px; color: #16a34a; margin-top: 4px; opacity: 0.8; }
+.ocv-netto-comm       { font-size: 11px; color: #16a34a; margin-top: 3px; }
+
+/* ─── Toast ───────────────────────────────────────────── */
+
+.ocv-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(16px);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 9999;
+    pointer-events: none;
+}
+.ocv-toast--ok   { background: #16a34a; }
+.ocv-toast--fout { background: #dc2626; }
+.ocv-toast.is-zichtbaar { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── Fout & laden ────────────────────────────────────── */
+
+.ocv-laden, .ocv-fout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    font-size: 14px;
+    color: #6b7280;
+}
+.ocv-fout { color: #dc2626; }
+
+.ocv-readonly-veld {
+    font-size: 13px;
+    padding: 7px 10px;
+    border-radius: var(--border-radius-md, 6px);
+    border: 0.5px solid var(--color-border-tertiary, #e2e8f0);
+    background: var(--color-background-secondary, #f8fafc);
+    color: var(--color-text-secondary, #64748b);
+}
+
+/* ─── Documenten sectie ───────────────────────────────── */
+
+.ocv-documenten-sectie .ocv-sectie-titel { margin-bottom: 10px; }
+
+.ocv-doc-count {
+    font-size: 12px;
+    font-weight: 400;
+    color: #64748b;
+    margin-left: 4px;
+}
+
+.ocv-documenten-lijst {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+    min-height: 28px;
+}
+
+.ocv-doc-leeg {
+    font-size: 13px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.ocv-document-rij {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.ocv-doc-naam {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #0f172a;
+}
+
+.ocv-doc-grootte {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+
+.ocv-doc-open-btn,
+.ocv-doc-del-btn {
+    display: flex;
+    align-items: center;
+    padding: 3px 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    color: #64748b;
+    transition: background 0.15s, color 0.15s;
+}
+.ocv-doc-open-btn:hover { background: #ede9fe; color: #6d28d9; }
+.ocv-doc-del-btn:hover  { background: #fee2e2; color: #dc2626; }
+
+.ocv-upload-knop {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6d28d9;
+    border: 1px dashed #c4b5fd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+    background: transparent;
+}
+.ocv-upload-knop:hover { background: #f5f3ff; }
+
+/* ─── PDF split-view viewer ──────────────────────────── */
+
+.ocv-pdf-viewer {
+    display: none;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    background: #fff;
+    border-left: 1px solid #e5e7eb;
+    overflow: hidden;
+}
+
+.ocv-pdf-viewer.actief { display: flex; }
+
+.ocv-pdf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.ocv-pdf-naam {
+    font-size: 13px;
+    font-weight: 500;
+    color: #0f172a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ocv-pdf-sluit {
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #64748b;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+.ocv-pdf-sluit:hover { background: #f1f5f9; color: #0f172a; }
+
+.ocv-pdf-iframe {
+    flex: 1;
+    border: none;
+    width: 100%;
+}
+
+/* ─── AI toelichting popover ─────────────────────────── */
+
+.ocv-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    font-size: 11px;
+    font-style: normal;
+    border: none;
+    border-radius: 50%;
+    background: #ede9fe;
+    color: #6d28d9;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 4px;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+.ocv-info-btn:hover { background: #ddd6fe; }
+
+.ocv-toelichting-popover {
+    position: fixed;
+    z-index: 2000;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    max-width: 300px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    font-size: 12.5px;
+    line-height: 1.55;
+    pointer-events: none;
+}
+
+.ocv-toelichting-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 600;
+    color: #4c1d95;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.ocv-toelichting-tekst {
+    margin: 0;
+    color: #374151;
+}
+
+/* ─── Looptijd readonly display ──────────────────────── */
+
+.ocv-var-readonly {
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 0.5px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
+}
+
+.ocv-doc-bron-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: #ede9fe;
+    color: #6d28d9;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ─── Splitter (sleepbare scheidingsbalk) ────────────── */
+
+.ocv-splitter {
+    width: 6px;
+    flex-shrink: 0;
+    background: #e5e7eb;
+    cursor: col-resize;
+    position: relative;
+    transition: background 0.15s;
+    z-index: 10;
+}
+
+.ocv-splitter:hover,
+.ocv-splitter.actief {
+    background: #7c3aed;
+}
+
+.ocv-splitter::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 32px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.6);
+    pointer-events: none;
+}

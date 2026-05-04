@@ -276,19 +276,19 @@ export class TenderbureausView extends BaseView {
     }
 
     renderBureauCard(bureau) {
-        const initials = this.generateInitials(bureau.bureau_naam);
         // Gebruik subscription_tier uit database
         const tierConfig = this.tiers.find(t => t.key === bureau.subscription_tier) || this.tiers[0];
         // Gebruik is_active uit database
         const isActive = bureau.is_active !== false;
         const usersCount = bureau.users_count || 0;
         const tendersCount = bureau.tenders_count || 0;
+        const crownIcon = window.Icons?.crown ? window.Icons.crown({ size: 20, color: 'white' }) : '♛';
 
         return `
             <div class="bureau-row" data-bureau-id="${bureau.id}" style="border-left-color: ${tierConfig.color}">
                 <div class="section-main">
                     <div class="bureau-avatar" style="background: linear-gradient(135deg, ${tierConfig.color}, ${this.darkenColor(tierConfig.color, 20)})">
-                        ${initials}
+                        ${crownIcon}
                     </div>
                     <div class="bureau-info">
                         <div class="bureau-name">${bureau.bureau_naam || 'Onbekend'}</div>

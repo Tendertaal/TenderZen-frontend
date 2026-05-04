@@ -59,7 +59,10 @@ async function openCommandCenter(tenderId) {
     window.notitiesPanel.setTender(
       tenderId,
       tender?.naam || 'Tender',
-      tender?.tenderbureau_id || null
+      tender?.tenderbureau_id || null,
+      tender?.bedrijfsnaam || null,
+      [],
+      tender?.opdrachtgever || null
     );
   }
 
@@ -81,6 +84,7 @@ async function openCommandCenter(tenderId) {
     tccState.loading = false;
     overlay.innerHTML = renderTcc(data);
     initTccEvents(overlay);
+    _bindDocsDropzone();
 
     overlay.querySelector('[data-tab="team"]')?.addEventListener('click', () => {
       setTimeout(() => loadTeamWorkload(), 100);
@@ -287,6 +291,7 @@ function renderTcc(data) {
                 ${renderTabAI(data)}
                 ${renderTabTenderplanning(data)}
                 ${renderTabProjectplanning(data)}
+                ${renderTabImplementatieplanning(data)}
                 ${renderTabChecklist(data)}
                 ${renderTabTeam(data)}
                 ${renderTabDocs(data)}
@@ -308,8 +313,10 @@ function _getNavItems(data) {
     { key: 'ai',              icon: 'sparkles',     label: 'AI',               badge: data.generatie?.badge || '',          badgeType: 'score' },
     { divider: true },
     { key: 'tenderplanning',  icon: 'calendarView', label: 'Tenderplanning',   badge: data.tenderplanning?.badge || '',     badgeType: '' },
-    { key: 'projectplanning', icon: 'calendarClock',label: 'Projectplanning',  badge: data.projectplanning?.badge || '',    badgeType: '' },
-    { key: 'checklist',       icon: 'checkSquare',  label: 'Checklist',        badge: data.checklist?.badge || '',          badgeType: 'warn' },
+    { key: 'projectplanning',     icon: 'calendarClock', label: 'Projectplanning',     badge: data.projectplanning?.badge || '',     badgeType: '' },
+    { key: 'implementatieplanning', icon: 'barChart',    label: 'Implementatieplanning', badge: '',                                   badgeType: '' },
+    { key: 'offerte',              icon: 'export',      label: 'Offerte Calculator',    badge: '',                                   badgeType: '' },
+    { key: 'checklist',           icon: 'checkSquare',  label: 'Checklist',           badge: data.checklist?.badge || '',          badgeType: 'warn' },
     { divider: true },
     { key: 'team',            icon: 'users',        label: 'Team',             badge: data.team?.badge || '',               badgeType: '' },
     { key: 'docs',            icon: 'folderOpen',   label: 'Documenten',       badge: totalDocs > 0 ? String(totalDocs) : '', badgeType: '' },
@@ -406,7 +413,6 @@ function initTccEvents(overlay) {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const action = btn.dataset.action;
-    console.log('[TCC] click action:', action, btn);
 
     switch (action) {
       case 'tcc-close': closeTcc(); break;
@@ -435,6 +441,17 @@ function initTccEvents(overlay) {
       case 'tp-toggle-detail':   handleTpToggleDetail(btn.dataset.key, panel); break;
       case 'tp-toggle-detail-ai': handleTpToggleDetailAi(btn.dataset.id, panel); break;
 
+      // Implementatieplanning — gedelegeerd naar handleIpEvent() in TCC_TabImplementatiePlanning.js
+      // (handleIpEvent() wordt ook gebruikt door de fullscreen body-handler)
+      case 'ip-ai-genereer':       case 'ip-ai-genereer-start': case 'ip-ai-genereer-close':
+      case 'ip-handmatig-start':   case 'ip-taak-open':         case 'ip-taak-save':
+      case 'ip-taak-close':        case 'ip-taak-verwijder':    case 'ip-sectie-open':
+      case 'ip-sectie-save':       case 'ip-sectie-close':      case 'ip-sectie-verwijder':
+      case 'ip-export-excel':      case 'ip-export-pdf':        case 'ip-fullscreen':
+      case 'ip-chat-toggle':       case 'ip-chat-stuur':        case 'ip-chat-sug':
+      case 'ip-chat-modus':        case 'ip-zoom':              case 'ip-doc-verwijder':
+        handleIpEvent(action, btn); break;
+
       // Projectplanning — handlers in TCC_TabProjectplanning.js
       case 'pp-toon-info':      handlePpToonInfo(btn.dataset.taakId); break;
       case 'pp-toon-config':    handlePpToonConfig(); break;
@@ -455,7 +472,6 @@ function initTccEvents(overlay) {
       case 'team-remove':        handleTeamRemoveMember(btn.dataset.memberId); break;
 
       // Documenten — handlers in TCC_TabDocs.js
-      case 'docs-upload-trigger': handleDocUpload(); break;
       case 'doc-delete':          handleDocDelete(btn.dataset.docId); break;
       case 'doc-preview':         handleDocPreview(btn.dataset.docId, btn.dataset.docName); break;
       case 'smart-import-trigger': handleSmartImportTrigger(); break;
@@ -561,6 +577,17 @@ function _switchTab(tabKey, panel) {
 
   if (tabKey === 'team') setTimeout(() => loadTeamWorkload(), 100);
   if (tabKey === 'projectplanning') setTimeout(() => _bridgePlanningToTcc(), 150);
+  if (tabKey === 'implementatieplanning') setTimeout(() => _ipInit(tccState.tenderId), 150);
+  if (tabKey === 'docs') _bindDocsDropzone();
+
+  // Offerte Calculator opent als aparte pagina
+  if (tabKey === 'offerte') {
+    const tenderId = tccState.tenderId;
+    closeTcc();
+    if (window.app?.showView) {
+      window.app.showView(`offerte-calculator:${tenderId}`);
+    }
+  }
 }
 
 function _toggleSection(section) {
@@ -595,7 +622,6 @@ async function _refreshNaDownstream(tabs = []) {
   const panel = tccState.overlay?.querySelector('#tcc-panel');
   if (!panel || !tccState.tenderId) return;
 
-  console.log('[TCC] Refresh na downstream voor tabs:', tabs);
 
   try {
     const fetches = {};
@@ -654,9 +680,10 @@ function _refreshTabPanel(panel, tabKey) {
 
   let nieuwHtml = '';
   switch (tabKey) {
-    case 'tenderplanning':   nieuwHtml = renderTabTenderplanning(tccState.data); break;
-    case 'projectplanning':  nieuwHtml = renderTabProjectplanning(tccState.data); break;
-    case 'checklist':        nieuwHtml = renderTabChecklist(tccState.data); break;
+    case 'tenderplanning':       nieuwHtml = renderTabTenderplanning(tccState.data); break;
+    case 'projectplanning':      nieuwHtml = renderTabProjectplanning(tccState.data); break;
+    case 'implementatieplanning': nieuwHtml = renderTabImplementatieplanning(tccState.data); break;
+    case 'checklist':            nieuwHtml = renderTabChecklist(tccState.data); break;
     default: return;
   }
 

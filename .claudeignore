@@ -1,0 +1,49 @@
+# ============================================================
+# .claudeignore — TenderZen
+# Bestanden en mappen die Claude Code overslaat bij lezen/zoeken.
+# Syntax identiek aan .gitignore.
+# ============================================================
+
+# --- Python cache ---
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+*.egg-info/
+
+# --- Virtual environments (twee aanwezig: root én Backend/) ---
+venv311/
+Backend/venv/
+
+# --- Environment / secrets ---
+**/.env
+# .env.example NIET genegeerd (veilig te lezen)
+
+# --- Editor- en OS-bestanden ---
+.vscode/
+.cursor/
+.DS_Store
+Thumbs.db
+**/*.tmp
+
+# --- Logs ---
+**/*.log
+
+# --- Historische documenten (Documentatie/ bevat .docx/.pdf + oude specs) ---
+Documentatie/
+
+# --- Losse sessie-notities en onderzoeksbestanden in de root ---
+Handover_Sessie_*.md
+AgendaView_Onderzoek_*.md
+Variables_Verificatie_*.md
+INSTRUCTIE_RODE_DRAAD_SESSIE_GENERATOR*.md
+
+# --- Backup- en verouderde bronbestanden ---
+**/*backup*
+**/*_oud_*
+
+# --- Test-output en tijdelijke databestanden ---
+Backend/website_verrijking_resultaten.json
+
+# --- Supabase Edge Functions (niet actief in gebruik per CLAUDE.md) ---
+supabase/

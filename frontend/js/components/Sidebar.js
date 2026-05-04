@@ -107,6 +107,32 @@ class Sidebar {
                 ${adminBadge}
                 <span class="tz-sidebar-tooltip">AI token verbruik</span>
             </button>
+            <!-- Tendermatch verwijderd — functionaliteit geïntegreerd in Tendersignalering -->
+            <!-- Code blijft beschikbaar in TendermatchView.js als referentie -->
+            <button class="tz-sidebar-item${this._activeItem === 'matchpool' ? ' active' : ''}" data-id="matchpool">
+                <span class="tz-sidebar-icon">${this._icon('buildingOffice', 20, 'currentColor')}</span>
+                <span class="tz-sidebar-label">Matchpool</span>
+                ${adminBadge}
+                <span class="tz-sidebar-tooltip">Matchpool</span>
+            </button>
+            <button class="tz-sidebar-item${this._activeItem === 'verrijking' ? ' active' : ''}" data-id="verrijking">
+                <span class="tz-sidebar-icon">${this._icon('link', 20, 'currentColor')}</span>
+                <span class="tz-sidebar-label">Website verrijking</span>
+                ${adminBadge}
+                <span class="tz-sidebar-tooltip">Website verrijking</span>
+            </button>
+            <button class="tz-sidebar-item${this._activeItem === 'tendersignalering' ? ' active' : ''}" data-id="tendersignalering">
+                <span class="tz-sidebar-icon">${this._icon('zap', 20, 'currentColor')}</span>
+                <span class="tz-sidebar-label">Tendersignalering</span>
+                ${adminBadge}
+                <span class="tz-sidebar-tooltip">Tendersignalering</span>
+            </button>
+            <button class="tz-sidebar-item${this._activeItem === 'offerte-overzicht' ? ' active' : ''}" data-id="offerte-overzicht">
+                <span class="tz-sidebar-icon">${this._icon('fileText', 20, 'currentColor')}</span>
+                <span class="tz-sidebar-label">Offertes</span>
+                ${adminBadge}
+                <span class="tz-sidebar-tooltip">Offerte Calculator</span>
+            </button>
             <div class="tz-sidebar-divider"></div>
         ` : '';
         const chevronIcon = this._isOpen

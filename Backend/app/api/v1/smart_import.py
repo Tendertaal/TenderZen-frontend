@@ -26,7 +26,7 @@ EXISTING:
 """
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
-from typing import List, Optional, Dict, Any, Literal
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
 import logging
 
@@ -36,6 +36,7 @@ import logging
 from app.core.database import get_supabase_async
 from app.core.dependencies import get_current_user
 from app.services.smart_import.smart_import_service import SmartImportService
+from app.config import TOEGESTANE_MODELLEN, DEFAULT_AI_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -50,11 +51,11 @@ class AnalyzeOptions(BaseModel):
     extract_gunningscriteria: bool = True
     extract_certificeringen: bool = True
     language: str = "nl"
-    model: Optional[Literal["haiku", "sonnet"]] = "haiku"
+    model: Optional[str] = None  # Volledig model-ID, gevalideerd in endpoint
 
 
 class ReanalyzeOptions(BaseModel):
-    model: Literal["haiku", "sonnet"] = "sonnet"
+    model: Optional[str] = None  # Volledig model-ID; default = DEFAULT_AI_MODEL
 
 
 class SupplementAnalyzeOptions(BaseModel):
@@ -140,21 +141,25 @@ async def start_analysis(
     if not import_record:
         raise HTTPException(status_code=404, detail="Import niet gevonden")
     
-    logger.info(f"📊 Starting analysis for {import_id} with model: {options.model}")
-    
+    gekozen_model = options.model or DEFAULT_AI_MODEL
+    if gekozen_model not in TOEGESTANE_MODELLEN:
+        raise HTTPException(status_code=400, detail=f"Ongeldig model: '{gekozen_model}'")
+
+    logger.info(f"📊 Starting analysis for {import_id} with model: {gekozen_model}")
+
     try:
         import asyncio
         asyncio.create_task(service.analyze(
             import_id=import_id,
             options=options.model_dump(),
-            model=options.model
+            model=gekozen_model
         ))
-        
+
         return {
             "import_id": import_id,
             "status": "analyzing",
-            "model": options.model,
-            "message": f"Analyse gestart met {options.model} model"
+            "model": gekozen_model,
+            "message": f"Analyse gestart met {gekozen_model}"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analyse starten mislukt: {str(e)}")
@@ -186,20 +191,24 @@ async def reanalyze(
             detail=f"Kan alleen her-analyseren na voltooide of gefaalde analyse (huidige status: {import_record.get('status')})"
         )
     
-    logger.info(f"🔄 Re-analyzing {import_id} with model: {options.model}")
-    
+    gekozen_model = options.model or DEFAULT_AI_MODEL
+    if gekozen_model not in TOEGESTANE_MODELLEN:
+        raise HTTPException(status_code=400, detail=f"Ongeldig model: '{gekozen_model}'")
+
+    logger.info(f"🔄 Re-analyzing {import_id} with model: {gekozen_model}")
+
     try:
         import asyncio
         asyncio.create_task(service.reanalyze(
             import_id=import_id,
-            model=options.model
+            model=gekozen_model
         ))
-        
+
         return {
             "import_id": import_id,
             "status": "analyzing",
-            "model": options.model,
-            "message": f"Her-analyse gestart met {options.model} model"
+            "model": gekozen_model,
+            "message": f"Her-analyse gestart met {gekozen_model}"
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Her-analyse starten mislukt: {str(e)}")

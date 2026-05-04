@@ -740,7 +740,7 @@ export class Header {
                                 <span class="admin-badge">Admin</span>
                             </a>
                             <a class="menu-item menu-item--admin" data-action="tenderbureaus">
-                                <span class="menu-item-icon">${Icons.briefcase ? Icons.briefcase({ size: 18, color: '#d97706' }) : ''}</span>
+                                <span class="menu-item-icon">${Icons.crown ? Icons.crown({ size: 18, color: '#d97706' }) : ''}</span>
                                 <span class="menu-item-label">Tenderbureaus</span>
                                 <span class="admin-badge">Admin</span>
                             </a>
@@ -987,7 +987,7 @@ export class Header {
             <div class="sub-header sub-header-context">
                 <div class="sub-header-left">
                     <div class="nav-tab active" data-color="purple">
-                        ${Icons.briefcase ? Icons.briefcase({ size: 16, color: '#8b5cf6' }) : ''}
+                        ${Icons.crown ? Icons.crown({ size: 16, color: '#8b5cf6' }) : ''}
                         <span>Tenderbureaus beheer</span>
                         <span class="nav-badge">${count}</span>
                     </div>

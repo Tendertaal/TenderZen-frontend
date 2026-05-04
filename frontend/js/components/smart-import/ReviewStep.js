@@ -437,12 +437,13 @@ export class ReviewStep {
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
 
         for (const file of fileList) {
-            if (!validTypes.includes(file.type) && !/\.(pdf|docx)$/i.test(file.name)) {
-                alert(`Ongeldig bestandstype: ${file.name}. Alleen PDF of DOCX.`);
+            const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+            if (!['.pdf', '.doc', '.docx'].includes(ext) && !validTypes.includes(file.type)) {
+                alert(`Ongeldig bestandstype: ${file.name}\nAlleen PDF of DOCX toegestaan.`);
                 continue;
             }
-            if (file.size > 25 * 1024 * 1024) {
-                alert(`Bestand te groot: ${file.name} (max 25 MB)`);
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`Bestand te groot: ${file.name} (max 10 MB)`);
                 continue;
             }
             const all = [...this.state.uploadedFiles, ...this.additionalFiles];
