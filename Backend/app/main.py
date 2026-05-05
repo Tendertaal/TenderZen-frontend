@@ -4,7 +4,7 @@ FastAPI Application Entry Point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.api.v1 import tenders, users, ai_documents, smart_import, tendermatch, bedrijven_import, bedrijven, verrijking, implementatieplanning, bedrijfsprofiel, tendersignalering, offerte_calculator
+from app.api.v1 import tenders, users, ai_documents, smart_import, tendermatch, bedrijven_import, bedrijven, verrijking, implementatieplanning, bedrijfsprofiel, tendersignalering, offerte_calculator, compliance
 from app.api.v1.password_history import router as password_router
 from app.api.v1.planning import router as planning_router
 from app.routers.document_router import router as document_router
@@ -50,6 +50,7 @@ app.include_router(implementatieplanning.router, prefix="/api/v1")
 app.include_router(bedrijfsprofiel.router)
 app.include_router(tendersignalering.router)
 app.include_router(offerte_calculator.router)
+app.include_router(compliance.router)
 
 
 @app.get("/")
