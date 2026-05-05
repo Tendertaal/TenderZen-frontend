@@ -519,13 +519,30 @@ async def update_offerte(
     current_user: dict = Depends(get_current_user),
     db: Client = Depends(get_supabase_async),
 ):
-    # Laad bestaand record — geen bureau filter zodat super-admin ook kan
-    bestaand_res = db.table("offerte_calculaties").select("*").eq("id", offerte_id).execute()
+    try:
+        bestaand_res = db.table("offerte_calculaties").select("*").eq("id", offerte_id).execute()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database fout bij ophalen: {str(e)}")
+
     if not bestaand_res.data:
         raise HTTPException(status_code=404, detail="Offerte niet gevonden")
 
     bestaand = bestaand_res.data[0]
     update_data = {k: v for k, v in body.dict(exclude_none=True).items()}
+
+    # Zorg dat INTEGER-kolommen echte integers zijn (geen floats zoals 1.0)
+    _int_kolommen = {
+        'looptijd_jaar', 'kwaliteit_weging', 'prijs_weging', 'percelen',
+        'sub_criteria', 'paginas', 'bijlagen', 'vragen_nvi', 'bijlagen_redigeren',
+        'bekende_klant_pct', 'zittende_partij_pct', 'uurtarief', 'commissie_pct',
+        'korting_tenderschrijven', 'korting_tendermanagement', 'korting_grafisch',
+    }
+    for veld in _int_kolommen:
+        if veld in update_data and update_data[veld] is not None:
+            try:
+                update_data[veld] = int(float(update_data[veld]))
+            except (ValueError, TypeError):
+                pass
 
     # Merge met bestaande data voor berekeningen
     merged = {**bestaand, **update_data}
@@ -541,9 +558,14 @@ async def update_offerte(
         **factuur_result,
     })
 
-    res = db.table("offerte_calculaties").update(update_data).eq("id", offerte_id).execute()
+    try:
+        res = db.table("offerte_calculaties").update(update_data).eq("id", offerte_id).execute()
+    except Exception as e:
+        logger.error(f"Opslaan offerte {offerte_id} mislukt: {e}")
+        raise HTTPException(status_code=500, detail=f"Opslaan mislukt: {str(e)}")
+
     if not res.data:
-        raise HTTPException(status_code=500, detail="Opslaan mislukt")
+        raise HTTPException(status_code=500, detail="Opslaan mislukt: geen data terug van database")
     return {"offerte": res.data[0], "activiteiten_detail": uren_result["activiteiten_detail"]}
 
 

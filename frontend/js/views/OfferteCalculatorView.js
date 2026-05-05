@@ -1363,6 +1363,56 @@ class OfferteCalculatorView {
         return `
         <div class="ocv-panel">
 
+          <!-- FACTUUR TOTAAL -->
+          <div class="ocv-factuur-totaal-kaart">
+            <div class="ocv-ft-header">Totaal factuur klant</div>
+            <div class="ocv-ft-body">
+              <div class="ocv-ft-rij"><span>Tenderschrijven</span><span id="ocv-sum-ts">€ 0</span></div>
+              <div class="ocv-ft-rij"><span>Tendermanagement</span><span id="ocv-sum-tm">€ 0</span></div>
+              <div class="ocv-ft-rij"><span>Tenderdocumenten</span><span id="ocv-sum-td">€ 0</span></div>
+              <div class="ocv-ft-rij"><span>Grafisch ontwerp</span><span id="ocv-sum-go">€ 0</span></div>
+              <div class="ocv-ft-totaal">
+                <span>Totaal</span>
+                <span id="ocv-f-totaal">€ 0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- KWALITEITSCHECKS -->
+          <div class="ocv-checks-kaart">
+            <div class="ocv-checks-header">
+              <span class="ocv-comp-icon">${window.Icons.checkCircle({ size: 16, color: 'currentColor' })}</span>
+              Kwaliteitschecks
+            </div>
+            <div class="ocv-checks-body">
+              <div class="ocv-ka-check" id="ocv-ka-check">
+                <div class="ocv-ka-lbl">Kosten per A4 (klant)</div>
+                <div class="ocv-ka-val" id="ocv-ka-val">—</div>
+                <div class="ocv-ka-sub" id="ocv-ka-sub">—</div>
+                <div class="ocv-check-berekening" id="ocv-ka-berekening">—</div>
+              </div>
+
+              <div class="ocv-ratio-kaart" id="ocv-ratio-kaart">
+                <div class="ocv-ratio-lbl">Offerte / max. opdrachtwaarde</div>
+                <div class="ocv-ratio-pct" id="ocv-ratio-pct">—</div>
+                <div class="ocv-ratio-sub" id="ocv-ratio-sub">—</div>
+                <div class="ocv-check-berekening" id="ocv-ratio-berekening">—</div>
+                <div class="ocv-ratio-balk-wrap">
+                  <div class="ocv-ratio-balk-fill" id="ocv-ratio-balk" style="width:0%"></div>
+                </div>
+                <div class="ocv-ratio-schaal"><span>0%</span><span>1%</span><span>2%</span><span>3%+</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- NETTO VOOR TENDERTAAL -->
+          <div class="ocv-netto-banner">
+            <div class="ocv-netto-lbl">Netto voor Tendertaal</div>
+            <div class="ocv-netto-val" id="ocv-netto-val">€ 0</div>
+            <div class="ocv-netto-berekening" id="ocv-netto-berekening">—</div>
+            <div class="ocv-netto-comm" id="ocv-netto-comm">—</div>
+          </div>
+
           <!-- TENDERSCHRIJVEN -->
           <div class="ocv-comp-kaart">
             <div class="ocv-comp-header">
@@ -1614,56 +1664,6 @@ class OfferteCalculatorView {
           </div>
 
           ${this._htmlNettoConfig()}
-
-          <!-- FACTUUR TOTAAL -->
-          <div class="ocv-factuur-totaal-kaart">
-            <div class="ocv-ft-header">Totaal factuur klant</div>
-            <div class="ocv-ft-body">
-              <div class="ocv-ft-rij"><span>Tenderschrijven</span><span id="ocv-sum-ts">€ 0</span></div>
-              <div class="ocv-ft-rij"><span>Tendermanagement</span><span id="ocv-sum-tm">€ 0</span></div>
-              <div class="ocv-ft-rij"><span>Tenderdocumenten</span><span id="ocv-sum-td">€ 0</span></div>
-              <div class="ocv-ft-rij"><span>Grafisch ontwerp</span><span id="ocv-sum-go">€ 0</span></div>
-              <div class="ocv-ft-totaal">
-                <span>Totaal</span>
-                <span id="ocv-f-totaal">€ 0</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- KWALITEITSCHECKS -->
-          <div class="ocv-checks-kaart">
-            <div class="ocv-checks-header">
-              <span class="ocv-comp-icon">${window.Icons.checkCircle({ size: 16, color: 'currentColor' })}</span>
-              Kwaliteitschecks
-            </div>
-            <div class="ocv-checks-body">
-              <div class="ocv-ka-check" id="ocv-ka-check">
-                <div class="ocv-ka-lbl">Kosten per A4 (klant)</div>
-                <div class="ocv-ka-val" id="ocv-ka-val">—</div>
-                <div class="ocv-ka-sub" id="ocv-ka-sub">—</div>
-                <div class="ocv-check-berekening" id="ocv-ka-berekening">—</div>
-              </div>
-
-              <div class="ocv-ratio-kaart" id="ocv-ratio-kaart">
-                <div class="ocv-ratio-lbl">Offerte / max. opdrachtwaarde</div>
-                <div class="ocv-ratio-pct" id="ocv-ratio-pct">—</div>
-                <div class="ocv-ratio-sub" id="ocv-ratio-sub">—</div>
-                <div class="ocv-check-berekening" id="ocv-ratio-berekening">—</div>
-                <div class="ocv-ratio-balk-wrap">
-                  <div class="ocv-ratio-balk-fill" id="ocv-ratio-balk" style="width:0%"></div>
-                </div>
-                <div class="ocv-ratio-schaal"><span>0%</span><span>1%</span><span>2%</span><span>3%+</span></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- NETTO -->
-          <div class="ocv-netto-banner">
-            <div class="ocv-netto-lbl">Netto voor Tendertaal</div>
-            <div class="ocv-netto-val" id="ocv-netto-val">€ 0</div>
-            <div class="ocv-netto-berekening" id="ocv-netto-berekening">—</div>
-            <div class="ocv-netto-comm" id="ocv-netto-comm">—</div>
-          </div>
 
         </div>`;
     }
